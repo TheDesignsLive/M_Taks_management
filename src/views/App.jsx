@@ -6,7 +6,7 @@ const AdminTable = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Dynamic URL: Local par 5000 use karega, Live par domain
+    // Dynamic URL: Local par 5000 use karega, Live par domaingfgfgf
     const baseURL = window.location.hostname === "localhost" 
       ? "http://localhost:5000" 
       : "";
