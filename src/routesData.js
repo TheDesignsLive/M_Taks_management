@@ -10,7 +10,7 @@ export const navLinks = [
 // Ye object aapke alag-alag pages ka data hai
 export const pageData = {
   home: {
-    title: "🏠 Homepp Page",
+    title: "🏠 Home Page",
     content: "Welcome to our Task Management System!"
   },
   about: {
