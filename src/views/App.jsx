@@ -9,8 +9,7 @@ const AdminTable = () => {
     // Dynamic URL: Local par 5000 use karega, Live par domain
     const baseURL = window.location.hostname === "localhost" 
       ? "http://localhost:5000" 
-      :window.location.origin;
-      // : "https://m-tms.thedesigns.live";
+      : "https://m-tms.thedesigns.live";
 
     fetch(`${baseURL}/api/admins/all`)
       .then((res) => res.json())
