@@ -1,21 +1,21 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
+// ... (imports)
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Pehle wale saare imports aur routes rehne dena...
+// 1. Pehle API Routes aane chahiye
+app.use('/api/admins', adminRoutes);
 
-// 1. Static files serve karo (React ka build folder)
+// 2. Phir Static files (React ka build)
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// 2. Har request par React ki index.html bhejo (taaki page refresh pe error na aaye)
+// 3. SABSE LAST mein ye '*' wala route hona chahiye
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Port wahi rehne do jo pehle tha
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server + Frontend running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
