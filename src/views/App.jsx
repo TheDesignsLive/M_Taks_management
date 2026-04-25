@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { navLinks, pageData } from './routesData'; // Step 2 wali file se data mangwaya
+import { navLinks, pageData } from '../routes/routesData'; // Step 2 wali file se data mangwaya
 
 // Ek simple component jo alag-alag pages ka content dikhayega
 const PageLayout = ({ data }) => {
