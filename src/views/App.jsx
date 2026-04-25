@@ -6,10 +6,10 @@ const AdminTable = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Dynamic URL: Local par 5000 use karega, Live par domaingfgfgf
+    // Dynamic URL: Local par 5000 use karega, Live par domain
     const baseURL = window.location.hostname === "localhost" 
       ? "http://localhost:5000" 
-      : "";
+      : "https://m-tms.thedesigns.live";
 
     fetch(`${baseURL}/api/admins/all`)
       .then((res) => res.json())
