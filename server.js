@@ -1,29 +1,29 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import adminRoutes from './routes/routesData.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// API Routes
+// 1. API Routes
 app.use('/api/admins', adminRoutes);
 
-// Static files (React Build)
-const distPath = path.resolve(__dirname, 'dist');
-app.use(express.static(distPath));
+// 2. Static files serve karo (Ekdum direct rasta)
+app.use(express.static('dist'));
 
-// React routing
+// 3. React Routing
 app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    // Agar rasta nahi mil raha toh error handle karega
+    res.sendFile(path.resolve('dist', 'index.html'), (err) => {
+        if (err) {
+            res.status(500).send("Backend is Running, but Frontend 'dist' folder is missing. Run npm run build.");
+        }
+    });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server + Frontend Running on port ${PORT}`);
+    console.log(`🚀 Server Running on Port ${PORT}`);
 });
