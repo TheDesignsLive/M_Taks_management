@@ -1,4 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Home from './Home.jsx';
+import Notifications from './Notifications.jsx';
+// import AssignedByMe from './AssignedByMe.jsx';
+// import ViewMembers from './ViewMembers.jsx';
+// import Settings from './Settings.jsx';
+// import Profile from './Profile.jsx';
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =
@@ -6,13 +12,13 @@ const BASE_URL =
     ? 'http://localhost:5000'
     : 'https://m-tms.thedesigns.live';
 
-// ─── DUMMY COMPONENTS ────────────────────────────────────────────────────────
-const Home = () => <div style={s.page}><h1>🏠 Home Dashboard</h1><p>Welcome back!</p></div>;
-const Notifications = () => <div style={s.page}><h1>🔔 Notifications</h1><p>No new updates.</p></div>;
-const AssignedByMe = () => <div style={s.page}><h1>📝 Assigned By Me</h1><p>List of tasks...</p></div>;
-const ViewMembers = () => <div style={s.page}><h1>👥 Members</h1><p>Manage your team.</p></div>;
-const Settings = () => <div style={s.page}><h1>⚙️ Settings</h1><p>Account preferences.</p></div>;
-const Profile = () => <div style={s.page}><h1>👤 Profile</h1><p>Your details.</p></div>;
+// // ─── DUMMY COMPONENTS ────────────────────────────────────────────────────────
+// const Home = () => <div style={s.page}><h1>🏠 Home Dashboard</h1><p>Welcome back!</p></div>;
+// const Notifications = () => <div style={s.page}><h1>🔔 Notifications</h1><p>No new updates.</p></div>;
+// const AssignedByMe = () => <div style={s.page}><h1>📝 Assigned By Me</h1><p>List of tasks...</p></div>;
+// const ViewMembers = () => <div style={s.page}><h1>👥 Members</h1><p>Manage your team.</p></div>;
+// const Settings = () => <div style={s.page}><h1>⚙️ Settings</h1><p>Account preferences.</p></div>;
+// const Profile = () => <div style={s.page}><h1>👤 Profile</h1><p>Your details.</p></div>;
 
 // ─── PRIORITY CONFIG ─────────────────────────────────────────────────────────
 const PRIORITIES = [
