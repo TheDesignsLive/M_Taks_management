@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-  
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -14,8 +13,11 @@
     "dev": "concurrently \"npm run dev-back\" \"npm run dev-front\""
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "multer": "^2.1.1",
     "mysql2": "^3.22.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
