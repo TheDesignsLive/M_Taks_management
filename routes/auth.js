@@ -58,10 +58,12 @@ router.post("/signup", (req, res) => {
             const sql = "INSERT INTO admins (name, company_name, email, phone, password, profile_pic) VALUES (?,?,?,?,?,?)";
             const [result] = await con.query(sql, [name, company_name, email, phone, hashedPassword, profilePic]);
 
+            // Set Admin Sessions
             req.session.adminId = result.insertId;
             req.session.role = "admin";
             req.session.email = email;
             req.session.adminName = name;
+            req.session.control_type = "ADMIN"; // Default for Admin
 
             return res.json({ status: 'success', message: 'Account created!', redirect: '/home' });
         } catch (err) {
@@ -97,17 +99,28 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ status: 'error', message: "Incorrect password or Email ❌" });
         }
 
+        // ================= SAVE SESSIONS =================
         if (login_type === "admin") {
             req.session.adminId = rows[0].id;
             req.session.role = "admin";
             req.session.adminName = rows[0].name;
+            req.session.control_type = "ADMIN";
         } else {
             req.session.userId = rows[0].id;
-            req.session.role = rows[0].control_type === 'OWNER' ? "owner" : "user";
             req.session.adminId = rows[0].admin_id;
+            req.session.role_id = rows[0].role_id;
             req.session.userName = rows[0].name;
+            req.session.control_type = rows[0].control_type; // ADMIN, PARTIAL, OWNER, etc.
+            
+            // Set role string based on control_type or defaults
+            if (rows[0].control_type === 'OWNER') {
+                req.session.role = "owner";
+            } else {
+                req.session.role = "user";
+            }
         }
         req.session.email = rows[0].email;
+        // ================================================
 
         return res.json({ status: 'success', message: 'Login successful!', redirect: '/home' });
 
@@ -120,7 +133,12 @@ router.post("/login", async (req, res) => {
 // ================= SESSION CHECK ====================
 router.get("/session", (req, res) => {
     if (req.session.adminId || req.session.userId) {
-        return res.json({ loggedIn: true, redirect: '/home' });
+        return res.json({ 
+            loggedIn: true, 
+            role: req.session.role,
+            control_type: req.session.control_type,
+            redirect: '/home' 
+        });
     }
     res.json({ loggedIn: false });
 });
