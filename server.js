@@ -3,6 +3,7 @@ import cors from 'cors';
 import session from 'express-session';
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js'; // ✅ ADD THIS
+import notificationRoutes from './routes/notifications.js';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(session({
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes); // ✅ ADD THIS — all task APIs at /api/tasks/*
+app.use('/api/notifications', notificationRoutes);
 
 app.use(express.static('dist'));
 app.use('/public', express.static('public'));
