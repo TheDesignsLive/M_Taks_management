@@ -110,6 +110,31 @@ function MiniCalendar({ value, onChange, onClose }) {
   );
 }
 
+// ─── FIXED PORTAL (escapes overflow clipping, renders above pill) ─────────────
+function FixedPortal({ rect, width, children }) {
+  if (!rect) return null;
+  const spaceAbove = rect.top;
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+  const style = {
+    position: 'fixed',
+    left: Math.min(rect.left, window.innerWidth - width - 8),
+    width,
+    zIndex: 99999,
+    ...(openUpward
+      ? { bottom: window.innerHeight - rect.top + 6 }
+      : { top: rect.bottom + 6 }),
+  };
+  return (
+    <div style={style} onClick={e => e.stopPropagation()}>
+      {children}
+    </div>
+  );
+}
+
+// Dummy wrapper — just passes ref through
+function PillAnchor({ children }) { return children; }
+
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -137,8 +162,14 @@ const Layout = () => {
   const [toast, setToast]             = useState('');
   const [titleError, setTitleError]   = useState(false);
 
-  const titleRef = useRef(null);
+const titleRef = useRef(null);
   const modalRef = useRef(null);
+  const pillCalRef    = useRef(null);
+  const pillPriRef    = useRef(null);
+  const pillAssignRef = useRef(null);
+  const [calRect,    setCalRect]    = useState(null);
+  const [priRect,    setPriRect]    = useState(null);
+  const [assignRect, setAssignRect] = useState(null);
 
   // Load teams once when task modal opens
   useEffect(() => {
@@ -388,12 +419,12 @@ const Layout = () => {
               />
             </div>
 
-            {/* Pills Row: Date | Priority | Assign | Send */}
+{/* Pills Row: Date | Priority | Assign | Send */}
             <div className="atb-pills-row">
 
               {/* DATE */}
-              <div style={{position:'relative'}}>
-                <div className="atb-pill" onClick={() => { setShowCal(v=>!v); setShowPri(false); setShowAssign(false); }}>
+              <PillAnchor onOpen={rect => setCalRect(rect)} isOpen={showCal}>
+                <div className="atb-pill" onClick={() => { const r = pillCalRef.current?.getBoundingClientRect(); setCalRect(r); setShowCal(v=>!v); setShowPri(false); setShowAssign(false); }} ref={pillCalRef}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2" width="15" height="15">
                     <rect x="3" y="4" width="18" height="18" rx="3"/>
                     <line x1="16" y1="2" x2="16" y2="6"/>
@@ -402,41 +433,22 @@ const Layout = () => {
                   </svg>
                   <span className="atb-pill-text">{formatDisplayDate(date)}</span>
                 </div>
-                {showCal && (
-                  <MiniCalendar value={date} onChange={setDate} onClose={() => setShowCal(false)} />
-                )}
-              </div>
+              </PillAnchor>
 
               {/* PRIORITY */}
-              <div style={{position:'relative'}}>
-                <div className="atb-pill" onClick={() => { setShowPri(v=>!v); setShowCal(false); setShowAssign(false); }}>
+              <PillAnchor onOpen={rect => setPriRect(rect)} isOpen={showPri}>
+                <div className="atb-pill" onClick={() => { const r = pillPriRef.current?.getBoundingClientRect(); setPriRect(r); setShowPri(v=>!v); setShowCal(false); setShowAssign(false); }} ref={pillPriRef}>
                   <span className="atb-dot" style={{background: priColor}} />
                   <span className="atb-pill-text" style={{color: priColor}}>{priority}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" width="11" height="11">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </div>
-                {showPri && (
-                  <div className="atb-drop">
-                    {PRIORITIES.map(p => (
-                      <div
-                        key={p.value}
-                        className="atb-drop-item"
-                        onClick={() => { setPriority(p.value); setShowPri(false); }}
-                        style={{fontWeight: priority === p.value ? 700 : 400}}
-                      >
-                        <span className="atb-dot" style={{background: p.color}} />
-                        <span style={{flex:1, color: p.color}}>{p.value}</span>
-                        {priority === p.value && <span style={{color:'#14b8a6'}}>✓</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              </PillAnchor>
 
               {/* ASSIGN TO */}
               <div style={{position:'relative', flex:1}}>
-                <div className="atb-pill atb-pill-assign" onClick={() => { setShowAssign(v=>!v); setShowCal(false); setShowPri(false); }}>
+                <div className="atb-pill atb-pill-assign" ref={pillAssignRef} onClick={() => { const r = pillAssignRef.current?.getBoundingClientRect(); setAssignRect(r); setShowAssign(v=>!v); setShowCal(false); setShowPri(false); }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2" width="15" height="15">
                     <circle cx="12" cy="8" r="4"/>
                     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
@@ -446,86 +458,6 @@ const Layout = () => {
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </div>
-
-                {showAssign && (
-                  <div className="atb-drop atb-drop-assign">
-                    {/* Myself */}
-                    <div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}>
-                      <span>👤</span>
-                      <span style={{flex:1}}>Myself</span>
-                      {assignTo === 'self' && <span style={{color:'#14b8a6'}}>✓</span>}
-                    </div>
-                    {/* All Members */}
-                    <div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}>
-                      <span>👥</span>
-                      <span style={{flex:1}}>All Members</span>
-                      {assignTo === 'all' && <span style={{color:'#14b8a6'}}>✓</span>}
-                    </div>
-
-                    {teams.length > 0 && <div className="atb-drop-sep"/>}
-
-                    {/* Teams */}
-                    {teams.map(team => (
-                      <div key={team.id} className="atb-sub-wrap">
-                        <div
-                          className="atb-drop-item"
-                          onClick={() => {
-                            setOpenTeam(v => v === team.id ? null : team.id);
-                            loadTeam(team.id);
-                            setShowOthers(false);
-                          }}
-                        >
-                          <span>🏷</span>
-                          <span style={{flex:1}}>{team.name}</span>
-                          <span style={{color:'#bbb', fontSize:12}}>›</span>
-                        </div>
-                        {openTeam === team.id && (
-                          <div className="atb-sub">
-                            <div
-                              className="atb-drop-item atb-sub-hdr"
-                              onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}
-                            >
-                              All {team.name}
-                            </div>
-                            {(teamMembers[team.id] || []).map(m => (
-                              <div key={m.id} className="atb-drop-item"
-                                onClick={() => selectAssign(String(m.id), m.name)}>
-                                <span style={{flex:1}}>{m.name}</span>
-                                {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Other Employees */}
-                    <div className="atb-sub-wrap">
-                      <div
-                        className="atb-drop-item"
-                        onClick={() => { setShowOthers(v=>!v); setOpenTeam(null); loadOthers(); }}
-                      >
-                        <span>🔖</span>
-                        <span style={{flex:1}}>Other Employees</span>
-                        <span style={{color:'#bbb', fontSize:12}}>›</span>
-                      </div>
-                      {showOthers && (
-                        <div className="atb-sub">
-                          {others.length === 0
-                            ? <div className="atb-drop-item" style={{color:'#aaa'}}>None found</div>
-                            : others.map(m => (
-                              <div key={m.id} className="atb-drop-item"
-                                onClick={() => selectAssign(String(m.id), m.name)}>
-                                <span style={{flex:1}}>{m.name}</span>
-                                {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
-                              </div>
-                            ))
-                          }
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* SEND BUTTON */}
@@ -541,6 +473,88 @@ const Layout = () => {
                 }
               </button>
             </div>
+
+            {/* ── FIXED PORTALS (escape overflow clipping) ── */}
+            {showCal && calRect && (
+              <FixedPortal rect={calRect} width={272}>
+                <MiniCalendar value={date} onChange={setDate} onClose={() => setShowCal(false)} />
+              </FixedPortal>
+            )}
+            {showPri && priRect && (
+              <FixedPortal rect={priRect} width={170}>
+                <div className="atb-drop-portal">
+                  {PRIORITIES.map(p => (
+                    <div
+                      key={p.value}
+                      className="atb-drop-item"
+                      onClick={() => { setPriority(p.value); setShowPri(false); }}
+                      style={{fontWeight: priority === p.value ? 700 : 400}}
+                    >
+                      <span className="atb-dot" style={{background: p.color}} />
+                      <span style={{flex:1, color: p.color}}>{p.value}</span>
+                      {priority === p.value && <span style={{color:'#14b8a6'}}>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              </FixedPortal>
+            )}
+            {showAssign && assignRect && (
+              <FixedPortal rect={assignRect} width={220}>
+                <div className="atb-drop-portal">
+                  <div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}>
+                    <span>👤</span><span style={{flex:1}}>Myself</span>
+                    {assignTo === 'self' && <span style={{color:'#14b8a6'}}>✓</span>}
+                  </div>
+                  <div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}>
+                    <span>👥</span><span style={{flex:1}}>All Members</span>
+                    {assignTo === 'all' && <span style={{color:'#14b8a6'}}>✓</span>}
+                  </div>
+                  {teams.length > 0 && <div className="atb-drop-sep"/>}
+                  {teams.map(team => (
+                    <div key={team.id}>
+                      <div className="atb-drop-item" onClick={() => { setOpenTeam(v => v === team.id ? null : team.id); loadTeam(team.id); setShowOthers(false); }}>
+                        <span>🏷</span>
+                        <span style={{flex:1}}>{team.name}</span>
+                        <span style={{color: openTeam===team.id ? '#14b8a6':'#bbb', fontSize:12, transition:'transform 0.2s', display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)'}}>›</span>
+                      </div>
+                      {openTeam === team.id && (
+                        <div className="atb-sub-inline">
+                          <div className="atb-drop-item atb-sub-hdr-inline" onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}>
+                            <span style={{color:'#14b8a6', marginRight:6}}>↳</span> All {team.name}
+                            {assignTo===`team_${team.id}` && <span style={{color:'#14b8a6', marginLeft:'auto'}}>✓</span>}
+                          </div>
+                          {(teamMembers[team.id] || []).map(m => (
+                            <div key={m.id} className="atb-drop-item atb-sub-indent" onClick={() => selectAssign(String(m.id), m.name)}>
+                              <span style={{flex:1}}>{m.name}</span>
+                              {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div className="atb-drop-sep"/>
+                  <div className="atb-drop-item" onClick={() => { setShowOthers(v=>!v); setOpenTeam(null); loadOthers(); }}>
+                    <span>🔖</span>
+                    <span style={{flex:1}}>Other Employees</span>
+                    <span style={{color: showOthers ? '#14b8a6':'#bbb', fontSize:12, display:'inline-block', transform: showOthers ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
+                  </div>
+                  {showOthers && (
+                    <div className="atb-sub-inline">
+                      {others.length === 0
+                        ? <div className="atb-drop-item" style={{color:'#aaa'}}>None found</div>
+                        : others.map(m => (
+                          <div key={m.id} className="atb-drop-item atb-sub-indent" onClick={() => selectAssign(String(m.id), m.name)}>
+                            <span style={{flex:1}}>{m.name}</span>
+                            {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
+              </FixedPortal>
+            )}
           </div>
         </div>
       )}
@@ -835,7 +849,7 @@ const customCSS = `
     80%{transform:translateX(4px)}
   }
   .atb-textarea { resize: none; min-height: 62px; }
-/* ── PILLS ROW (date | priority | assign | send) in ONE line ── */
+/* ── PILLS ROW ── */
   .atb-pills-row {
     display: flex;
     align-items: center;
@@ -843,8 +857,6 @@ const customCSS = `
     margin-top: 4px;
     flex-wrap: nowrap;
     overflow: visible;
-    padding-bottom: 80px;
-    margin-bottom: -80px;
   }
 
   /* Individual pill */
@@ -930,20 +942,16 @@ const customCSS = `
   .atb-cal-past   { color:#ccc; cursor:default; }
   .atb-cal-empty  { cursor:default; }
 
-/* ── Dropdowns ── */
-  .atb-drop {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
+/* ── Dropdown portal card ── */
+  .atb-drop-portal {
     background: #fff;
     border-radius: 14px;
-    box-shadow: 0 10px 32px rgba(0,0,0,0.16);
-    z-index: 9000;
-    min-width: 160px;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.18);
     overflow: hidden;
     animation: atbFadeIn 0.14s ease;
+    max-height: 320px;
+    overflow-y: auto;
   }
-  .atb-drop-assign { min-width: 200px; }
   .atb-drop-item {
     padding: 10px 14px; font-size: 13px; cursor: pointer;
     color: #222; display: flex; align-items: center; gap: 8px;
@@ -952,34 +960,25 @@ const customCSS = `
   }
   .atb-drop-item:hover { background: #e9f2ef; }
   .atb-drop-sep { height: 1px; background: #f0f0f0; }
-
-/* Sub-menu */
-  .atb-sub-wrap { position: relative; }
-  .atb-sub {
-    position: absolute;
-    left: calc(100% + 4px);
-    top: 0;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 10px 32px rgba(0,0,0,0.16);
-    min-width: 190px;
-    z-index: 9001;
-    overflow-y: auto;
-    animation: atbFadeIn 0.14s ease;
-    max-height: 220px;
+  /* Inline sub-menu (expands in place, no second dropdown) */
+  .atb-sub-inline {
+    background: #f7fdfb;
+    border-top: 1px solid #e8f5f3;
+    border-bottom: 1px solid #e8f5f3;
   }
-  @media (max-width: 480px) {
-    .atb-sub {
-      position: static;
-      box-shadow: none;
-      border-radius: 0;
-      border-top: 1px solid #f0f0f0;
-    }
-  }
-  .atb-sub-hdr {
+  .atb-sub-hdr-inline {
     font-weight: 700; color: #0f9d9a;
-    border-bottom: 1px solid #eef7f6;
+    font-size: 12px; padding: 8px 14px 8px 20px;
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
   }
+  .atb-sub-hdr-inline:hover { background: #e0f5f2; }
+  .atb-sub-indent {
+    padding-left: 28px !important;
+    font-size: 12.5px !important;
+    color: #334155 !important;
+  }
+
+  /* .atb-sub removed — now using atb-sub-inline inside portal */
 
   /* ── Toast ── */
   .atb-toast {
