@@ -4,7 +4,7 @@ import Notifications from './Notifications.jsx';
 // import AssignedByMe from './AssignedByMe.jsx';
 // import ViewMembers from './ViewMembers.jsx';
 // import Settings from './Settings.jsx';
-// import Profile from './Profile.jsx';
+import Profile from './Profile.jsx';
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =

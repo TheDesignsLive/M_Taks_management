@@ -1,3 +1,4 @@
+// routes/notifications.js -
 import express from 'express';
 import con from '../config/db.js';
 const router = express.Router();

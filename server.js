@@ -4,6 +4,7 @@ import session from 'express-session';
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js'; // ✅ ADD THIS
 import notificationRoutes from './routes/notifications.js';
+import Profile from './routes/profile.js';
 
 const app = express();
 
@@ -32,7 +33,7 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes); // ✅ ADD THIS — all task APIs at /api/tasks/*
 app.use('/api/notifications', notificationRoutes);
-
+app.use('/api/profile', Profile);
 app.use(express.static('dist'));
 app.use('/public', express.static('public'));
 
