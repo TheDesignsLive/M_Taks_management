@@ -33,7 +33,7 @@ function formatDisplayDate(iso) {
   const tom = new Date(today); tom.setDate(today.getDate() + 1);
   d.setHours(0, 0, 0, 0);
   if (d.getTime() === today.getTime()) return 'Today';
-  if (d.getTime() === tom.getTime()) return 'Tomorrow';
+  if (d.getTime() === tom.getTime()) return 'Tom';
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 }
 
