@@ -73,13 +73,15 @@ function MiniCalendar({ value, onChange, onClose }) {
     onChange(iso);
     onClose();
   }
-
-  return (
+return (
     <div className="atb-cal-popup" onClick={e => e.stopPropagation()}>
       <div className="atb-cal-hdr">
-        <button className="atb-cal-nav" onClick={prev}>‹</button>
-        <span className="atb-cal-month">{MONTHS[vMonth]} {vYear}</span>
-        <button className="atb-cal-nav" onClick={next}>›</button>
+        <button className="atb-cal-nav atb-cal-nav-lg" onClick={prev}>‹</button>
+        <div className="atb-cal-month-wrap">
+          <span className="atb-cal-month">{MONTHS[vMonth]}</span>
+          <span className="atb-cal-year">{vYear}</span>
+        </div>
+        <button className="atb-cal-nav atb-cal-nav-lg" onClick={next}>›</button>
       </div>
       <div className="atb-cal-grid">
         {WDAYS.map(d => <div key={d} className="atb-cal-wday">{d}</div>)}
@@ -111,18 +113,19 @@ function MiniCalendar({ value, onChange, onClose }) {
 }
 
 // ─── FIXED PORTAL (escapes overflow clipping, renders above pill) ─────────────
-function FixedPortal({ rect, width, children }) {
+function FixedPortal({ rect, width, children, forceUp }) {
   if (!rect) return null;
   const spaceAbove = rect.top;
   const spaceBelow = window.innerHeight - rect.bottom;
-  const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+  const isMobile = window.innerWidth < 600;
+  const openUpward = forceUp || isMobile || (spaceBelow < 300 && spaceAbove > spaceBelow);
   const style = {
     position: 'fixed',
     left: Math.min(rect.left, window.innerWidth - width - 8),
     width,
     zIndex: 99999,
     ...(openUpward
-      ? { bottom: window.innerHeight - rect.top + 6 }
+      ? { bottom: window.innerHeight - rect.top + 8 }
       : { top: rect.bottom + 6 }),
   };
   return (
@@ -475,8 +478,8 @@ const titleRef = useRef(null);
             </div>
 
             {/* ── FIXED PORTALS (escape overflow clipping) ── */}
-            {showCal && calRect && (
-              <FixedPortal rect={calRect} width={272}>
+    {showCal && calRect && (
+              <FixedPortal rect={calRect} width={272} forceUp>
                 <MiniCalendar value={date} onChange={setDate} onClose={() => setShowCal(false)} />
               </FixedPortal>
             )}
@@ -905,40 +908,47 @@ const customCSS = `
 
   /* ── Calendar Popup ── */
 
-  .atb-cal-popup {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
+.atb-cal-popup {
     background: #fff;
     border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(0,0,0,0.18);
-    padding: 14px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.22);
+    padding: 14px 12px 12px;
     z-index: 9000;
     width: 268px;
     animation: atbFadeIn 0.15s ease;
   }
   .atb-cal-hdr {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
-  .atb-cal-month { font-weight: 700; font-size: 14px; color: #0b3d3a; }
+  .atb-cal-month-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+  }
+  .atb-cal-month { font-weight: 700; font-size: 15px; color: #0b3d3a; line-height: 1.2; }
+  .atb-cal-year  { font-size: 11px; color: #14b8a6; font-weight: 600; }
   .atb-cal-nav {
-    background: #f1faf9; border: none; border-radius: 8px;
-    width: 28px; height: 28px; cursor: pointer;
-    font-size: 18px; color: #14b8a6; line-height: 1;
+    background: #f1faf9; border: none; border-radius: 10px;
+    width: 36px; height: 36px; cursor: pointer;
+    font-size: 22px; color: #14b8a6; line-height: 1;
     transition: background 0.14s;
     display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   .atb-cal-nav:hover { background: #daf2ef; }
-  .atb-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
-  .atb-cal-wday { text-align:center; font-size:10px; font-weight:700; color:#14b8a6; padding:2px 0 5px; }
+  .atb-cal-nav:active { background: #b2e8e3; transform: scale(0.93); }
+  .atb-cal-nav-lg { width: 40px; height: 40px; font-size: 24px; border-radius: 12px; }
+  .atb-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+  .atb-cal-wday { text-align:center; font-size:10px; font-weight:700; color:#14b8a6; padding:2px 0 6px; }
   .atb-cal-day {
-    text-align:center; font-size:12px; padding:5px 2px;
-    border-radius:7px; cursor:pointer; color:#333; transition: background 0.12s;
+    text-align:center; font-size:13px; padding:7px 2px;
+    border-radius:8px; cursor:pointer; color:#333; transition: background 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   .atb-cal-day:hover:not(.atb-cal-past):not(.atb-cal-empty) { background: #e0f7f5; }
   .atb-cal-today  { font-weight:700; color:#14b8a6; }
-  .atb-cal-sel    { background:#14b8a6 !important; color:#fff !important; font-weight:700; border-radius:7px; }
+  .atb-cal-sel    { background:#14b8a6 !important; color:#fff !important; font-weight:700; border-radius:8px; }
   .atb-cal-past   { color:#ccc; cursor:default; }
   .atb-cal-empty  { cursor:default; }
 
