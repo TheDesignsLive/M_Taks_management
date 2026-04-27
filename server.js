@@ -1,15 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
-import authRoutes from './routes/auth.js'; 
+import authRoutes from './routes/auth.js';
+import taskRoutes from './routes/tasks.js'; // ✅ ADD THIS
 
 const app = express();
 
-// ✅ FIX: CORS must allow specific origin and credentials for sessions to work
+// ✅ CORS — allow frontend origin with credentials
 app.use(cors({
     origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true
-})); 
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -22,12 +23,13 @@ app.use(session({
     cookie: {
         secure: false, // Set to true only if using HTTPS
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 
+        maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
 // Routes
-app.use('/api/auth', authRoutes); 
+app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes); // ✅ ADD THIS — all task APIs at /api/tasks/*
 
 app.use(express.static('dist'));
 app.use('/public', express.static('public'));
