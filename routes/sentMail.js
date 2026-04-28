@@ -6,17 +6,12 @@ router.post("/send-otp", async (req, res) => {
     const { contact, otp, sent_for } = req.body;
 
     // Purana configuration jo tumne bataya chal raha hai:
+    // फालतू details हटा दी, अब ये पुराने app जैसा है
     let transporter = nodemailer.createTransport({
         service: "gmail",
-        host: 'smtp.gmail.com', // host specify karna live server par help karta hai
-        port: 587,
-        secure: false, // SSL use karega
         auth: {
             user: "social.designs.live@gmail.com",
             pass: "ipka xjqi uach zrpc" 
-        },
-        tls: {
-            rejectUnauthorized: false // Certificate issue bypass karne ke liye
         }
     });
 
