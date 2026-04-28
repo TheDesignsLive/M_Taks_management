@@ -38,7 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes); // ✅ ADD THIS — all task APIs at /api/tasks/*
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/profile', Profile);
-app.use('/api/member-actions', memberActions);
+app.use('/api/notifications', memberActions);
 // app.use('/api/settings', Settings);
 // app.use('/api/sent-mail', sent_mail);
 app.use(express.static('dist'));
