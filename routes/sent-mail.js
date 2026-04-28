@@ -1,141 +1,56 @@
-// sendMail.js  —  React/Frontend mail utility (ESM)
-// ─────────────────────────────────────────────────────────────────────────────
-// This is the FRONTEND version of the mail sender.
-// All it does is call your backend  POST /api/settings/send-otp
-// (or the public variant) with { contact, otp, sent_for }.
-//
-// Usage:
-//   import { sendOtp, generateOtp, SENT_FOR } from './sendMail';
-//
-//   const otp = generateOtp();
-//   const result = await sendOtp({ contact: 'user@example.com', otp, sent_for: SENT_FOR.CHANGE_PASSWORD });
-//   if (result.success) { ... }
-//
-// ─────────────────────────────────────────────────────────────────────────────
+import express from 'express';
+const router = express.Router();
+import nodemailer from 'nodemailer';
 
-// ─── Base URL (auto-switch dev / prod) ───────────────────────────────────────
-const BASE_URL =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:5000'
-    : '';   // same origin in production
+router.post("/send-otp", async (req, res) => {
+    const { contact, otp, sent_for } = req.body;
 
-// ─── sent_for constants ───────────────────────────────────────────────────────
-export const SENT_FOR = {
-  CHANGE_PASSWORD: 'change_password',
-  CHANGE_EMAIL:    'change_email',
-  DELETE_PROFILE:  'delete_profile',
-  SIGNUP:          'signup',
-  FORGET_PASSWORD: 'forget_password',
-  TWO_FA:          '2fa',
-};
-
-// ─── Generate a 6-digit OTP ──────────────────────────────────────────────────
-export function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// ─── Send OTP (authenticated routes — requires session cookie) ───────────────
-// Use for: change_password, change_email, delete_profile
-export async function sendOtp({ contact, otp, sent_for }) {
-  try {
-    const res = await fetch(`${BASE_URL}/api/settings/send-otp`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact, otp, sent_for }),
+    let transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: "social.designs.live@gmail.com",
+            pass: "ipka xjqi uach zrpc" 
+        }
     });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { success: false, message: data.message || `Server error (${res.status})` };
+    let subject = "Verification Code";
+    let color = "#0F8989"; // Teal
+    let title = "Verification Required";
+
+    if(sent_for === "change_password") {
+        subject = "Security Alert: Change Password OTP";
+        title = "Password Change";
+    } else if(sent_for === "change_email") {
+        subject = "OTP for Email Update";
+        title = "Email Update";
+    } else if(sent_for === "delete_profile") {
+        subject = "CRITICAL: OTP to Delete Account";
+        color = "#d9534f"; // Red
+        title = "Account Deletion";
     }
 
-    const data = await res.json();
-    return { success: data.success, message: data.message || '', status: data.status };
-  } catch (err) {
-    console.error('[sendMail] sendOtp error:', err);
-    return { success: false, message: 'Network error. Check your connection and try again.' };
-  }
-}
+    const mailOptions = {
+        from: 'social.designs.live@gmail.com',
+        to: contact,
+        subject: subject,
+        html: `
+            <div style="font-family: Arial; max-width: 400px; margin: auto; border: 1px solid #eee; border-top: 4px solid ${color}; padding: 20px; border-radius: 8px;">
+                <h2 style="color: ${color}; text-align: center;">${title}</h2>
+                <p style="text-align: center; color: #555;">Use the following OTP to verify your action:</p>
+                <div style="background: #f4fdfd; border: 2px dashed ${color}; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; color: ${color}; letter-spacing: 5px;">
+                    ${otp}
+                </div>
+                <p style="font-size: 12px; color: #888; text-align: center;">This code is valid for 10 minutes. If you didn't request this, ignore this email.</p>
+            </div>
+        `
+    };
 
-// ─── Send OTP (public routes — no session required) ──────────────────────────
-// Use for: signup, forget_password
-export async function sendOtpPublic({ contact, otp, sent_for }) {
-  try {
-    const res = await fetch(`${BASE_URL}/api/settings/send-otp-public`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contact, otp, sent_for }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { success: false, message: data.message || `Server error (${res.status})` };
+    try {
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, status: "sent" });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Mailer Error" });
     }
+});
 
-    const data = await res.json();
-    return { success: data.success, message: data.message || '', status: data.status };
-  } catch (err) {
-    console.error('[sendMail] sendOtpPublic error:', err);
-    return { success: false, message: 'Network error. Check your connection and try again.' };
-  }
-}
-
-// ─── Verify OTP (client-side, no server round-trip) ──────────────────────────
-// The OTP is generated on the client and kept in local state.
-// This helper just compares without exposing the value unnecessarily.
-export function verifyOtp(input, expected) {
-  if (!input || !expected) return false;
-  return input.trim() === expected.trim();
-}
-
-// ─── Password validator ───────────────────────────────────────────────────────
-// Min 8 chars, 1 uppercase, 1 lowercase, 1 digit
-export function isValidPassword(password) {
-  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
-}
-
-// ─── Email validator ─────────────────────────────────────────────────────────
-export function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  USAGE EXAMPLES (for reference — not executed)
-// ─────────────────────────────────────────────────────────────────────────────
-//
-//  ── Change password flow ──────────────────────────────────────────────────
-//  const otp = generateOtp();
-//  const result = await sendOtp({
-//    contact: 'user@example.com',
-//    otp,
-//    sent_for: SENT_FOR.CHANGE_PASSWORD,
-//  });
-//  if (result.success) {
-//    // store otp in component state, show OTP input
-//  }
-//
-//  ── Signup flow (no session yet) ─────────────────────────────────────────
-//  const otp = generateOtp();
-//  const result = await sendOtpPublic({
-//    contact: 'newuser@example.com',
-//    otp,
-//    sent_for: SENT_FOR.SIGNUP,
-//  });
-//
-//  ── Forgot password (public) ──────────────────────────────────────────────
-//  const otp = generateOtp();
-//  const result = await sendOtpPublic({
-//    contact: email,
-//    sent_for: SENT_FOR.FORGET_PASSWORD,
-//    otp,
-//  });
-//
-//  ── Verify input ─────────────────────────────────────────────────────────
-//  if (!verifyOtp(userTypedOtp, storedOtp)) {
-//    setError('Invalid OTP. Please try again.');
-//    return;
-//  }
-//
-// ─────────────────────────────────────────────────────────────────────────────
+export default router;
