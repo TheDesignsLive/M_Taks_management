@@ -1,3 +1,4 @@
+// Profile.jsx - User profile page with view and edit functionality
 import React, { useState, useRef, useEffect } from 'react';
 
 const BASE_URL =
