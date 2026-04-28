@@ -581,7 +581,7 @@ const styles = {
 
   // ── Body ──
   body: {
-    maxWidth: 560, margin: '-18px auto 0',
+    maxWidth: 560, margin: '12px auto 0',
     padding: '0 14px',
     position: 'relative', zIndex: 2,
   },
