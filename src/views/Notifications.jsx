@@ -7,6 +7,8 @@ const Notifications = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('announce');
     const [modal, setModal] = useState({ show: false, type: 'add', editId: null });
+
+    // Form states
     const [form, setForm] = useState({ title: '', desc: '', teamId: '0', file: null });
 
     useEffect(() => { fetchNotifications(); }, []);
@@ -38,10 +40,13 @@ const Notifications = () => {
     };
 
     const handleAction = async (action, id) => {
-        // pattern: calling dynamic routes like your old app
-        const res = await fetch(`${BASE_URL}/api/notifications/process-request/${action}/${id}`, { credentials: 'include' });
-        const result = await res.json();
-        if (result.success) fetchNotifications();
+        // Pattern: Calls memberActions router and handles alert message
+        try {
+            const res = await fetch(`${BASE_URL}/api/notifications/${action}/${id}`, { credentials: 'include' });
+            const result = await res.json();
+            alert(result.message);
+            if (result.success) fetchNotifications();
+        } catch (err) { alert("Action failed"); }
     };
 
     const handleDeleteAnn = async (id) => {
@@ -54,15 +59,13 @@ const Notifications = () => {
 
     return (
         <div style={styles.container}>
-            {/* Toggle Tab - Shows if user can manage either Announcements or Members */}
-            {(data.canManageAnnounce || data.canManageMembers) && (
+            {/* Toggle Tab - Shows if user can manage members */}
+            {data.canManageMembers && (
                 <div style={styles.toggleRow}>
                     <div style={{...styles.tab, ...(activeTab === 'announce' ? styles.activeTab : {})}} onClick={() => setActiveTab('announce')}>Announcements</div>
-                    {data.canManageMembers && (
-                        <div style={{...styles.tab, ...(activeTab === 'requests' ? styles.activeTab : {})}} onClick={() => setActiveTab('requests')}>
-                            Requests {(data.memberRequests.length + data.deletionRequests.length) > 0 && <span style={styles.badge}>!</span>}
-                        </div>
-                    )}
+                    <div style={{...styles.tab, ...(activeTab === 'requests' ? styles.activeTab : {})}} onClick={() => setActiveTab('requests')}>
+                        Requests {(data.memberRequests.length + data.deletionRequests.length) > 0 && <span style={styles.badge}>!</span>}
+                    </div>
                 </div>
             )}
 
@@ -100,7 +103,7 @@ const Notifications = () => {
                 </div>
             ) : (
                 <div id="req-section">
-                    <h4 style={{color:'#2ecc71', marginBottom:10, textAlign:'left'}}>Add Requests</h4>
+                    <h4 style={{color:'#2ecc71', marginBottom:15, textAlign:'left'}}>Add Requests</h4>
                     {data.memberRequests.map(r => (
                         <div key={r.id} style={{...styles.reqCard, borderLeft:'4px solid #2ecc71'}}>
                             <div style={styles.reqFlex}>
@@ -124,7 +127,8 @@ const Notifications = () => {
                                 <div style={{...styles.avatar, background:'#ff4d4d'}}>{r.name.charAt(0)}</div>
                                 <div style={{flex:1, marginLeft:10, textAlign:'left'}}>
                                     <h4 style={{margin:0, color:'#ff4d4d'}}>{r.name}</h4>
-                                    <p style={styles.metaRow}>Role: {r.role_name}</p>
+                                    <p style={styles.metaRow}>{r.email} | {r.role_name}</p>
+                                    <p style={{...styles.metaRow, fontSize:10}}>By {r.requested_by_name}</p>
                                 </div>
                                 <div style={styles.btnStack}>
                                     <button onClick={() => handleAction('confirm-deletion', r.id)} style={styles.btnSmlRed}>Approve</button>
@@ -176,7 +180,7 @@ const styles = {
     annTitle: { color: '#CDF4F4', fontSize: 17, margin: '0 0 5px 0', paddingRight: 60, textAlign:'left' },
     metaRow: { display: 'flex', fontSize: 11, color: '#aaa', marginBottom: 10 },
     sep: { margin: '0 8px', opacity: 0.3 },
-    descText: { color: '#eee', fontSize: 13, lineHeight: 1.5, margin: '10px 0', textAlign:'left' },
+    descText: { color: '#eee', fontSize: 13, lineHeight: 1.5, margin: '10px 0' },
     footer: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#888' },
     attachLink: { color: '#0F8989', textDecoration: 'none', fontWeight: 'bold' },
     modalOverlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:2000, padding:20 },
@@ -186,8 +190,8 @@ const styles = {
     reqFlex: { display: 'flex', alignItems: 'center' },
     avatar: { width: 40, height: 40, borderRadius: '50%', background: '#095959', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' },
     btnStack: { display: 'flex', flexDirection: 'column', gap: 5 },
-    btnSmlGreen: { background: '#2ecc71', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10, fontWeight: 'bold' },
-    btnSmlRed: { background: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10, fontWeight: 'bold' }
+    btnSmlGreen: { background: '#2ecc71', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10 },
+    btnSmlRed: { background: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10 }
 };
 
 export default Notifications;
