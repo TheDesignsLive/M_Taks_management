@@ -10,6 +10,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// MAIN DATA FETCH ROUTE
 router.get('/', async (req, res) => {
     if (!req.session.role) return res.status(401).json({ success: false });
 
@@ -17,16 +18,17 @@ router.get('/', async (req, res) => {
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        // --- Permissions Logic (Matching your old app exactly) ---
+        // PERMISSIONS AS PER PATTERN
         const canManageAnnounce = (role === 'admin' || control_type === 'OWNER' || control_type === 'ADMIN');
-        const canManageMembers = (role === 'admin' || control_type === 'OWNER'); // NOT for Admin control
+        const canManageMembers = (role === 'admin' || control_type === 'OWNER'); // NO Admin control here
 
-        // 1. Fetch Teams for current admin
+        // 1. Fetch Teams for Dropdown
         const [teams] = await con.query("SELECT id, name FROM teams WHERE admin_id = ?", [adminId]);
 
-        // 2. Announcements Query
+        // 2. Announcements Query with Joins
         let annQuery = `
-            SELECT a.*, IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
+            SELECT a.*, 
+            IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
             CASE 
                 WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
                 WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
@@ -40,7 +42,6 @@ router.get('/', async (req, res) => {
         
         let annParams = [adminId];
         
-        // Filter announcements if user has no management rights
         if (!canManageAnnounce) {
             annQuery += ` AND (a.role_id = (SELECT team_id FROM roles WHERE id=?) OR a.role_id=0) `;
             annParams.push(role_id);
@@ -48,7 +49,7 @@ router.get('/', async (req, res) => {
         annQuery += ` ORDER BY a.created_at DESC`;
         const [announcements] = await con.query(annQuery, annParams);
 
-        // 3. Member Requests (Permission Based)
+        // 3. Member Requests (Sirf Admin/Owner Control ke liye)
         let memberRequests = [];
         let deletionRequests = [];
         if (canManageMembers) {
@@ -58,16 +59,46 @@ router.get('/', async (req, res) => {
             deletionRequests = dReqs;
         }
 
-        // 4. Seen Logic
+        // 4. Mark as Seen logic
         for (let ann of announcements) {
-            await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", [ann.id, sessionUserId, role, adminId]);
+            await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", 
+            [ann.id, sessionUserId, role, adminId]);
         }
 
-        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers });
+        res.json({
+            success: true,
+            teams,
+            announcements,
+            memberRequests,
+            deletionRequests,
+            canManageAnnounce,
+            canManageMembers,
+            session: { role, role_id, control_type }
+        });
     } catch (err) {
-        console.error(err);
         res.status(500).json({ success: false });
     }
+});
+
+// ADD ANNOUNCEMENT (POST)
+router.post('/add-announcement', upload.single('attachment'), async (req, res) => {
+    try {
+        const { title, description, role_id } = req.body;
+        const { adminId, role, userId } = req.session;
+        const attachment = req.file ? req.file.filename : null;
+        const addedBy = role === 'admin' ? adminId : userId;
+
+        const [result] = await con.query(
+            "INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)",
+            [adminId, addedBy, role.toUpperCase(), role_id, title, description, attachment]
+        );
+
+        // Fetch back for Socket emission
+        const [newAnn] = await con.query(`SELECT a.*, IF(a.role_id=0,'All',t.name) as target_team_name FROM announcements a LEFT JOIN teams t ON a.role_id=t.id WHERE a.id=?`, [result.insertId]);
+        
+        if (req.io) req.io.emit('new_announcement', newAnn[0]);
+        res.json({ success: true, announcement: newAnn[0] });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 export default router;
