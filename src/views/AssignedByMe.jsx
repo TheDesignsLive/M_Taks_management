@@ -18,9 +18,9 @@ function useToast() {
 
 // ─── PRIORITY COLORS ─────────────────────────────────────────────────────────
 const PRIORITY_COLOR = {
-  HIGH:   { border: '#ff4d6d', bg: 'rgba(255,77,109,0.12)', text: '#ff4d6d' },
-  MEDIUM: { border: '#fbbf24', bg: 'rgba(251,191,36,0.12)', text: '#fbbf24' },
-  LOW:    { border: '#38bdf8', bg: 'rgba(56,189,248,0.12)', text: '#38bdf8' },
+  HIGH:   { border: '#ff4d6d', bg: 'rgba(255,77,109,0.15)', text: '#ff4d6d' },
+  MEDIUM: { border: '#fbbf24', bg: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
+  LOW:    { border: '#0F8989', bg: 'rgba(15,137,137,0.15)', text: '#14b8a6' },
 };
 
 // ─── FORMAT DATE ─────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ function AssigneePicker({ taskId, members, teams, session, adminName, onClose, o
               </button>
               {subOpen === t.id && (
                 <div style={S.subList}>
-                  <button style={{ ...S.pickerItem, paddingLeft: 36, color: '#2dd4bf', fontWeight: 700 }}
+                  <button style={{ ...S.pickerItem, paddingLeft: 36, color: '#14b8a6', fontWeight: 700 }}
                     onClick={() => handleAssign(`team_${t.id}`)}>
                     ➜ Assign All in Team
                   </button>
@@ -82,7 +82,7 @@ function AssigneePicker({ taskId, members, teams, session, adminName, onClose, o
                     </button>
                   ))}
                   {!members.some(m => m.team_id == t.id) && (
-                    <div style={{ paddingLeft: 36, color: '#6b7280', fontSize: 12, padding: '8px 36px' }}>No members</div>
+                    <div style={{ paddingLeft: 36, color: '#aaa', fontSize: 12, padding: '8px 36px' }}>No members</div>
                   )}
                 </div>
               )}
@@ -197,8 +197,8 @@ function ConfirmModal({ title, message, onConfirm, onClose, danger }) {
         <div style={S.pickerPill} />
         <div style={{ textAlign: 'center', padding: '20px 24px 28px' }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>🗑️</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#e2e8f0', marginBottom: 8 }}>{title}</div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 24, lineHeight: 1.6 }}>{message}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 8 }}>{title}</div>
+          <div style={{ fontSize: 13, color: '#aaa', marginBottom: 24, lineHeight: 1.6 }}>{message}</div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button style={S.btnCancel} onClick={onClose}>Cancel</button>
             <button style={{ ...S.btnSave, background: 'linear-gradient(135deg,#b91c1c,#ef4444)' }} onClick={onConfirm}>
@@ -276,7 +276,7 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
 
   return (
     <>
-      <div style={{ ...S.taskCard, borderLeft: `3px solid ${pc.border}`, opacity: isCompleted ? 0.7 : 1 }}>
+      <div style={{ ...S.taskCard, borderLeft: `4px solid ${pc.border}`, opacity: isCompleted ? 0.75 : 1 }}>
         {/* Top row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           {/* Checkbox */}
@@ -286,20 +286,20 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
             disabled={toggling}
             aria-label={isCompleted ? 'Mark pending' : 'Mark complete'}
           >
-            {isCompleted && <span style={{ color: '#0f172a', fontSize: 11, fontWeight: 900 }}>✓</span>}
+            {isCompleted && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
           </button>
 
           {/* Title + desc */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 14, fontWeight: 700, color: isCompleted ? '#64748b' : '#e2e8f0',
+              fontSize: 14, fontWeight: 700, color: isCompleted ? '#aaa' : '#fff',
               textDecoration: 'none',
               wordBreak: 'break-word', lineHeight: 1.35,
             }}>
               {task.title}
             </div>
             {task.description && task.description !== 'null' && task.description !== '' && (
-              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 3, wordBreak: 'break-word', lineHeight: 1.4 }}>
+              <div style={{ fontSize: 11.5, color: '#aaa', marginTop: 3, wordBreak: 'break-word', lineHeight: 1.4 }}>
                 {task.description}
               </div>
             )}
@@ -321,20 +321,20 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
         {/* Bottom row: badges + assignee + date */}
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {/* Priority */}
-          <span style={{ ...S.badge, color: pc.text, background: pc.bg, border: `1px solid ${pc.border}33` }}>
+          <span style={{ ...S.badge, color: pc.text, background: pc.bg, border: `1px solid ${pc.border}44` }}>
             {task.priority}
           </span>
 
           {/* Section */}
           {task.section && (
-            <span style={{ ...S.badge, color: '#94a3b8', background: 'rgba(148,163,184,0.1)', border: '1px solid rgba(148,163,184,0.2)' }}>
+            <span style={{ ...S.badge, color: '#ccc', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
               {task.section}
             </span>
           )}
 
           {/* Assignee */}
           {isCompleted ? (
-            <span style={{ ...S.badge, color: '#2dd4bf', background: 'rgba(45,212,191,0.1)', border: '1px solid rgba(45,212,191,0.2)', marginLeft: 'auto' }}>
+            <span style={{ ...S.badge, color: '#14b8a6', background: 'rgba(15,137,137,0.18)', border: '1px solid rgba(15,137,137,0.3)', marginLeft: 'auto' }}>
               👤 {task.assigned_to}
             </span>
           ) : (
@@ -345,7 +345,7 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
 
           {/* Date */}
           {task.due_date && (
-            <span style={{ ...S.badge, color: '#94a3b8', background: 'rgba(148,163,184,0.08)' }}>
+            <span style={{ ...S.badge, color: '#aaa', background: 'rgba(255,255,255,0.06)' }}>
               📅 {formatDate(task.due_date)}
             </span>
           )}
@@ -441,7 +441,7 @@ export default function AssignByMe() {
     return (
       <div style={S.loadingWrap}>
         <div style={S.spinner} />
-        <p style={{ color: '#2dd4bf', marginTop: 16, fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+        <p style={{ color: '#14b8a6', marginTop: 16, fontSize: 13, fontFamily: "Arial, sans-serif" }}>
           Loading tasks…
         </p>
       </div>
@@ -464,8 +464,8 @@ export default function AssignByMe() {
               <span style={S.statNum}>{openTasks.length}</span>
               <span style={S.statLbl}>Pending</span>
             </div>
-            <div style={{ ...S.statPill, background: 'rgba(45,212,191,0.15)', border: '1px solid rgba(45,212,191,0.3)' }}>
-              <span style={{ ...S.statNum, color: '#2dd4bf' }}>{completedTasks.length}</span>
+            <div style={{ ...S.statPill, background: 'rgba(15,137,137,0.2)', border: '1px solid rgba(15,137,137,0.4)' }}>
+              <span style={{ ...S.statNum, color: '#14b8a6' }}>{completedTasks.length}</span>
               <span style={S.statLbl}>Done</span>
             </div>
           </div>
@@ -473,45 +473,43 @@ export default function AssignByMe() {
       </div>
 
       {/* ── TAB TOGGLE ── */}
-{/* ── TAB TOGGLE ── */}
- {/* ── TAB TOGGLE ── */}
-<div style={{ maxWidth: 640, margin: '0 auto', padding: '12px 14px 0' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '12px 14px 0' }}>
 
-  {/* Tabs Row */}
-  <div style={{ display: 'flex' }}>
-    <div style={S.tabBar}>
-      <button
-        style={{ ...S.tab, ...(activeTab === 'pending' ? S.tabActive : {}) }}
-        onClick={() => setActiveTab('pending')}
-      >
-        Pending
-        <span style={{ ...S.tabBadge, background: activeTab === 'pending' ? '#2dd4bf' : '#374151' }}>
-          {openTasks.length}
-        </span>
-      </button>
+        {/* Tabs Row */}
+        <div style={{ display: 'flex' }}>
+          <div style={S.tabBar}>
+            <button
+              style={{ ...S.tab, ...(activeTab === 'pending' ? S.tabActive : {}) }}
+              onClick={() => setActiveTab('pending')}
+            >
+              Pending
+              <span style={{ ...S.tabBadge, background: activeTab === 'pending' ? '#0F8989' : '#555' }}>
+                {openTasks.length}
+              </span>
+            </button>
 
-      <button
-        style={{ ...S.tab, ...(activeTab === 'completed' ? S.tabActive : {}) }}
-        onClick={() => setActiveTab('completed')}
-      >
-        Completed
-        <span style={{ ...S.tabBadge, background: activeTab === 'completed' ? '#2dd4bf' : '#374151' }}>
-          {completedTasks.length}
-        </span>
-      </button>
-    </div>
-  </div>
+            <button
+              style={{ ...S.tab, ...(activeTab === 'completed' ? S.tabActive : {}) }}
+              onClick={() => setActiveTab('completed')}
+            >
+              Completed
+              <span style={{ ...S.tabBadge, background: activeTab === 'completed' ? '#0F8989' : '#555' }}>
+                {completedTasks.length}
+              </span>
+            </button>
+          </div>
+        </div>
 
-  {/* Clear All Row (RIGHT aligned, separate row) */}
-  {activeTab === 'completed' && completedTasks.length > 0 && (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-      <button style={S.clearBtn} onClick={() => setDeleteAllOpen(true)}>
-        🗑️ Clear All
-      </button>
-    </div>
-  )}
+        {/* Clear All Row (RIGHT aligned, separate row) */}
+        {activeTab === 'completed' && completedTasks.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+            <button style={S.clearBtn} onClick={() => setDeleteAllOpen(true)}>
+              🗑️ Clear All
+            </button>
+          </div>
+        )}
 
-</div>
+      </div>
 
       {/* ── TASK LIST ── */}
       <div style={S.listWrap}>
@@ -553,7 +551,7 @@ export default function AssignByMe() {
       {/* ── TOAST ── */}
       <div
         className={`abm-toast${toast.show ? ' show' : ''}`}
-        style={{ background: toast.type === 'error' ? '#7f1d1d' : '#134e4a' }}
+        style={{ background: toast.type === 'error' ? '#7f1d1d' : '#095959' }}
         role="alert"
       >
         <span style={{ marginRight: 7 }}>{toast.type === 'error' ? '❌' : '✅'}</span>
@@ -580,8 +578,8 @@ function EmptyState({ icon, title, sub }) {
 const S = {
   page: {
     minHeight: '100%',
-    background: '#0b1120',
-    fontFamily: "'DM Sans','Segoe UI',sans-serif",
+    background: '#3C3A3A',           // ← Notification page bg
+    fontFamily: "Arial, sans-serif",
     paddingBottom: 100,
   },
   loadingWrap: {
@@ -591,17 +589,17 @@ const S = {
   },
   spinner: {
     width: 40, height: 40,
-    border: '3px solid rgba(45,212,191,0.2)',
-    borderTop: '3px solid #2dd4bf',
+    border: '3px solid rgba(15,137,137,0.2)',
+    borderTop: '3px solid #0F8989',
     borderRadius: '50%',
     animation: 'abmSpin 0.7s linear infinite',
   },
 
   // Header
   header: {
-    background: 'linear-gradient(135deg, #0d1f2d 0%, #0f2a2a 100%)',
+    background: '#2E2D2D',           // ← Notification darker panel
     padding: '20px 18px 16px',
-    borderBottom: '1px solid rgba(45,212,191,0.15)',
+    borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
   headerInner: {
     maxWidth: 640, margin: '0 auto',
@@ -609,23 +607,24 @@ const S = {
   },
   headerTitle: {
     margin: 0, fontSize: 20, fontWeight: 800,
-    color: '#e2e8f0', letterSpacing: -0.3,
+    color: '#CDF4F4',                // ← Notification annTitle color
+    letterSpacing: -0.3,
   },
   headerSub: {
-    margin: '3px 0 0', fontSize: 12, color: '#64748b', fontWeight: 400,
+    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
   statPill: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: 12, padding: '6px 14px',
     minWidth: 54,
   },
-  statNum: { fontSize: 18, fontWeight: 800, color: '#f8fafc', lineHeight: 1 },
-  statLbl: { fontSize: 9.5, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
+  statNum: { fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1 },
+  statLbl: { fontSize: 9.5, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
 
-  // Tabs
+  // Tabs — matches Notification toggleRow exactly
   tabWrap: {
     maxWidth: 640, margin: '0 auto',
     padding: '12px 14px 0',
@@ -633,38 +632,38 @@ const S = {
   },
   tabBar: {
     display: 'flex', flex: 1,
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 16, padding: 4,
+    background: '#2E2D2D',           // ← Notification toggleRow bg
+    borderRadius: 30,
+    padding: 5,
     gap: 4,
   },
   tab: {
-    flex: 1, padding: '9px 12px',
+    flex: 1, padding: '10px 12px',
     border: 'none', background: 'transparent',
-    color: '#64748b', fontWeight: 700, fontSize: 13,
-    cursor: 'pointer', borderRadius: 12,
+    color: '#aaa', fontWeight: 700, fontSize: 13,
+    cursor: 'pointer', borderRadius: 25,
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     transition: 'all 0.18s ease',
-    fontFamily: "'DM Sans','Segoe UI',sans-serif",
+    fontFamily: "Arial, sans-serif",
     letterSpacing: 0.1,
   },
   tabActive: {
-    background: 'linear-gradient(135deg, #0d4f4f, #134e4a)',
-    color: '#2dd4bf',
-    boxShadow: '0 2px 12px rgba(45,212,191,0.2)',
+    background: '#0F8989',           // ← Notification activeTab bg
+    color: '#fff',
+    fontWeight: 'bold',
   },
   tabBadge: {
-    fontSize: 10, fontWeight: 800, color: '#0b1120',
+    fontSize: 10, fontWeight: 800, color: '#fff',
     padding: '1px 6px', borderRadius: 20,
     minWidth: 18, textAlign: 'center',
   },
   clearBtn: {
     padding: '8px 12px',
-    background: 'rgba(239,68,68,0.12)',
-    border: '1px solid rgba(239,68,68,0.25)',
-    borderRadius: 12, color: '#ef4444',
+    background: 'rgba(239,68,68,0.15)',
+    border: '1px solid rgba(239,68,68,0.3)',
+    borderRadius: 100, color: '#ef4444',
     fontSize: 12, fontWeight: 700, cursor: 'pointer',
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "Arial, sans-serif",
     whiteSpace: 'nowrap',
   },
 
@@ -672,14 +671,14 @@ const S = {
   listWrap: {
     maxWidth: 640, margin: '12px auto 0',
     padding: '0 14px',
-    display: 'flex', flexDirection: 'column', gap: 8,
+    display: 'flex', flexDirection: 'column', gap: 10,
   },
 
-  // Task Card
+  // Task Card — matches Notification annCard
   taskCard: {
-    background: 'linear-gradient(135deg, #111827 0%, #0f1923 100%)',
-    border: '1px solid rgba(255,255,255,0.07)',
-    borderRadius: 14,
+    background: '#444',              // ← Notification annCard bg
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 8,
     padding: '12px 14px',
     position: 'relative',
     transition: 'transform 0.15s, box-shadow 0.15s',
@@ -698,37 +697,38 @@ const S = {
   },
   assignBtn: {
     padding: '3px 10px',
-    background: 'rgba(45,212,191,0.1)',
-    border: '1px solid rgba(45,212,191,0.25)',
-    borderRadius: 20, color: '#2dd4bf',
+    background: 'rgba(15,137,137,0.18)',
+    border: '1px solid rgba(15,137,137,0.35)',
+    borderRadius: 20, color: '#14b8a6',
     fontSize: 11, fontWeight: 700, cursor: 'pointer',
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "Arial, sans-serif",
     whiteSpace: 'nowrap',
   },
   dotsBtn: {
     width: 28, height: 28,
-    background: 'transparent', border: 'none',
-    color: '#64748b', fontSize: 20, fontWeight: 900,
+    background: 'rgba(255,255,255,0.08)',
+    border: 'none',
+    color: '#ccc', fontSize: 20, fontWeight: 900,
     cursor: 'pointer', display: 'flex',
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: 8, padding: 0, lineHeight: 1,
+    borderRadius: '50%', padding: 0, lineHeight: 1,
   },
   dropMenu: {
     position: 'absolute', right: 0, top: 32,
-    background: '#1e293b',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 12, overflow: 'hidden',
+    background: '#2E2D2D',           // ← Notification dark panel
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 10, overflow: 'hidden',
     zIndex: 9999, minWidth: 130,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
   },
   dropItem: {
     display: 'block', width: '100%',
     padding: '10px 14px', textAlign: 'left',
     background: 'transparent', border: 'none',
-    color: '#cbd5e1', fontSize: 13, fontWeight: 600,
-    cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+    color: '#eee', fontSize: 13, fontWeight: 600,
+    cursor: 'pointer', fontFamily: "Arial, sans-serif",
   },
-  dropDivider: { height: 1, background: 'rgba(255,255,255,0.07)' },
+  dropDivider: { height: 1, background: 'rgba(255,255,255,0.08)' },
 
   // Picker / Sheet
   pickerBackdrop: {
@@ -739,22 +739,23 @@ const S = {
   },
   pickerSheet: {
     width: '100%', maxWidth: 520,
-    background: '#111827',
+    background: '#2E2D2D',           // ← Notification dark panel
     borderRadius: '22px 22px 0 0',
-    border: '1px solid rgba(45,212,191,0.15)',
+    border: '1px solid rgba(15,137,137,0.2)',
     paddingBottom: 24,
     maxHeight: '80dvh', overflowY: 'auto',
     animation: 'abmSlide 0.24s cubic-bezier(.22,.68,0,1.18)',
-    boxShadow: '0 -8px 48px rgba(0,0,0,0.6)',
+    boxShadow: '0 -8px 48px rgba(0,0,0,0.5)',
   },
   pickerPill: {
     width: 40, height: 4,
-    background: 'rgba(45,212,191,0.3)',
+    background: 'rgba(15,137,137,0.4)',
     borderRadius: 4, margin: '12px auto 0',
   },
   pickerTitle: {
     fontSize: 16, fontWeight: 800,
-    color: '#e2e8f0', padding: '14px 18px 8px',
+    color: '#CDF4F4',
+    padding: '14px 18px 8px',
     letterSpacing: -0.2,
   },
   pickerList: { padding: '0 10px' },
@@ -762,68 +763,68 @@ const S = {
     display: 'flex', alignItems: 'center', gap: 10,
     width: '100%', padding: '12px 8px',
     background: 'transparent', border: 'none',
-    color: '#cbd5e1', fontSize: 14, fontWeight: 500,
+    color: '#eee', fontSize: 14, fontWeight: 500,
     cursor: 'pointer', textAlign: 'left',
     borderRadius: 10,
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "Arial, sans-serif",
   },
   pickerItemGroup: {
     display: 'flex', alignItems: 'center', gap: 10,
     width: '100%', padding: '12px 8px',
     background: 'transparent', border: 'none',
-    color: '#94a3b8', fontSize: 13, fontWeight: 700,
+    color: '#aaa', fontSize: 13, fontWeight: 700,
     cursor: 'pointer', textAlign: 'left',
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "Arial, sans-serif",
   },
   pickerIcon: { fontSize: 16, width: 24, textAlign: 'center', flexShrink: 0 },
   subList: {
-    background: 'rgba(45,212,191,0.04)',
-    borderLeft: '2px solid rgba(45,212,191,0.2)',
+    background: 'rgba(15,137,137,0.06)',
+    borderLeft: '2px solid rgba(15,137,137,0.25)',
     marginLeft: 18, borderRadius: '0 0 8px 8px',
   },
   pickerCancel: {
     display: 'block', margin: '12px 18px 0',
     width: 'calc(100% - 36px)',
     padding: '13px',
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 14, color: '#94a3b8',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 14, color: '#aaa',
     fontSize: 14, fontWeight: 700,
-    cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+    cursor: 'pointer', fontFamily: "Arial, sans-serif",
   },
 
   // Edit modal form
   formLabel: {
     display: 'block', fontSize: 10.5, fontWeight: 800,
-    color: '#2dd4bf', textTransform: 'uppercase',
+    color: '#14b8a6', textTransform: 'uppercase',
     letterSpacing: 0.7, marginBottom: 5, marginTop: 14,
   },
   formInput: {
     width: '100%', boxSizing: 'border-box',
     padding: '10px 12px',
-    background: '#1e293b',
-    border: '1.5px solid rgba(45,212,191,0.2)',
-    borderRadius: 10, color: '#e2e8f0',
+    background: '#3C3A3A',           // ← Notification container bg as input bg
+    border: '1.5px solid rgba(15,137,137,0.3)',
+    borderRadius: 8, color: '#eee',
     fontSize: 14, outline: 'none',
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "Arial, sans-serif",
   },
 
   // Buttons
   btnCancel: {
     flex: 1, padding: '12px',
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 12, color: '#94a3b8',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 12, color: '#aaa',
     fontSize: 14, fontWeight: 700,
-    cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+    cursor: 'pointer', fontFamily: "Arial, sans-serif",
   },
   btnSave: {
     flex: 1, padding: '12px',
-    background: 'linear-gradient(135deg,#0d4f4f,#0f766e)',
+    background: '#0F8989',           // ← Notification addBtn bg
     border: 'none', borderRadius: 12,
     color: '#fff', fontSize: 14, fontWeight: 700,
-    cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-    boxShadow: '0 4px 16px rgba(45,212,191,0.25)',
+    cursor: 'pointer', fontFamily: "Arial, sans-serif",
+    boxShadow: '0 4px 16px rgba(15,137,137,0.3)',
   },
 
   // Empty state
@@ -831,18 +832,16 @@ const S = {
     textAlign: 'center', padding: '48px 24px',
   },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 16, fontWeight: 700, color: '#475569', marginBottom: 6 },
-  emptySub: { fontSize: 13, color: '#334155' },
+  emptyTitle: { fontSize: 16, fontWeight: 700, color: '#aaa', marginBottom: 6 },
+  emptySub: { fontSize: 13, color: '#777' },
 };
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-
   @keyframes abmSpin  { to { transform: rotate(360deg); } }
   @keyframes abmFade  { from { opacity: 0; } to { opacity: 1; } }
   @keyframes abmSlide { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-  .abm-task-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,212,191,0.1); }
+  .abm-task-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(15,137,137,0.15); }
 
   .abm-toast {
     position: fixed;
@@ -852,7 +851,7 @@ const CSS = `
     padding: 11px 22px;
     border-radius: 32px;
     font-size: 13px; font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
+    font-family: Arial, sans-serif;
     box-shadow: 0 6px 28px rgba(0,0,0,0.4);
     z-index: 99999;
     white-space: nowrap;
@@ -860,13 +859,13 @@ const CSS = `
     transition: bottom 0.32s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
     opacity: 0; pointer-events: none;
     max-width: calc(100vw - 40px);
-    border: 1px solid rgba(45,212,191,0.2);
+    border: 1px solid rgba(15,137,137,0.25);
   }
   .abm-toast.show { bottom: 90px; opacity: 1; }
 
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.4); cursor: pointer; }
 
-  select option { background: #1e293b; color: #e2e8f0; }
+  select option { background: #3C3A3A; color: #eee; }
 
   @media (min-width: 600px) {
     .abm-toast.show { bottom: 36px; }
