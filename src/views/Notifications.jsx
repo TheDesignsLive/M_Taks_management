@@ -144,71 +144,35 @@ const Notifications = () => {
           </div>
 
           {/* --- SIRF YE SECTION BADLO --- */}
-          {/* --- ANNOUNCEMENT LIST LOOP (FIXED SYNTAX) --- */}
-          {data.announcements.map((a) => (
-            <div key={a.id} style={styles.annCard}>
-              {/* VISIBILITY LOGIC: ICONS TOP-RIGHT LIKE DESKTOP */}
-              {data.canManageAnnounce && (
-                <div style={styles.cardActions}>
-                  <button
-                    style={styles.iconBtn}
-                    title="Edit"
-                    onClick={() => {
-                      setForm({
-                        title: a.title,
-                        desc: a.description,
-                        teamId: a.role_id,
-                        file: null,
-                      });
-                      setModal({ show: true, type: "edit", editId: a.id });
-                    }}
-                  >
-                    <i className="fa-solid fa-pen-to-square"></i>
-                  </button>
-                  <button
-                    style={{ ...styles.iconBtn, color: "#ff4d4d" }}
-                    title="Delete"
-                    onClick={() => handleDeleteAnn(a.id)}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,77,77,0.1)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                  >
-                    <i className="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              )}
+          {data.canManageAnnounce && (
+  <div style={styles.cardActions}>
+    {/* Edit Emoji Button */}
+    <button
+      style={styles.iconBtn}
+      onClick={() => {
+        setForm({
+          title: a.title,
+          desc: a.description,
+          teamId: a.role_id,
+          file: null,
+        });
+        setModal({ show: true, type: "edit", editId: a.id });
+      }}
+    >
+      📝
+    </button>
 
-              {/* ALIGNMENT: LEFT */}
-              <h3 style={styles.annTitle}>{a.title}</h3>
-              <div style={styles.metaRow}>
-                <span>
-                  <i className="fa-solid fa-user-tag" style={{ marginRight: 5 }}></i>
-                  {a.added_by_name}
-                </span>
-                <span style={styles.sep}>|</span>
-                <span style={{ color: "#14b8a6" }}>
-                  <i className="fa-solid fa-users" style={{ marginRight: 5 }}></i>
-                  {a.target_team_name}
-                </span>
-              </div>
-              <p style={styles.descText}>{a.description}</p>
-              <div style={styles.footer}>
-                <span>
-                  <i className="fa-regular fa-clock" style={{ marginRight: 5 }}></i>
-                  {new Date(a.created_at).toLocaleDateString()}
-                </span>
-                {a.attachment && (
-                  <a
-                    href={`${BASE_URL}/uploads/${a.attachment}`}
-                    target="_blank"
-                    style={styles.attachLink}
-                  >
-                    <i className="fa-solid fa-paperclip" style={{ marginRight: 4 }}></i>
-                    View File
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
+    {/* Delete Emoji Button */}
+    <button
+      style={styles.iconBtn}
+      onClick={() => handleDeleteAnn(a.id)}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,77,77,0.1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+    >
+      🗑️
+    </button>
+  </div>
+)}
           {/* --- BAKKI SAB SAME HAI --- */}
         </div>
       ) : (
@@ -427,28 +391,26 @@ const styles = {
     position: "relative",
     textAlign: "left",
   },
- cardActions: {
+  cardActions: {
     position: "absolute",
-    top: "12px",
-    right: "12px",
+    top: 12,
+    right: 12,
     display: "flex",
-    gap: "10px",
+    gap: 12,
   },
-  iconBtn: {
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "none",
-    color: "#aaa",
-    width: "32px", // Mobile circle size
-    height: "32px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontSize: "14px",
-    transition: "all 0.2s",
-    color: "#ffffff",
-  },
+ iconBtn: {
+  background: "rgba(255, 255, 255, 0.05)",
+  border: "none",
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  fontSize: "18px", // Emoji ke liye perfect size
+  transition: "all 0.2s",
+},
   annTitle: {
     color: "#CDF4F4",
     fontSize: 17,
