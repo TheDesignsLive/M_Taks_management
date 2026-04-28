@@ -17,20 +17,16 @@ router.get('/', async (req, res) => {
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        // --- 1. Permissions Check (Exactly like your desktop app) ---
-        // Add/Edit/Delete Announcement: Admin OR Owner Control OR Admin Control
+        // --- Permissions Logic (Matching your old app exactly) ---
         const canManageAnnounce = (role === 'admin' || control_type === 'OWNER' || control_type === 'ADMIN');
-        
-        // Member Requests: ONLY Admin OR User with OWNER control (Strictly NOT Admin control)
-        const canManageMembers = (role === 'admin' || control_type === 'OWNER');
+        const canManageMembers = (role === 'admin' || control_type === 'OWNER'); // NOT for Admin control
 
-        // --- 2. Fetch Teams for Dropdown (Current Admin's Teams) ---
+        // 1. Fetch Teams for current admin
         const [teams] = await con.query("SELECT id, name FROM teams WHERE admin_id = ?", [adminId]);
 
-        // --- 3. Announcements Logic ---
+        // 2. Announcements Query
         let annQuery = `
-            SELECT a.*, 
-            IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
+            SELECT a.*, IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
             CASE 
                 WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
                 WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
@@ -44,7 +40,7 @@ router.get('/', async (req, res) => {
         
         let annParams = [adminId];
         
-        // If normal user (no management rights), filter by their team or "All"
+        // Filter announcements if user has no management rights
         if (!canManageAnnounce) {
             annQuery += ` AND (a.role_id = (SELECT team_id FROM roles WHERE id=?) OR a.role_id=0) `;
             annParams.push(role_id);
@@ -52,45 +48,22 @@ router.get('/', async (req, res) => {
         annQuery += ` ORDER BY a.created_at DESC`;
         const [announcements] = await con.query(annQuery, annParams);
 
-        // --- 4. Member Requests (Based on canManageMembers) ---
+        // 3. Member Requests (Permission Based)
         let memberRequests = [];
         let deletionRequests = [];
         if (canManageMembers) {
-            const [mReqs] = await con.query(`
-                SELECT mr.*, r.role_name, u.name AS requested_by_name
-                FROM member_requests mr
-                JOIN roles r ON r.id=mr.role_id
-                JOIN users u ON u.id=mr.requested_by
-                WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='ADD'
-                ORDER BY mr.created_at DESC`, [adminId]);
-            
-            const [dReqs] = await con.query(`
-                SELECT mr.*, r.role_name, u.name AS requested_by_name
-                FROM member_requests mr
-                JOIN roles r ON r.id=mr.role_id
-                JOIN users u ON u.id=mr.requested_by
-                WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='DELETE'
-                ORDER BY mr.created_at DESC`, [adminId]);
-            
+            const [mReqs] = await con.query(`SELECT mr.*, r.role_name, u.name AS requested_by_name FROM member_requests mr JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=mr.requested_by WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='ADD' ORDER BY mr.created_at DESC`, [adminId]);
+            const [dReqs] = await con.query(`SELECT mr.*, r.role_name, u.name AS requested_by_name FROM member_requests mr JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=mr.requested_by WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='DELETE' ORDER BY mr.created_at DESC`, [adminId]);
             memberRequests = mReqs;
             deletionRequests = dReqs;
         }
 
-        // --- 5. Mark as Seen ---
+        // 4. Seen Logic
         for (let ann of announcements) {
-            await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", 
-            [ann.id, sessionUserId, role, adminId]);
+            await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", [ann.id, sessionUserId, role, adminId]);
         }
 
-        res.json({
-            success: true,
-            teams,
-            announcements,
-            memberRequests,
-            deletionRequests,
-            canManageAnnounce,
-            canManageMembers
-        });
+        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false });
