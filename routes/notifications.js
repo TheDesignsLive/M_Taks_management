@@ -71,4 +71,26 @@ router.get('/delete-announcement/:id', async (req, res) => {
     res.json({ success: true });
 });
 
+// EDIT ANNOUNCEMENT ROUTE (Bhai isse add kar le tabhi save hoga)
+router.post('/edit-announcement/:id', upload.single('attachment'), async (req, res) => {
+    try {
+        const { title, description, role_id } = req.body;
+        const announcementId = req.params.id;
+        
+        let query = "UPDATE announcements SET title=?, description=?, role_id=? WHERE id=?";
+        let params = [title, description, role_id, announcementId];
+
+        if (req.file) {
+            query = "UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=?";
+            params = [title, description, role_id, req.file.filename, announcementId];
+        }
+
+        await con.query(query, params);
+        res.json({ success: true, message: "Announcement updated!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
+});
+
 export default router;

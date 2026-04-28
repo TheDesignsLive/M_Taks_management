@@ -282,9 +282,11 @@ const Notifications = () => {
         </div>
       )}
 
+      {/* --- JSX ke Modal section mein ye badlav karo --- */}
       {modal.show && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
+            {/* Title dynamic kiya: Create ya Edit */}
             <h3 style={{ color: "#333", marginTop: 0 }}>
               {modal.type === "add" ? "Create" : "Edit"} Announcement
             </h3>
@@ -320,11 +322,12 @@ const Notifications = () => {
                 onChange={(e) => setForm({ ...form, file: e.target.files[0] })}
               />
               <div style={{ display: "flex", gap: 10 }}>
+                {/* Button dynamic kiya: Save ya Update */}
                 <button
                   type="submit"
                   style={{ ...styles.addBtn, flex: 1, borderRadius: 5 }}
                 >
-                  Save
+                  {modal.type === "add" ? "Save" : "Update"}
                 </button>
                 <button
                   type="button"
