@@ -74,7 +74,6 @@ const Notifications = () => {
   };
 
   const handleAction = async (action, id) => {
-    // Pattern: Calls memberActions router and handles alert message
     try {
       const res = await fetch(`${BASE_URL}/api/notifications/${action}/${id}`, {
         credentials: "include",
@@ -100,7 +99,7 @@ const Notifications = () => {
 
   return (
     <div style={styles.container}>
-      {/* Toggle Tab - Shows if user can manage members */}
+      {/* Toggle Tab */}
       {data.canManageMembers && (
         <div style={styles.toggleRow}>
           <div
@@ -143,37 +142,53 @@ const Notifications = () => {
             )}
           </div>
 
-          {/* --- SIRF YE SECTION BADLO --- */}
-          {data.canManageAnnounce && (
-  <div style={styles.cardActions}>
-    {/* Edit Emoji Button */}
-    <button
-      style={styles.iconBtn}
-      onClick={() => {
-        setForm({
-          title: a.title,
-          desc: a.description,
-          teamId: a.role_id,
-          file: null,
-        });
-        setModal({ show: true, type: "edit", editId: a.id });
-      }}
-    >
-      📝
-    </button>
-
-    {/* Delete Emoji Button */}
-    <button
-      style={styles.iconBtn}
-      onClick={() => handleDeleteAnn(a.id)}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,77,77,0.1)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-    >
-      🗑️
-    </button>
-  </div>
-)}
-          {/* --- BAKKI SAB SAME HAI --- */}
+          {data.announcements.map((a) => (
+            <div key={a.id} style={styles.annCard}>
+              {data.canManageAnnounce && (
+                <div style={styles.cardActions}>
+                  <button
+                    style={styles.iconBtn}
+                    onClick={() => {
+                      setForm({
+                        title: a.title,
+                        desc: a.description,
+                        teamId: a.role_id,
+                        file: null,
+                      });
+                      setModal({ show: true, type: "edit", editId: a.id });
+                    }}
+                  >
+                    📝
+                  </button>
+                  <button
+                    style={styles.iconBtn}
+                    onClick={() => handleDeleteAnn(a.id)}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              )}
+              <h3 style={styles.annTitle}>{a.title}</h3>
+              <div style={styles.metaRow}>
+                <span>{a.added_by_name}</span>
+                <span style={styles.sep}>|</span>
+                <span style={{ color: "#14b8a6" }}>{a.target_team_name}</span>
+              </div>
+              <p style={styles.descText}>{a.description}</p>
+              <div style={styles.footer}>
+                <span>{new Date(a.created_at).toLocaleDateString()}</span>
+                {a.attachment && (
+                  <a
+                    href={`${BASE_URL}/uploads/${a.attachment}`}
+                    target="_blank"
+                    style={styles.attachLink}
+                  >
+                    View File
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div id="req-section">
@@ -263,11 +278,9 @@ const Notifications = () => {
         </div>
       )}
 
-      {/* --- JSX ke Modal section mein ye badlav karo --- */}
       {modal.show && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
-            {/* Title dynamic kiya: Create ya Edit */}
             <h3 style={{ color: "#333", marginTop: 0 }}>
               {modal.type === "add" ? "Create" : "Edit"} Announcement
             </h3>
@@ -303,7 +316,6 @@ const Notifications = () => {
                 onChange={(e) => setForm({ ...form, file: e.target.files[0] })}
               />
               <div style={{ display: "flex", gap: 10 }}>
-                {/* Button dynamic kiya: Save ya Update */}
                 <button
                   type="submit"
                   style={{ ...styles.addBtn, flex: 1, borderRadius: 5 }}
@@ -398,19 +410,19 @@ const styles = {
     display: "flex",
     gap: 12,
   },
- iconBtn: {
-  background: "rgba(255, 255, 255, 0.05)",
-  border: "none",
-  width: "32px",
-  height: "32px",
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  fontSize: "18px", // Emoji ke liye perfect size
-  transition: "all 0.2s",
-},
+  iconBtn: {
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "none",
+    width: "34px",
+    height: "34px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    fontSize: "18px",
+    transition: "all 0.2s",
+  },
   annTitle: {
     color: "#CDF4F4",
     fontSize: 17,
