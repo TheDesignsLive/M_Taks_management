@@ -144,13 +144,15 @@ const Notifications = () => {
           </div>
 
           {/* --- SIRF YE SECTION BADLO --- */}
+          {/* --- ANNOUNCEMENT LIST LOOP (FIXED SYNTAX) --- */}
           {data.announcements.map((a) => (
             <div key={a.id} style={styles.annCard}>
-              {/* VISIBILITY LOGIC MATCHED WITH ADD BUTTON */}
+              {/* VISIBILITY LOGIC: ICONS TOP-RIGHT LIKE DESKTOP */}
               {data.canManageAnnounce && (
                 <div style={styles.cardActions}>
                   <button
                     style={styles.iconBtn}
+                    title="Edit"
                     onClick={() => {
                       setForm({
                         title: a.title,
@@ -165,27 +167,42 @@ const Notifications = () => {
                   </button>
                   <button
                     style={{ ...styles.iconBtn, color: "#ff4d4d" }}
+                    title="Delete"
                     onClick={() => handleDeleteAnn(a.id)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,77,77,0.1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
                   >
                     <i className="fa-solid fa-trash"></i>
                   </button>
                 </div>
               )}
+
+              {/* ALIGNMENT: LEFT */}
               <h3 style={styles.annTitle}>{a.title}</h3>
               <div style={styles.metaRow}>
-                <span>{a.added_by_name}</span>
+                <span>
+                  <i className="fa-solid fa-user-tag" style={{ marginRight: 5 }}></i>
+                  {a.added_by_name}
+                </span>
                 <span style={styles.sep}>|</span>
-                <span style={{ color: "#14b8a6" }}>{a.target_team_name}</span>
+                <span style={{ color: "#14b8a6" }}>
+                  <i className="fa-solid fa-users" style={{ marginRight: 5 }}></i>
+                  {a.target_team_name}
+                </span>
               </div>
               <p style={styles.descText}>{a.description}</p>
               <div style={styles.footer}>
-                <span>{new Date(a.created_at).toLocaleDateString()}</span>
+                <span>
+                  <i className="fa-regular fa-clock" style={{ marginRight: 5 }}></i>
+                  {new Date(a.created_at).toLocaleDateString()}
+                </span>
                 {a.attachment && (
                   <a
                     href={`${BASE_URL}/uploads/${a.attachment}`}
                     target="_blank"
                     style={styles.attachLink}
                   >
+                    <i className="fa-solid fa-paperclip" style={{ marginRight: 4 }}></i>
                     View File
                   </a>
                 )}
@@ -410,19 +427,26 @@ const styles = {
     position: "relative",
     textAlign: "left",
   },
-  cardActions: {
+ cardActions: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: "12px",
+    right: "12px",
     display: "flex",
-    gap: 12,
+    gap: "10px",
   },
   iconBtn: {
-    background: "none",
+    background: "rgba(255, 255, 255, 0.05)",
     border: "none",
     color: "#aaa",
-    fontSize: 15,
+    width: "32px", // Mobile circle size
+    height: "32px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
+    fontSize: "14px",
+    transition: "all 0.2s",
   },
   annTitle: {
     color: "#CDF4F4",
