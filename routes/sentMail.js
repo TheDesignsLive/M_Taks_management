@@ -9,7 +9,7 @@ router.post("/send-otp", async (req, res) => {
     let transporter = nodemailer.createTransport({
         service: "gmail",
         host: 'smtp.gmail.com', // host specify karna live server par help karta hai
-        port: 465,
+        port: 587,
         secure: true, // SSL use karega
         auth: {
             user: "social.designs.live@gmail.com",
