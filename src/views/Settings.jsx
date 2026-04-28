@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 
+// ─── FIX: BASE_URL must point to port 5000 on localhost ──────────────────────
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? ''
+    ? 'http://localhost:5000'
     : 'https://m-tms.thedesigns.live';
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ const T = {
   dangerBg: '#fef2f2',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── API helper — always uses BASE_URL with credentials ──────────────────────
 function api(path, opts = {}) {
   const isForm = opts.body instanceof FormData;
   return fetch(BASE_URL + path, {
@@ -315,7 +316,7 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
         showToast(data.message || 'Failed to send OTP.', 'error');
       }
     } catch {
-      showToast('Failed to send OTP. Try again.', 'error');
+      showToast('Network error. Check your connection and try again.', 'error');
     }
     setLoading(false);
   }
@@ -376,11 +377,11 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
           <OtpBanner email={userEmail} />
           <OtpInput
             value={otpInput}
-            onChange={e => { setOtpInput(e.target.value); setErr({}); }}
+            onChange={e => { setOtpInput(e.target.value.replace(/\D/g, '')); setErr({}); }}
             error={err.otp}
           />
           <PrimaryBtn onClick={verifyOtp}>Verify OTP</PrimaryBtn>
-          <GhostBtn onClick={() => setStep(0)} style={{ marginTop: 10 }}>Back</GhostBtn>
+          <GhostBtn onClick={() => { setOtpInput(''); setErr({}); setStep(0); }} style={{ marginTop: 10 }}>Resend OTP</GhostBtn>
         </>
       )}
 
@@ -438,7 +439,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       const data = await res.json();
       if (data.success) setStep(1);
       else showToast(data.message || 'Failed to send OTP.', 'error');
-    } catch { showToast('Failed to send OTP.', 'error'); }
+    } catch { showToast('Network error. Check your connection.', 'error'); }
     setLoading(false);
   }
 
@@ -450,6 +451,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
 
   async function sendNewOtp() {
     if (!emailRx.test(newEmail)) { setErr({ newEmail: 'Enter a valid email address.' }); return; }
+    if (newEmail === userEmail) { setErr({ newEmail: 'New email must be different from current email.' }); return; }
     setLoading(true);
     const g = generateOtp(); setNewOtp(g);
     try {
@@ -460,7 +462,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       const data = await res.json();
       if (data.success) setStep(3);
       else showToast(data.message || 'Failed to send OTP.', 'error');
-    } catch { showToast('Failed to send OTP.', 'error'); }
+    } catch { showToast('Network error. Check your connection.', 'error'); }
     setLoading(false);
   }
 
@@ -510,11 +512,11 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
           <OtpBanner email={userEmail} />
           <OtpInput
             value={curOtpInput}
-            onChange={e => { setCurOtpInput(e.target.value); setErr({}); }}
+            onChange={e => { setCurOtpInput(e.target.value.replace(/\D/g, '')); setErr({}); }}
             error={err.curOtp}
           />
           <PrimaryBtn onClick={verifyCurOtp}>Verify OTP</PrimaryBtn>
-          <GhostBtn onClick={() => setStep(0)} style={{ marginTop: 10 }}>Back</GhostBtn>
+          <GhostBtn onClick={() => { setCurOtpInput(''); setErr({}); setStep(0); }} style={{ marginTop: 10 }}>Resend OTP</GhostBtn>
         </>
       )}
 
@@ -548,7 +550,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
           <OtpBanner email={newEmail} />
           <OtpInput
             value={newOtpInput}
-            onChange={e => { setNewOtpInput(e.target.value); setErr({}); }}
+            onChange={e => { setNewOtpInput(e.target.value.replace(/\D/g, '')); setErr({}); }}
             error={err.newOtp}
           />
           <PrimaryBtn onClick={verifyNewAndChange} loading={loading}>Confirm & Change Email</PrimaryBtn>
@@ -622,7 +624,7 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
       const data = await res.json();
       if (data.success) setStep(1);
       else showToast(data.message || 'Failed to send OTP.', 'error');
-    } catch { showToast('Failed to send OTP.', 'error'); }
+    } catch { showToast('Network error. Check your connection.', 'error'); }
     setLoading(false);
   }
 
@@ -703,7 +705,7 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
           <OtpBanner email={userEmail} />
           <OtpInput
             value={otpInput}
-            onChange={e => { setOtpInput(e.target.value); setErr({}); }}
+            onChange={e => { setOtpInput(e.target.value.replace(/\D/g, '')); setErr({}); }}
             error={err.otp}
           />
           <PrimaryBtn danger onClick={verifyAndDelete} loading={loading}>Confirm Permanent Deletion</PrimaryBtn>
@@ -765,7 +767,7 @@ function SettingsItem({ icon, label, subtitle, onClick, danger }) {
 //  MAIN SETTINGS PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SettingsPage({ session, onLogout }) {
-  // ── FIX: auth.js stores adminName / userName, not generic "name" ──────────
+  // auth.js stores adminName / userName (not generic "name")
   const resolvedName = session?.adminName || session?.userName || session?.name || '';
 
   const [userEmail, setUserEmail] = useState(session?.email || '');
@@ -950,7 +952,6 @@ const S = {
     minHeight: '100%',
     background: T.page,
     fontFamily: "'DM Sans', 'Plus Jakarta Sans', 'Segoe UI', sans-serif",
-    // ── FIX: bottom padding so global add-task FAB (bottom-right) doesn't hide content ──
     paddingBottom: 100,
   },
   banner: {
@@ -1078,7 +1079,6 @@ const CSS = `
     background: #fff !important;
   }
 
-  /* ── FIX: error state via CSS class (inline !important doesn't work in React) ── */
   .sett-input-err {
     border-color: #e24b4a !important;
     animation: settShake .36s ease;
@@ -1110,18 +1110,15 @@ const CSS = `
     max-width: calc(100vw - 40px);
   }
 
-  /* ── FIX: raised above global add-task FAB (approx 80px from bottom on mobile) ── */
   .sett-toast.show {
     bottom: 96px;
     opacity: 1;
   }
 
-  /* Desktop: FAB less of an issue, toast at normal position */
   @media (min-width: 600px) {
     .sett-toast.show { bottom: 36px; }
   }
 
-  /* iPhone safe area */
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .sett-toast.show {
       bottom: calc(96px + env(safe-area-inset-bottom));
@@ -1133,10 +1130,8 @@ const CSS = `
     }
   }
 
-  /* Mobile tap highlight */
   .sett-item { -webkit-tap-highlight-color: transparent; }
 
-  /* Tablet+: center sheet as card dialog */
   @media (min-width: 600px) {
     .sett-backdrop-el { align-items: center !important; }
   }
