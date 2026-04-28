@@ -4,80 +4,79 @@ import multer from 'multer';
 
 const router = express.Router();
 
-// Multer Setup for Attachments
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'public/uploads'),
     filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname)
 });
 const upload = multer({ storage });
 
-// =======================================================
-// MAIN NOTIFICATIONS DATA
-// =======================================================
 router.get('/', async (req, res) => {
     if (!req.session.role) return res.status(401).json({ success: false });
-    console.log("=== Current Session Data ===");
-    console.log(req.session); // Poora object ek saath
 
-    const { adminId, role, userId, role_id } = req.session;
+    const { adminId, role, userId, role_id, control_type } = req.session;
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        // 1. Roles & Admin Info
-        const [roles] = await con.query("SELECT id, role_name FROM roles WHERE admin_id=?", [adminId]);
+        // 1. Check Specific Permissions
+        // Announcements manage: Admin, Owner control, Admin control
+        const canManageAnnounce = (role === 'admin' || control_type === 'OWNER' || control_type === 'ADMIN');
+        
+        // Member Requests manage: ONLY Admin and Owner control (NOT Admin control)
+        const canManageMembers = (role === 'admin' || control_type === 'OWNER');
 
-        // 2. Announcements Logic (Based on Permissions)
-        let annQuery = "";
+        // 2. Fetch Teams for Dropdown (Instead of Roles)
+        const [teams] = await con.query("SELECT id, name FROM teams WHERE admin_id = ?", [adminId]);
+
+        // 3. Announcements Logic
+        let annQuery = `
+            SELECT a.*, 
+            IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
+            CASE 
+                WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
+                WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
+                ELSE usr.name
+            END AS added_by_name
+            FROM announcements a
+            LEFT JOIN teams t ON a.role_id = t.id
+            LEFT JOIN admins adm ON a.added_by=adm.id AND a.who_added='ADMIN'
+            LEFT JOIN users usr ON a.added_by=usr.id AND (a.who_added='USER' OR a.who_added='OWNER')
+            WHERE a.admin_id=? `;
+        
         let annParams = [adminId];
-
-        if (role === "admin" || role === "owner") {
-            annQuery = `
-                SELECT a.*, IF(a.role_id=0,'All',r.role_name) AS target_role,
-                CASE 
-                    WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
-                    WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
-                    ELSE usr.name
-                END AS added_by_name
-                FROM announcements a
-                LEFT JOIN roles r ON a.role_id=r.id
-                LEFT JOIN admins adm ON a.added_by=adm.id AND a.who_added='ADMIN'
-                LEFT JOIN users usr ON a.added_by=usr.id AND (a.who_added='USER' OR a.who_added='OWNER')
-                WHERE a.admin_id=? ORDER BY a.created_at DESC`;
-        } else {
-            annQuery = `
-                SELECT a.*, 
-                CASE 
-                    WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
-                    ELSE usr.name
-                END AS added_by_name
-                FROM announcements a
-                LEFT JOIN admins adm ON a.added_by=adm.id AND a.who_added='ADMIN'
-                LEFT JOIN users usr ON a.added_by=usr.id AND a.who_added='USER'
-                WHERE a.admin_id=? AND (a.role_id=? OR a.role_id=0)
-                ORDER BY a.created_at DESC`;
+        
+        // If not a manager, filter by team or "All"
+        if (!canManageAnnounce) {
+            annQuery += ` AND (a.role_id = (SELECT team_id FROM roles WHERE id=?) OR a.role_id=0) `;
             annParams.push(role_id);
         }
+        annQuery += ` ORDER BY a.created_at DESC`;
         const [announcements] = await con.query(annQuery, annParams);
 
-        // 3. Member & Deletion Requests (Admin/Owner Only)
+        // 4. Member & Deletion Requests (Based on canManageMembers)
         let memberRequests = [];
         let deletionRequests = [];
-        if (role === "admin" || role === "owner") {
-            const commonReqQuery = `
+        if (canManageMembers) {
+            const [mReqs] = await con.query(`
                 SELECT mr.*, r.role_name, u.name AS requested_by_name
                 FROM member_requests mr
                 JOIN roles r ON r.id=mr.role_id
                 JOIN users u ON u.id=mr.requested_by
-                WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type=?
-                ORDER BY mr.created_at DESC`;
+                WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='ADD'
+                ORDER BY mr.created_at DESC`, [adminId]);
             
-            const [mReqs] = await con.query(commonReqQuery, [adminId, 'ADD']);
-            const [dReqs] = await con.query(commonReqQuery, [adminId, 'DELETE']);
+            const [dReqs] = await con.query(`
+                SELECT mr.*, r.role_name, u.name AS requested_by_name
+                FROM member_requests mr
+                JOIN roles r ON r.id=mr.role_id
+                JOIN users u ON u.id=mr.requested_by
+                WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='DELETE'
+                ORDER BY mr.created_at DESC`, [adminId]);
+            
             memberRequests = mReqs;
             deletionRequests = dReqs;
         }
 
-        // 4. Mark as Seen
+        // 5. Mark as Seen
         for (let ann of announcements) {
             await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", 
             [ann.id, sessionUserId, role, adminId]);
@@ -85,16 +84,17 @@ router.get('/', async (req, res) => {
 
         res.json({
             success: true,
-            roles,
+            teams,
             announcements,
             memberRequests,
             deletionRequests,
-            sessionRole: role
+            canManageAnnounce,
+            canManageMembers
         });
     } catch (err) {
-        res.status(500).json({ success: false, message: "Server Error" });
+        console.error(err);
+        res.status(500).json({ success: false });
     }
 });
 
-// Add, Delete, Edit routes ka logic bhi res.json format mein rahega jaisa maine pehle diya tha.
 export default router;
