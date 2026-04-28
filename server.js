@@ -5,6 +5,8 @@ import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js'; // ✅ ADD THIS
 import notificationRoutes from './routes/notifications.js';
 import Profile from './routes/profile.js';
+import memberActions from './routes/memberActions.js';
+
 // import Settings from './routes/settings.js';
 // import sent_mail from './routes/sent-mail.js';
 
@@ -36,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes); // ✅ ADD THIS — all task APIs at /api/tasks/*
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/profile', Profile);
+app.use('/api/member-actions', memberActions);
 // app.use('/api/settings', Settings);
 // app.use('/api/sent-mail', sent_mail);
 app.use(express.static('dist'));
