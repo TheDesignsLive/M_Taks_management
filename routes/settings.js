@@ -1,13 +1,5 @@
 // routes/settings.js  —  Express Router (ESM)
-//
-//  Mount in server.js:  app.use('/api/settings', settingsRoutes);
-//
-//  Endpoints:
-//   POST   /api/settings/send-otp
-//   POST   /api/settings/change-password
-//   POST   /api/settings/change-email
-//   POST   /api/settings/logout
-//   DELETE /api/settings/delete-profile
+
 
 import express from 'express';
 import bcrypt  from 'bcryptjs';

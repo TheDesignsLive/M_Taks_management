@@ -1,10 +1,10 @@
 // Settings.jsx
-// src/views/SettingsPage.jsx
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? ''   // Vite proxy
+    ? ''
     : 'https://m-tms.thedesigns.live';
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -79,12 +79,17 @@ function PasswordInput({ label, value, onChange, error, placeholder }) {
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          style={{ ...S.input, ...(error ? S.inputErr : {}), paddingRight: 44 }}
-          className="sett-input"
+          style={{ ...S.input, paddingRight: 44 }}
+          className={`sett-input${error ? ' sett-input-err' : ''}`}
         />
-        <button type="button" onClick={() => setShow(s => !s)}
-          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-            background: 'none', border: 'none', cursor: 'pointer', color: T.faint, padding: 4 }}>
+        <button
+          type="button"
+          onClick={() => setShow(s => !s)}
+          style={{
+            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', cursor: 'pointer', color: T.faint, padding: 4,
+          }}
+        >
           <EyeIcon visible={show} />
         </button>
       </div>
@@ -99,14 +104,15 @@ function OtpInput({ value, onChange, error }) {
     <div style={{ marginBottom: 14 }}>
       <label style={S.label}>Verification Code</label>
       <input
-        type="number"
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
         value={value}
         onChange={onChange}
         placeholder="Enter 6-digit OTP"
         maxLength={6}
-        inputMode="numeric"
-        style={{ ...S.input, ...(error ? S.inputErr : {}), letterSpacing: 6, fontSize: 20, textAlign: 'center', fontWeight: 700 }}
-        className="sett-input"
+        style={{ ...S.input, letterSpacing: 6, fontSize: 20, textAlign: 'center', fontWeight: 700 }}
+        className={`sett-input${error ? ' sett-input-err' : ''}`}
       />
       {error && <p style={S.errText}>{error}</p>}
     </div>
@@ -116,7 +122,10 @@ function OtpInput({ value, onChange, error }) {
 // ─── PrimaryBtn ───────────────────────────────────────────────────────────────
 function PrimaryBtn({ children, onClick, loading, danger, type = 'button', style: extraStyle = {} }) {
   return (
-    <button type={type} onClick={onClick} disabled={loading}
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={loading}
       style={{
         width: '100%', padding: '14px', border: 'none', borderRadius: 14,
         background: danger
@@ -129,7 +138,8 @@ function PrimaryBtn({ children, onClick, loading, danger, type = 'button', style
         ...extraStyle,
       }}
       onMouseDown={e => { if (!loading) e.currentTarget.style.transform = 'scale(.98)'; }}
-      onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
+      onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+    >
       {loading ? 'Please wait…' : children}
     </button>
   );
@@ -137,14 +147,17 @@ function PrimaryBtn({ children, onClick, loading, danger, type = 'button', style
 
 function GhostBtn({ children, onClick, style: extra = {} }) {
   return (
-    <button type="button" onClick={onClick}
+    <button
+      type="button"
+      onClick={onClick}
       style={{
         width: '100%', padding: '13px', border: `1.5px solid ${T.border}`, borderRadius: 14,
         background: 'transparent', color: T.mid, fontSize: 14, fontWeight: 600,
         cursor: 'pointer', fontFamily: 'inherit', transition: 'background .2s', ...extra,
       }}
       onMouseEnter={e => { e.currentTarget.style.background = T.bg25; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+    >
       {children}
     </button>
   );
@@ -159,9 +172,15 @@ function Sheet({ open, onClose, title, children, accentColor }) {
   }, [open]);
 
   if (!open) return null;
+
   return (
     <div style={S.backdrop} onClick={onClose}>
-      <div style={S.sheet} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        style={S.sheet}
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div style={S.sheetPill} />
         <div style={S.sheetHead}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -177,10 +196,14 @@ function Sheet({ open, onClose, title, children, accentColor }) {
             </div>
             <span style={{ fontSize: 16, fontWeight: 800, color: T.text }}>{title}</span>
           </div>
-          <button onClick={onClose}
-            style={{ background: T.bg50, border: 'none', borderRadius: '50%',
+          <button
+            onClick={onClose}
+            style={{
+              background: T.bg50, border: 'none', borderRadius: '50%',
               width: 32, height: 32, cursor: 'pointer', color: T.mid,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+            }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -211,10 +234,22 @@ function Steps({ current, total, labels }) {
                 ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                 : i + 1}
             </div>
-            {labels && <div style={{ fontSize: 9, color: i <= current ? T.mid : T.faint, marginTop: 3, fontWeight: 600, textAlign: 'center', letterSpacing: 0.3 }}>{labels[i]}</div>}
+            {labels && (
+              <div style={{
+                fontSize: 9, color: i <= current ? T.mid : T.faint,
+                marginTop: 3, fontWeight: 600, textAlign: 'center', letterSpacing: 0.3,
+              }}>
+                {labels[i]}
+              </div>
+            )}
           </div>
           {i < total - 1 && (
-            <div style={{ flex: 2, height: 2, background: i < current ? T.brand : T.bg50, transition: 'background .3s', marginBottom: labels ? 14 : 0 }} />
+            <div style={{
+              flex: 2, height: 2,
+              background: i < current ? T.brand : T.bg50,
+              transition: 'background .3s',
+              marginBottom: labels ? 14 : 0,
+            }} />
           )}
         </React.Fragment>
       ))}
@@ -225,17 +260,23 @@ function Steps({ current, total, labels }) {
 // ─── OTP Sent Banner ─────────────────────────────────────────────────────────
 function OtpBanner({ email }) {
   return (
-    <div style={{ background: T.bg50, borderRadius: 12, padding: '12px 14px', marginBottom: 18,
-      display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-      <div style={{ width: 32, height: 32, borderRadius: '50%', background: T.brand, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{
+      background: T.bg50, borderRadius: 12, padding: '12px 14px', marginBottom: 18,
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: '50%', background: T.brand, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
           <rect x="2" y="4" width="20" height="16" rx="3"/><polyline points="2,4 12,13 22,4"/>
         </svg>
       </div>
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: T.primary, marginBottom: 2 }}>OTP sent successfully</div>
-        <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.5 }}>Check your inbox at <strong style={{ color: T.mid }}>{email}</strong></div>
+        <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.5 }}>
+          Check your inbox at <strong style={{ color: T.mid }}>{email}</strong>
+        </div>
       </div>
     </div>
   );
@@ -245,18 +286,17 @@ function OtpBanner({ email }) {
 //  CHANGE PASSWORD SHEET
 // ─────────────────────────────────────────────────────────────────────────────
 function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
-  const [step, setStep]       = useState(0); // 0=send, 1=verify, 2=reset
-  const [otp, setOtp]         = useState('');
+  const [step, setStep]         = useState(0);
+  const [otp, setOtp]           = useState('');
   const [otpInput, setOtpInput] = useState('');
-  const [newPwd, setNewPwd]   = useState('');
-  const [confPwd, setConfPwd] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [err, setErr]         = useState({});
+  const [newPwd, setNewPwd]     = useState('');
+  const [confPwd, setConfPwd]   = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [err, setErr]           = useState({});
 
   function reset() {
     setStep(0); setOtp(''); setOtpInput(''); setNewPwd(''); setConfPwd(''); setErr({});
   }
-
   function handleClose() { reset(); onClose(); }
 
   async function sendOtp() {
@@ -264,12 +304,19 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
     const g = generateOtp();
     setOtp(g);
     try {
-      await api('/api/settings/send-otp', {
+      const res = await api('/api/settings/send-otp', {
         method: 'POST',
         body: JSON.stringify({ contact: userEmail, otp: g, sent_for: 'change_password' }),
       });
-      setStep(1);
-    } catch { showToast('Failed to send OTP. Try again.', 'error'); }
+      const data = await res.json();
+      if (data.success) {
+        setStep(1);
+      } else {
+        showToast(data.message || 'Failed to send OTP.', 'error');
+      }
+    } catch {
+      showToast('Failed to send OTP. Try again.', 'error');
+    }
     setLoading(false);
   }
 
@@ -282,17 +329,26 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
 
   async function changePassword() {
     const errs = {};
-    if (!passRx.test(newPwd))  errs.newPwd  = 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number.';
-    if (newPwd !== confPwd)    errs.confPwd = 'Passwords do not match.';
+    if (!passRx.test(newPwd)) errs.newPwd = 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number.';
+    if (newPwd !== confPwd)   errs.confPwd = 'Passwords do not match.';
     if (Object.keys(errs).length) { setErr(errs); return; }
 
     setLoading(true);
     try {
-      const res  = await api('/api/settings/change-password', { method: 'POST', body: JSON.stringify({ new_password: newPwd }) });
+      const res  = await api('/api/settings/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ new_password: newPwd }),
+      });
       const data = await res.json();
-      if (data.success) { showToast('Password updated successfully.'); handleClose(); }
-      else showToast(data.message || 'Update failed.', 'error');
-    } catch { showToast('Network error. Try again.', 'error'); }
+      if (data.success) {
+        showToast('Password updated successfully.');
+        handleClose();
+      } else {
+        showToast(data.message || 'Update failed.', 'error');
+      }
+    } catch {
+      showToast('Network error. Try again.', 'error');
+    }
     setLoading(false);
   }
 
@@ -318,7 +374,11 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
       {step === 1 && (
         <>
           <OtpBanner email={userEmail} />
-          <OtpInput value={otpInput} onChange={e => { setOtpInput(e.target.value); setErr({}); }} error={err.otp} />
+          <OtpInput
+            value={otpInput}
+            onChange={e => { setOtpInput(e.target.value); setErr({}); }}
+            error={err.otp}
+          />
           <PrimaryBtn onClick={verifyOtp}>Verify OTP</PrimaryBtn>
           <GhostBtn onClick={() => setStep(0)} style={{ marginTop: 10 }}>Back</GhostBtn>
         </>
@@ -326,12 +386,20 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
 
       {step === 2 && (
         <>
-          <PasswordInput label="New Password" value={newPwd}
+          <PasswordInput
+            label="New Password"
+            value={newPwd}
             onChange={e => { setNewPwd(e.target.value); setErr(v => ({ ...v, newPwd: '' })); }}
-            error={err.newPwd} placeholder="Min 8 characters" />
-          <PasswordInput label="Confirm Password" value={confPwd}
+            error={err.newPwd}
+            placeholder="Min 8 characters"
+          />
+          <PasswordInput
+            label="Confirm Password"
+            value={confPwd}
             onChange={e => { setConfPwd(e.target.value); setErr(v => ({ ...v, confPwd: '' })); }}
-            error={err.confPwd} placeholder="Repeat new password" />
+            error={err.confPwd}
+            placeholder="Repeat new password"
+          />
           <PrimaryBtn onClick={changePassword} loading={loading}>Update Password</PrimaryBtn>
           <GhostBtn onClick={handleClose} style={{ marginTop: 10 }}>Cancel</GhostBtn>
         </>
@@ -354,7 +422,8 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
   const [err, setErr]                 = useState({});
 
   function reset() {
-    setStep(0); setCurOtp(''); setCurOtpInput(''); setNewEmail(''); setNewOtp(''); setNewOtpInput(''); setErr({});
+    setStep(0); setCurOtp(''); setCurOtpInput(''); setNewEmail('');
+    setNewOtp(''); setNewOtpInput(''); setErr({});
   }
   function handleClose() { reset(); onClose(); }
 
@@ -362,8 +431,13 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
     setLoading(true);
     const g = generateOtp(); setCurOtp(g);
     try {
-      await api('/api/settings/send-otp', { method: 'POST', body: JSON.stringify({ contact: userEmail, otp: g, sent_for: 'change_email' }) });
-      setStep(1);
+      const res = await api('/api/settings/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ contact: userEmail, otp: g, sent_for: 'change_email' }),
+      });
+      const data = await res.json();
+      if (data.success) setStep(1);
+      else showToast(data.message || 'Failed to send OTP.', 'error');
     } catch { showToast('Failed to send OTP.', 'error'); }
     setLoading(false);
   }
@@ -379,8 +453,13 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
     setLoading(true);
     const g = generateOtp(); setNewOtp(g);
     try {
-      await api('/api/settings/send-otp', { method: 'POST', body: JSON.stringify({ contact: newEmail, otp: g, sent_for: 'change_email' }) });
-      setStep(3);
+      const res = await api('/api/settings/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ contact: newEmail, otp: g, sent_for: 'change_email' }),
+      });
+      const data = await res.json();
+      if (data.success) setStep(3);
+      else showToast(data.message || 'Failed to send OTP.', 'error');
     } catch { showToast('Failed to send OTP.', 'error'); }
     setLoading(false);
   }
@@ -390,10 +469,18 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
     if (newOtpInput.trim() !== newOtp) { setErr({ newOtp: 'Invalid OTP.' }); setNewOtpInput(''); return; }
     setLoading(true);
     try {
-      const res  = await api('/api/settings/change-email', { method: 'POST', body: JSON.stringify({ new_email: newEmail }) });
+      const res  = await api('/api/settings/change-email', {
+        method: 'POST',
+        body: JSON.stringify({ new_email: newEmail }),
+      });
       const data = await res.json();
-      if (data.success) { showToast('Email updated successfully.'); onEmailChanged(newEmail); handleClose(); }
-      else showToast(data.message || 'Update failed.', 'error');
+      if (data.success) {
+        showToast('Email updated successfully.');
+        onEmailChanged(newEmail);
+        handleClose();
+      } else {
+        showToast(data.message || 'Update failed.', 'error');
+      }
     } catch { showToast('Network error. Try again.', 'error'); }
     setLoading(false);
   }
@@ -405,9 +492,12 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       {step === 0 && (
         <>
           <div style={S.infoBanner}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>
-              First, verify your current email:<br/><strong style={{ color: T.primary }}>{userEmail}</strong>
+              First, verify your current email:<br/>
+              <strong style={{ color: T.primary }}>{userEmail}</strong>
             </div>
           </div>
           <PrimaryBtn onClick={sendCurrentOtp} loading={loading}>Send OTP to Current Email</PrimaryBtn>
@@ -418,7 +508,11 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       {step === 1 && (
         <>
           <OtpBanner email={userEmail} />
-          <OtpInput value={curOtpInput} onChange={e => { setCurOtpInput(e.target.value); setErr({}); }} error={err.curOtp} />
+          <OtpInput
+            value={curOtpInput}
+            onChange={e => { setCurOtpInput(e.target.value); setErr({}); }}
+            error={err.curOtp}
+          />
           <PrimaryBtn onClick={verifyCurOtp}>Verify OTP</PrimaryBtn>
           <GhostBtn onClick={() => setStep(0)} style={{ marginTop: 10 }}>Back</GhostBtn>
         </>
@@ -427,16 +521,21 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       {step === 2 && (
         <>
           <div style={S.successBanner}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
             <span style={{ fontSize: 13, color: T.primary, fontWeight: 600 }}>Current email verified!</span>
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={S.label}>New Email Address</label>
-            <input type="email" value={newEmail}
+            <input
+              type="email"
+              value={newEmail}
               onChange={e => { setNewEmail(e.target.value); setErr({}); }}
               placeholder="Enter new email address"
-              style={{ ...S.input, ...(err.newEmail ? S.inputErr : {}) }}
-              className="sett-input" />
+              style={S.input}
+              className={`sett-input${err.newEmail ? ' sett-input-err' : ''}`}
+            />
             {err.newEmail && <p style={S.errText}>{err.newEmail}</p>}
           </div>
           <PrimaryBtn onClick={sendNewOtp} loading={loading}>Send OTP to New Email</PrimaryBtn>
@@ -447,7 +546,11 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       {step === 3 && (
         <>
           <OtpBanner email={newEmail} />
-          <OtpInput value={newOtpInput} onChange={e => { setNewOtpInput(e.target.value); setErr({}); }} error={err.newOtp} />
+          <OtpInput
+            value={newOtpInput}
+            onChange={e => { setNewOtpInput(e.target.value); setErr({}); }}
+            error={err.newOtp}
+          />
           <PrimaryBtn onClick={verifyNewAndChange} loading={loading}>Confirm & Change Email</PrimaryBtn>
           <GhostBtn onClick={() => setStep(2)} style={{ marginTop: 10 }}>Back</GhostBtn>
         </>
@@ -461,6 +564,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
 // ─────────────────────────────────────────────────────────────────────────────
 function LogoutSheet({ open, onClose, userEmail, onLogout }) {
   const [loading, setLoading] = useState(false);
+
   async function handleLogout() {
     setLoading(true);
     try {
@@ -469,14 +573,18 @@ function LogoutSheet({ open, onClose, userEmail, onLogout }) {
     onLogout();
     setLoading(false);
   }
+
   return (
     <Sheet open={open} onClose={onClose} title="Confirm Logout">
       <div style={{ textAlign: 'center', padding: '8px 0 22px' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fff3cd',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%', background: '#fff3cd',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+        }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
         </div>
         <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, margin: '0 0 20px' }}>
@@ -507,8 +615,13 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
     setLoading(true);
     const g = generateOtp(); setOtp(g);
     try {
-      await api('/api/settings/send-otp', { method: 'POST', body: JSON.stringify({ contact: userEmail, otp: g, sent_for: 'delete_profile' }) });
-      setStep(1);
+      const res = await api('/api/settings/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ contact: userEmail, otp: g, sent_for: 'delete_profile' }),
+      });
+      const data = await res.json();
+      if (data.success) setStep(1);
+      else showToast(data.message || 'Failed to send OTP.', 'error');
     } catch { showToast('Failed to send OTP.', 'error'); }
     setLoading(false);
   }
@@ -528,13 +641,21 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
 
   if (!isAdmin) {
     return (
-      <Sheet open={open} onClose={onClose} title="Delete Profile"
-        accentColor="linear-gradient(135deg, #a32d2d, #d9534f)">
+      <Sheet
+        open={open}
+        onClose={onClose}
+        title="Delete Profile"
+        accentColor="linear-gradient(135deg, #a32d2d, #d9534f)"
+      >
         <div style={{ textAlign: 'center', padding: '8px 0 22px' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fef2f2',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%', background: '#fef2f2',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+          }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
           <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, margin: '0 0 20px' }}>
@@ -547,16 +668,29 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
   }
 
   return (
-    <Sheet open={open} onClose={handleClose} title="Delete Profile"
-      accentColor="linear-gradient(135deg, #a32d2d, #d9534f)">
+    <Sheet
+      open={open}
+      onClose={handleClose}
+      title="Delete Profile"
+      accentColor="linear-gradient(135deg, #a32d2d, #d9534f)"
+    >
       <Steps current={step} total={2} labels={['Send OTP', 'Confirm']} />
 
       {step === 0 && (
         <>
-          <div style={{ ...S.infoBanner, background: '#fef2f2', borderColor: 'rgba(217,83,79,0.2)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style={{
+            ...S.infoBanner,
+            background: '#fef2f2',
+            borderColor: 'rgba(217,83,79,0.2)',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             <div style={{ fontSize: 13, color: '#7f1d1d', lineHeight: 1.5 }}>
-              <strong>This action is permanent.</strong> All your data and employees will be deleted. A verification code will be sent to <strong>{userEmail}</strong>.
+              <strong>This action is permanent.</strong> All your data and employees will be deleted.
+              A verification code will be sent to <strong>{userEmail}</strong>.
             </div>
           </div>
           <PrimaryBtn danger onClick={sendOtp} loading={loading}>Send Verification OTP</PrimaryBtn>
@@ -567,7 +701,11 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
       {step === 1 && (
         <>
           <OtpBanner email={userEmail} />
-          <OtpInput value={otpInput} onChange={e => { setOtpInput(e.target.value); setErr({}); }} error={err.otp} />
+          <OtpInput
+            value={otpInput}
+            onChange={e => { setOtpInput(e.target.value); setErr({}); }}
+            error={err.otp}
+          />
           <PrimaryBtn danger onClick={verifyAndDelete} loading={loading}>Confirm Permanent Deletion</PrimaryBtn>
           <GhostBtn onClick={handleClose} style={{ marginTop: 10 }}>Cancel</GhostBtn>
         </>
@@ -579,9 +717,10 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
 // ─────────────────────────────────────────────────────────────────────────────
 //  SETTINGS ITEM
 // ─────────────────────────────────────────────────────────────────────────────
-function SettingsItem({ icon, label, subtitle, onClick, danger, badge }) {
+function SettingsItem({ icon, label, subtitle, onClick, danger }) {
   return (
-    <button onClick={onClick}
+    <button
+      onClick={onClick}
       style={{
         width: '100%', background: 'none', border: 'none', cursor: 'pointer',
         display: 'flex', alignItems: 'center', gap: 14,
@@ -592,7 +731,8 @@ function SettingsItem({ icon, label, subtitle, onClick, danger, badge }) {
       }}
       className="sett-item"
       onMouseEnter={e => { e.currentTarget.style.background = danger ? '#fef2f2' : T.bg25; }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}>
+      onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+    >
       <div style={{
         width: 42, height: 42, borderRadius: 14, flexShrink: 0,
         background: danger ? '#fef2f2' : T.bg50,
@@ -602,15 +742,19 @@ function SettingsItem({ icon, label, subtitle, onClick, danger, badge }) {
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: danger ? T.danger : T.text, marginBottom: subtitle ? 2 : 0 }}>{label}</div>
-        {subtitle && <div style={{ fontSize: 11.5, color: T.faint, lineHeight: 1.4 }}>{subtitle}</div>}
+        <div style={{
+          fontSize: 14, fontWeight: 700,
+          color: danger ? T.danger : T.text,
+          marginBottom: subtitle ? 2 : 0,
+        }}>
+          {label}
+        </div>
+        {subtitle && (
+          <div style={{ fontSize: 11.5, color: T.faint, lineHeight: 1.4, wordBreak: 'break-all' }}>{subtitle}</div>
+        )}
       </div>
-      {badge && (
-        <span style={{ fontSize: 10, fontWeight: 700, background: T.brand, color: '#fff',
-          padding: '2px 8px', borderRadius: 20, letterSpacing: 0.3 }}>{badge}</span>
-      )}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-        stroke={danger ? T.danger : T.faint} strokeWidth="2.5">
+        stroke={danger ? T.danger : T.faint} strokeWidth="2.5" style={{ flexShrink: 0 }}>
         <polyline points="9 18 15 12 9 6"/>
       </svg>
     </button>
@@ -621,9 +765,12 @@ function SettingsItem({ icon, label, subtitle, onClick, danger, badge }) {
 //  MAIN SETTINGS PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SettingsPage({ session, onLogout }) {
+  // ── FIX: auth.js stores adminName / userName, not generic "name" ──────────
+  const resolvedName = session?.adminName || session?.userName || session?.name || '';
+
   const [userEmail, setUserEmail] = useState(session?.email || '');
   const [userRole]                = useState(session?.role || 'user');
-  const [userName]                = useState(session?.name || '');
+  const [userName]                = useState(resolvedName);
 
   const [pwdOpen,    setPwdOpen]    = useState(false);
   const [emailOpen,  setEmailOpen]  = useState(false);
@@ -642,7 +789,6 @@ export default function SettingsPage({ session, onLogout }) {
       {/* ── Header Banner ── */}
       <div style={S.banner}>
         <div style={S.bannerInner}>
-          {/* Avatar */}
           <div style={S.avatarWrap}>
             <div style={S.avatar}>{initial}</div>
             <div style={S.avatarRing} />
@@ -656,8 +802,11 @@ export default function SettingsPage({ session, onLogout }) {
           </div>
         </div>
         {/* Wave */}
-        <svg viewBox="0 0 390 38" preserveAspectRatio="none"
-          style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 38, display: 'block' }}>
+        <svg
+          viewBox="0 0 390 38"
+          preserveAspectRatio="none"
+          style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 38, display: 'block' }}
+        >
           <path d="M0 38 Q98 0 195 18 Q292 36 390 8 L390 38 Z" fill={T.page} />
         </svg>
       </div>
@@ -671,13 +820,23 @@ export default function SettingsPage({ session, onLogout }) {
           <SettingsItem
             label="Change Password"
             subtitle="Update your login password"
-            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            }
             onClick={() => setPwdOpen(true)}
           />
           <SettingsItem
             label="Change Email"
             subtitle={`Current: ${userEmail}`}
-            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="3"/><polyline points="2,4 12,13 22,4"/></svg>}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.brand} strokeWidth="2">
+                <rect x="2" y="4" width="20" height="16" rx="3"/>
+                <polyline points="2,4 12,13 22,4"/>
+              </svg>
+            }
             onClick={() => setEmailOpen(true)}
           />
         </div>
@@ -688,9 +847,14 @@ export default function SettingsPage({ session, onLogout }) {
           <SettingsItem
             label="Logout"
             subtitle="Sign out from this device"
-            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            }
             onClick={() => setLogoutOpen(true)}
-            style={{ borderBottom: 'none' }}
           />
         </div>
 
@@ -699,8 +863,19 @@ export default function SettingsPage({ session, onLogout }) {
         <div style={{ ...S.card, borderColor: 'rgba(217,83,79,0.2)' }}>
           <SettingsItem
             label="Delete Profile"
-            subtitle={isAdmin ? 'Permanently delete your account & data' : 'Contact admin to remove your account'}
-            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>}
+            subtitle={
+              isAdmin
+                ? 'Permanently delete your account & data'
+                : 'Contact admin to remove your account'
+            }
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            }
             onClick={() => setDeleteOpen(true)}
             danger
           />
@@ -708,7 +883,11 @@ export default function SettingsPage({ session, onLogout }) {
 
         {/* App info */}
         <div style={S.appInfo}>
-          <div style={S.appInfoDot} />
+          <div style={S.appInfoDot}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.mid }}>TMS Workspace</div>
             <div style={{ fontSize: 11, color: T.faint, marginTop: 1 }}>Version 2.0 · © 2026 All rights reserved</div>
@@ -718,15 +897,41 @@ export default function SettingsPage({ session, onLogout }) {
       </div>
 
       {/* ── Sheets ── */}
-      <ChangePasswordSheet open={pwdOpen} onClose={() => setPwdOpen(false)} userEmail={userEmail} showToast={showToast} />
-      <ChangeEmailSheet    open={emailOpen} onClose={() => setEmailOpen(false)} userEmail={userEmail} onEmailChanged={setUserEmail} showToast={showToast} />
-      <LogoutSheet        open={logoutOpen} onClose={() => setLogoutOpen(false)} userEmail={userEmail} onLogout={onLogout} />
-      <DeleteProfileSheet open={deleteOpen} onClose={() => setDeleteOpen(false)} userEmail={userEmail} isAdmin={isAdmin} showToast={showToast} onDeleted={onLogout} />
+      <ChangePasswordSheet
+        open={pwdOpen}
+        onClose={() => setPwdOpen(false)}
+        userEmail={userEmail}
+        showToast={showToast}
+      />
+      <ChangeEmailSheet
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        userEmail={userEmail}
+        onEmailChanged={setUserEmail}
+        showToast={showToast}
+      />
+      <LogoutSheet
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        userEmail={userEmail}
+        onLogout={onLogout}
+      />
+      <DeleteProfileSheet
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        userEmail={userEmail}
+        isAdmin={isAdmin}
+        showToast={showToast}
+        onDeleted={onLogout}
+      />
 
       {/* ── Toast ── */}
-      <div className={`sett-toast${toast.show ? ' show' : ''}`}
+      <div
+        className={`sett-toast${toast.show ? ' show' : ''}`}
         style={{ background: toast.type === 'error' ? '#a32d2d' : T.primary }}
-        role="alert" aria-live="polite">
+        role="alert"
+        aria-live="polite"
+      >
         <span style={{ marginRight: 8, display: 'inline-flex', alignItems: 'center' }}>
           {toast.type === 'error'
             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -745,7 +950,8 @@ const S = {
     minHeight: '100%',
     background: T.page,
     fontFamily: "'DM Sans', 'Plus Jakarta Sans', 'Segoe UI', sans-serif",
-    paddingBottom: 60,
+    // ── FIX: bottom padding so global add-task FAB (bottom-right) doesn't hide content ──
+    paddingBottom: 100,
   },
   banner: {
     background: `linear-gradient(150deg, ${T.primary} 0%, ${T.mid} 50%, ${T.brand} 100%)`,
@@ -767,8 +973,7 @@ const S = {
     boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
   },
   avatarRing: {
-    position: 'absolute', inset: -4,
-    borderRadius: '50%',
+    position: 'absolute', inset: -4, borderRadius: '50%',
     border: '1.5px solid rgba(255,255,255,0.15)',
   },
   bannerName: {
@@ -783,9 +988,13 @@ const S = {
   emailBadge: {
     color: 'rgba(255,255,255,0.65)', fontSize: 11,
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-    maxWidth: 160,
+    maxWidth: 180,
   },
-  body: { maxWidth: 560, margin: '-18px auto 0', padding: '0 14px', position: 'relative', zIndex: 2 },
+  body: {
+    maxWidth: 560, margin: '-18px auto 0',
+    padding: '0 14px',
+    position: 'relative', zIndex: 2,
+  },
   sectionLabel: {
     fontSize: 10, fontWeight: 800, color: T.faint,
     textTransform: 'uppercase', letterSpacing: 1.2,
@@ -812,7 +1021,6 @@ const S = {
     position: 'fixed', inset: 0,
     background: 'rgba(4,52,44,0.52)', zIndex: 1300,
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    animation: 'settFade .15s ease',
   },
   sheet: {
     width: '100%', maxWidth: 540,
@@ -821,17 +1029,21 @@ const S = {
     padding: '0 20px 48px',
     maxHeight: '92dvh', overflowY: 'auto',
     boxSizing: 'border-box',
-    animation: 'settSlide .25s cubic-bezier(.22,.68,0,1.18)',
     boxShadow: '0 -8px 48px rgba(4,52,44,0.18)',
     WebkitOverflowScrolling: 'touch',
   },
-  sheetPill: { width: 40, height: 4, background: T.bg50, borderRadius: 4, margin: '12px auto 0' },
+  sheetPill: {
+    width: 40, height: 4, background: T.bg50, borderRadius: 4, margin: '12px auto 0',
+  },
   sheetHead: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     paddingTop: 16, marginBottom: 20,
   },
   // Form
-  label: { display: 'block', fontSize: 10.5, fontWeight: 800, color: T.mid, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 5 },
+  label: {
+    display: 'block', fontSize: 10.5, fontWeight: 800, color: T.mid,
+    textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 5,
+  },
   input: {
     width: '100%', boxSizing: 'border-box',
     padding: '13px 14px', border: `1.5px solid ${T.border}`,
@@ -840,7 +1052,6 @@ const S = {
     transition: 'border-color .18s, box-shadow .18s',
     WebkitAppearance: 'none',
   },
-  inputErr: { borderColor: '#e24b4a !important' },
   errText: { fontSize: 11.5, color: '#a32d2d', marginTop: 5, fontWeight: 600 },
   infoBanner: {
     background: T.bg50, borderRadius: 12, padding: '12px 14px', marginBottom: 18,
@@ -859,7 +1070,6 @@ const CSS = `
 
   @keyframes settFade  { from { opacity: 0 } to { opacity: 1 } }
   @keyframes settSlide { from { transform: translateY(64px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-  @keyframes settSpin  { to { transform: rotate(360deg) } }
   @keyframes settShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)} }
 
   .sett-input:focus {
@@ -867,40 +1077,67 @@ const CSS = `
     box-shadow: 0 0 0 3px rgba(29,158,117,0.14) !important;
     background: #fff !important;
   }
-  .sett-input[style*="border-color: rgb(226, 75, 74)"],
-  .sett-input.err { border-color: #e24b4a !important; animation: settShake .36s ease; }
 
+  /* ── FIX: error state via CSS class (inline !important doesn't work in React) ── */
+  .sett-input-err {
+    border-color: #e24b4a !important;
+    animation: settShake .36s ease;
+  }
+
+  /* last item no border */
   .sett-item:last-child { border-bottom: none !important; }
 
+  /* Toast */
   .sett-toast {
-    position: fixed; bottom: -80px; left: 50%;
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
     transform: translateX(-50%);
-    color: #fff; padding: 11px 22px; border-radius: 32px;
-    font-size: 13px; font-weight: 600;
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 32px;
+    font-size: 13px;
+    font-weight: 600;
     font-family: 'DM Sans', 'Segoe UI', sans-serif;
     box-shadow: 0 6px 28px rgba(4,52,44,0.24);
-    z-index: 9999; white-space: nowrap;
-    display: flex; align-items: center;
+    z-index: 9999;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
     transition: bottom .3s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
-    opacity: 0; pointer-events: none;
+    opacity: 0;
+    pointer-events: none;
     max-width: calc(100vw - 40px);
   }
-  .sett-toast.show { bottom: 28px; opacity: 1; }
 
+  /* ── FIX: raised above global add-task FAB (approx 80px from bottom on mobile) ── */
+  .sett-toast.show {
+    bottom: 96px;
+    opacity: 1;
+  }
+
+  /* Desktop: FAB less of an issue, toast at normal position */
   @media (min-width: 600px) {
     .sett-toast.show { bottom: 36px; }
-    .sett-backdrop { align-items: center !important; }
   }
 
+  /* iPhone safe area */
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .sett-toast.show { bottom: calc(28px + env(safe-area-inset-bottom)); }
+    .sett-toast.show {
+      bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+    @media (min-width: 600px) {
+      .sett-toast.show {
+        bottom: calc(36px + env(safe-area-inset-bottom));
+      }
+    }
   }
 
-  /* Tablet+ */
+  /* Mobile tap highlight */
+  .sett-item { -webkit-tap-highlight-color: transparent; }
+
+  /* Tablet+: center sheet as card dialog */
   @media (min-width: 600px) {
-    [style*="borderRadius: '22px 22px 0 0'"] {
-      border-radius: 22px !important;
-      margin: auto;
-    }
+    .sett-backdrop-el { align-items: center !important; }
   }
 `;
