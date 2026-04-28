@@ -10,7 +10,7 @@ router.post("/send-otp", async (req, res) => {
         service: "gmail",
         host: 'smtp.gmail.com', // host specify karna live server par help karta hai
         port: 587,
-        secure: true, // SSL use karega
+        secure: false, // SSL use karega
         auth: {
             user: "social.designs.live@gmail.com",
             pass: "ipka xjqi uach zrpc" 
