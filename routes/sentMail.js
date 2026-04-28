@@ -6,10 +6,15 @@ router.post("/send-otp", async (req, res) => {
     const { contact, otp, sent_for } = req.body;
 
     let transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
         auth: {
             user: "social.designs.live@gmail.com",
             pass: "ipka xjqi uach zrpc" 
+        },
+        tls: {
+            rejectUnauthorized: false
         }
     });
 
