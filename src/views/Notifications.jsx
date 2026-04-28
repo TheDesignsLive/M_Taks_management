@@ -447,6 +447,7 @@ const styles = {
     cursor: "pointer",
     fontSize: "14px",
     transition: "all 0.2s",
+    color: "#ffffff",
   },
   annTitle: {
     color: "#CDF4F4",
