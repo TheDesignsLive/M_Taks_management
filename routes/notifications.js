@@ -18,14 +18,12 @@ router.get('/', async (req, res) => {
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        // PERMISSIONS AS PER PATTERN
+        // PERMISSIONS PATTERN
         const canManageAnnounce = (role === 'admin' || control_type === 'OWNER' || control_type === 'ADMIN');
-        const canManageMembers = (role === 'admin' || control_type === 'OWNER'); // NO Admin control here
+        const canManageMembers = (role === 'admin' || control_type === 'OWNER'); 
 
-        // 1. Fetch Teams for Dropdown
         const [teams] = await con.query("SELECT id, name FROM teams WHERE admin_id = ?", [adminId]);
 
-        // 2. Announcements Query with Joins
         let annQuery = `
             SELECT a.*, 
             IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
@@ -49,7 +47,6 @@ router.get('/', async (req, res) => {
         annQuery += ` ORDER BY a.created_at DESC`;
         const [announcements] = await con.query(annQuery, annParams);
 
-        // 3. Member Requests (Sirf Admin/Owner Control ke liye)
         let memberRequests = [];
         let deletionRequests = [];
         if (canManageMembers) {
@@ -59,7 +56,6 @@ router.get('/', async (req, res) => {
             deletionRequests = dReqs;
         }
 
-        // 4. Mark as Seen logic
         for (let ann of announcements) {
             await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", 
             [ann.id, sessionUserId, role, adminId]);
@@ -93,7 +89,6 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
             [adminId, addedBy, role.toUpperCase(), role_id, title, description, attachment]
         );
 
-        // Fetch back for Socket emission
         const [newAnn] = await con.query(`SELECT a.*, IF(a.role_id=0,'All',t.name) as target_team_name FROM announcements a LEFT JOIN teams t ON a.role_id=t.id WHERE a.id=?`, [result.insertId]);
         
         if (req.io) req.io.emit('new_announcement', newAnn[0]);
