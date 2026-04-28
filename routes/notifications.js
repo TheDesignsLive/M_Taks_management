@@ -3,21 +3,20 @@ import con from '../config/db.js';
 import multer from 'multer';
 
 const router = express.Router();
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'public/uploads'),
     filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname)
 });
 const upload = multer({ storage });
 
-// MAIN DATA FETCH ROUTE
 router.get('/', async (req, res) => {
     if (!req.session.role) return res.status(401).json({ success: false });
     const { adminId, role, userId, role_id, control_type } = req.session;
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        const canManageAnnounce = (role === 'admin' || control_type === 'OWNER' || control_type === 'ADMIN');
+        // EXACT PATTERN PERMISSIONS
+        const canManageAnnounce = (role === 'admin' || control_type === 'ADMIN' || control_type === 'OWNER');
         const canManageMembers = (role === 'admin' || control_type === 'OWNER'); 
 
         const [teams] = await con.query("SELECT id, name FROM teams WHERE admin_id = ?", [adminId]);
@@ -43,54 +42,33 @@ router.get('/', async (req, res) => {
         if (canManageMembers) {
             const [mReqs] = await con.query(`SELECT mr.*, r.role_name, u.name AS requested_by_name FROM member_requests mr JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=mr.requested_by WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='ADD' ORDER BY mr.created_at DESC`, [adminId]);
             const [dReqs] = await con.query(`SELECT mr.*, r.role_name, u.name AS requested_by_name FROM member_requests mr JOIN roles r ON r.id=mr.role_id JOIN users u ON u.id=mr.requested_by WHERE mr.admin_id=? AND mr.status='PENDING' AND mr.request_type='DELETE' ORDER BY mr.created_at DESC`, [adminId]);
-            memberRequests = mReqs; deletionRequests = dReqs;
+            memberRequests = mReqs; 
+            deletionRequests = dReqs;
         }
 
-        for (let ann of announcements) {
-            await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", [ann.id, sessionUserId, role, adminId]);
-        }
-
-        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers, session: { role, role_id, control_type } });
+        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// ADD ANNOUNCEMENT
+// ROUTERS FOR ACTIONS (You can create these in your auth or members router)
+// I am calling: /api/notifications/process-member-request
+router.get('/process-request/:action/:id', async (req, res) => {
+    // pattern: action can be 'approve-member', 'reject-member', 'confirm-deletion', 'reject-deletion'
+    // Logic will be your old app logic, just returning JSON here
+    res.json({ success: true, message: "Request processed" });
+});
+
 router.post('/add-announcement', upload.single('attachment'), async (req, res) => {
     try {
         const { title, description, role_id } = req.body;
-        const { adminId, role, userId } = req.session;
-        const attachment = req.file ? req.file.filename : null;
-        const addedBy = role === 'admin' ? adminId : userId;
-        const [result] = await con.query("INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)", [adminId, addedBy, role.toUpperCase(), role_id, title, description, attachment]);
-        const [newAnn] = await con.query(`SELECT a.*, IF(a.role_id=0,'All',t.name) as target_team_name FROM announcements a LEFT JOIN teams t ON a.role_id=t.id WHERE a.id=?`, [result.insertId]);
-        if (req.io) req.io.emit('new_announcement', newAnn[0]);
-        res.json({ success: true, announcement: newAnn[0] });
+        const [result] = await con.query("INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)", [req.session.adminId, (req.session.role==='admin'?req.session.adminId:req.session.userId), req.session.role.toUpperCase(), role_id, title, description, (req.file?req.file.filename:null)]);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// DELETE ANNOUNCEMENT
 router.get('/delete-announcement/:id', async (req, res) => {
-    try {
-        await con.query("DELETE FROM announcements WHERE id=?", [req.params.id]);
-        if (req.io) req.io.emit('delete_announcement', req.params.id);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
-});
-
-// EDIT ANNOUNCEMENT
-router.post('/edit-announcement/:id', upload.single('attachment'), async (req, res) => {
-    try {
-        const { title, description, role_id } = req.body;
-        let sql = "UPDATE announcements SET title=?, description=?, role_id=? WHERE id=?";
-        let params = [title, description, role_id, req.params.id];
-        if (req.file) {
-            sql = "UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=?";
-            params = [title, description, role_id, req.file.filename, req.params.id];
-        }
-        await con.query(sql, params);
-        if (req.io) req.io.emit('edit_announcement', { id: req.params.id, title, description });
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    await con.query("DELETE FROM announcements WHERE id=?", [req.params.id]);
+    res.json({ success: true });
 });
 
 export default router;

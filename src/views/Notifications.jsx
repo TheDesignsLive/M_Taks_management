@@ -7,8 +7,6 @@ const Notifications = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('announce');
     const [modal, setModal] = useState({ show: false, type: 'add', editId: null });
-
-    // Form states
     const [form, setForm] = useState({ title: '', desc: '', teamId: '0', file: null });
 
     useEffect(() => { fetchNotifications(); }, []);
@@ -30,41 +28,41 @@ const Notifications = () => {
         if (form.file) formData.append('attachment', form.file);
 
         const url = modal.type === 'add' ? `${BASE_URL}/api/notifications/add-announcement` : `${BASE_URL}/api/notifications/edit-announcement/${modal.editId}`;
-        try {
-            const res = await fetch(url, { method: 'POST', body: formData, credentials: 'include' });
-            const result = await res.json();
-            if (result.success) {
-                setModal({ show: false, type: 'add', editId: null });
-                fetchNotifications();
-                setForm({ title: '', desc: '', teamId: '0', file: null });
-            }
-        } catch (err) { alert("Error saving announcement"); }
+        const res = await fetch(url, { method: 'POST', body: formData, credentials: 'include' });
+        const result = await res.json();
+        if (result.success) {
+            setModal({ show: false, type: 'add', editId: null });
+            fetchNotifications();
+            setForm({ title: '', desc: '', teamId: '0', file: null });
+        }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Permanent delete?")) return;
-        try {
-            const res = await fetch(`${BASE_URL}/api/notifications/delete-announcement/${id}`, { credentials: 'include' });
-            const result = await res.json();
-            if (result.success) fetchNotifications();
-        } catch (err) { alert("Delete failed"); }
+    const handleAction = async (action, id) => {
+        // pattern: calling dynamic routes like your old app
+        const res = await fetch(`${BASE_URL}/api/notifications/process-request/${action}/${id}`, { credentials: 'include' });
+        const result = await res.json();
+        if (result.success) fetchNotifications();
     };
 
-    const openEdit = (a) => {
-        setForm({ title: a.title, desc: a.description, teamId: a.role_id.toString(), file: null });
-        setModal({ show: true, type: 'edit', editId: a.id });
+    const handleDeleteAnn = async (id) => {
+        if(!window.confirm("Delete this?")) return;
+        const res = await fetch(`${BASE_URL}/api/notifications/delete-announcement/${id}`, { credentials: 'include' });
+        if((await res.json()).success) fetchNotifications();
     };
 
     if (loading) return <div style={styles.loader}>Loading...</div>;
 
     return (
         <div style={styles.container}>
-            {data.canManageMembers && (
+            {/* Toggle Tab - Shows if user can manage either Announcements or Members */}
+            {(data.canManageAnnounce || data.canManageMembers) && (
                 <div style={styles.toggleRow}>
                     <div style={{...styles.tab, ...(activeTab === 'announce' ? styles.activeTab : {})}} onClick={() => setActiveTab('announce')}>Announcements</div>
-                    <div style={{...styles.tab, ...(activeTab === 'requests' ? styles.activeTab : {})}} onClick={() => setActiveTab('requests')}>
-                        Requests {(data.memberRequests.length + data.deletionRequests.length) > 0 && <span style={styles.badge}>!</span>}
-                    </div>
+                    {data.canManageMembers && (
+                        <div style={{...styles.tab, ...(activeTab === 'requests' ? styles.activeTab : {})}} onClick={() => setActiveTab('requests')}>
+                            Requests {(data.memberRequests.length + data.deletionRequests.length) > 0 && <span style={styles.badge}>!</span>}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -73,8 +71,8 @@ const Notifications = () => {
                     <div style={styles.header}>
                         <h2 style={styles.title}>Announcements</h2>
                         {data.canManageAnnounce && (
-                            <button style={styles.addBtn} onClick={() => { setForm({title:'', desc:'', teamId:'0', file:null}); setModal({show:true, type:'add', editId:null}); }}>
-                                <i className="fa-solid fa-plus" style={{marginRight:5}}></i> Add
+                            <button style={styles.addBtn} onClick={() => setModal({show:true, type:'add', editId:null})}>
+                                <i className="fa-solid fa-plus"></i> Add
                             </button>
                         )}
                     </div>
@@ -83,8 +81,8 @@ const Notifications = () => {
                         <div key={a.id} style={styles.annCard}>
                             {data.canManageAnnounce && (
                                 <div style={styles.cardActions}>
-                                    <button style={styles.iconBtn} onClick={() => openEdit(a)}><i className="fa-solid fa-pen-to-square"></i></button>
-                                    <button style={{...styles.iconBtn, color:'#ff4d4d'}} onClick={() => handleDelete(a.id)}><i className="fa-solid fa-trash"></i></button>
+                                    <button style={styles.iconBtn} onClick={() => { setForm({title:a.title, desc:a.description, teamId:a.role_id, file:null}); setModal({show:true, type:'edit', editId:a.id}) }}><i className="fa-solid fa-pen-to-square"></i></button>
+                                    <button style={{...styles.iconBtn, color:'#ff4d4d'}} onClick={() => handleDeleteAnn(a.id)}><i className="fa-solid fa-trash"></i></button>
                                 </div>
                             )}
                             <h3 style={styles.annTitle}>{a.title}</h3>
@@ -102,7 +100,7 @@ const Notifications = () => {
                 </div>
             ) : (
                 <div id="req-section">
-                    <h4 style={{color:'#2ecc71', marginBottom:15, textAlign:'left'}}>Add Requests</h4>
+                    <h4 style={{color:'#2ecc71', marginBottom:10, textAlign:'left'}}>Add Requests</h4>
                     {data.memberRequests.map(r => (
                         <div key={r.id} style={{...styles.reqCard, borderLeft:'4px solid #2ecc71'}}>
                             <div style={styles.reqFlex}>
@@ -111,7 +109,27 @@ const Notifications = () => {
                                     <h4 style={{margin:0, color:'#fff'}}>{r.name}</h4>
                                     <p style={styles.metaRow}>{r.email} | {r.role_name}</p>
                                 </div>
-                                <div style={styles.btnStack}><button style={styles.btnSmlGreen}>Accept</button></div>
+                                <div style={styles.btnStack}>
+                                    <button onClick={() => handleAction('approve-member', r.id)} style={styles.btnSmlGreen}>Accept</button>
+                                    <button onClick={() => handleAction('reject-member', r.id)} style={styles.btnSmlRed}>Reject</button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    <h4 style={{color:'#ff4d4d', marginTop:20, marginBottom:10, textAlign:'left'}}>Deletion Requests</h4>
+                    {data.deletionRequests.map(r => (
+                        <div key={r.id} style={{...styles.reqCard, borderLeft:'4px solid #ff4d4d', background:'#352525'}}>
+                            <div style={styles.reqFlex}>
+                                <div style={{...styles.avatar, background:'#ff4d4d'}}>{r.name.charAt(0)}</div>
+                                <div style={{flex:1, marginLeft:10, textAlign:'left'}}>
+                                    <h4 style={{margin:0, color:'#ff4d4d'}}>{r.name}</h4>
+                                    <p style={styles.metaRow}>Role: {r.role_name}</p>
+                                </div>
+                                <div style={styles.btnStack}>
+                                    <button onClick={() => handleAction('confirm-deletion', r.id)} style={styles.btnSmlRed}>Approve</button>
+                                    <button onClick={() => handleAction('reject-deletion', r.id)} style={styles.btnSmlGreen}>Keep</button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -121,21 +139,17 @@ const Notifications = () => {
             {modal.show && (
                 <div style={styles.modalOverlay}>
                     <div style={styles.modalContent}>
-                        <h3 style={{color:'#333', marginTop:0}}>{modal.type === 'add' ? 'Create' : 'Edit'} Announcement</h3>
+                        <h3 style={{color:'#333', marginTop:0}}>{modal.type==='add'?'Create':'Edit'} Announcement</h3>
                         <form onSubmit={handleSubmit}>
-                            <label style={styles.label}>Title</label>
-                            <input style={styles.input} value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
-                            <label style={styles.label}>Description</label>
-                            <textarea style={{...styles.input, height:80}} value={form.desc} onChange={e => setForm({...form, desc: e.target.value})} />
-                            <label style={styles.label}>Target Team</label>
+                            <input style={styles.input} placeholder="Title" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required />
+                            <textarea style={{...styles.input, height:80}} placeholder="Description" value={form.desc} onChange={e => setForm({...form, desc: e.target.value})} />
                             <select style={styles.input} value={form.teamId} onChange={e => setForm({...form, teamId: e.target.value})}>
                                 <option value="0">All Members</option>
                                 {data.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
-                            <label style={styles.label}>File (Optional)</label>
                             <input type="file" style={styles.input} onChange={e => setForm({...form, file: e.target.files[0]})} />
                             <div style={{display:'flex', gap:10}}>
-                                <button type="submit" style={{...styles.addBtn, flex:1, borderRadius:5}}>{modal.type === 'add' ? 'Post' : 'Update'}</button>
+                                <button type="submit" style={{...styles.addBtn, flex:1, borderRadius:5}}>Save</button>
                                 <button type="button" onClick={() => setModal({show:false, type:'add', editId:null})} style={{...styles.addBtn, flex:1, background:'#666', borderRadius:5}}>Cancel</button>
                             </div>
                         </form>
@@ -159,21 +173,21 @@ const styles = {
     annCard: { background: '#444', padding: 15, borderRadius: 8, marginBottom: 15, borderLeft: '5px solid #0F8989', position: 'relative', textAlign:'left' },
     cardActions: { position: 'absolute', top: 12, right: 12, display: 'flex', gap: 12 },
     iconBtn: { background: 'none', border: 'none', color: '#aaa', fontSize: 15, cursor:'pointer' },
-    annTitle: { color: '#CDF4F4', fontSize: 17, margin: '0 0 5px 0', paddingRight: 60 },
+    annTitle: { color: '#CDF4F4', fontSize: 17, margin: '0 0 5px 0', paddingRight: 60, textAlign:'left' },
     metaRow: { display: 'flex', fontSize: 11, color: '#aaa', marginBottom: 10 },
     sep: { margin: '0 8px', opacity: 0.3 },
-    descText: { color: '#eee', fontSize: 13, lineHeight: 1.5, margin: '10px 0' },
+    descText: { color: '#eee', fontSize: 13, lineHeight: 1.5, margin: '10px 0', textAlign:'left' },
     footer: { display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#888' },
     attachLink: { color: '#0F8989', textDecoration: 'none', fontWeight: 'bold' },
     modalOverlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:2000, padding:20 },
     modalContent: { background:'#fff', padding:20, borderRadius:10, width:'100%', maxWidth:400 },
-    label: { display:'block', fontSize:12, fontWeight:'bold', color:'#555', marginBottom:5, textAlign:'left' },
-    input: { width:'100%', padding:10, marginBottom:15, borderRadius:5, border:'1px solid #ddd' },
+    input: { width:'100%', padding:10, marginBottom:10, borderRadius:5, border:'1px solid #ddd' },
     reqCard: { background: '#2E2D2D', padding: 12, borderRadius: 8, marginBottom: 10 },
     reqFlex: { display: 'flex', alignItems: 'center' },
     avatar: { width: 40, height: 40, borderRadius: '50%', background: '#095959', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' },
     btnStack: { display: 'flex', flexDirection: 'column', gap: 5 },
-    btnSmlGreen: { background: '#2ecc71', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10 }
+    btnSmlGreen: { background: '#2ecc71', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10, fontWeight: 'bold' },
+    btnSmlRed: { background: '#e74c3c', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10, fontWeight: 'bold' }
 };
 
 export default Notifications;
