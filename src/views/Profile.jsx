@@ -255,7 +255,7 @@ export default function Profile() {
             <span style={styles.cardAccent} />
             <span style={styles.cardTitle}>Account details</span>
           </div>
-          <InfoRow icon={<ShieldIcon />} label="Account type"   value={isAdmin ? 'Administrator' : 'User'} />
+          <InfoRow icon={<ShieldIcon />} label="Account type"   value={isAdmin ? 'Admin' : 'User'} />
           {!isAdmin && (
             <InfoRow icon={<TagIcon />}  label="Role"           value={profile?.userRoleName || 'N/A'} />
           )}
