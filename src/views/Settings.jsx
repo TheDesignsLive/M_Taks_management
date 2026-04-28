@@ -1,12 +1,32 @@
 // Settings.jsx
+// Reads session from /api/auth/session (adminName / userName / email / role)
+// API base auto-switches between localhost:5000 and production
 
 import React, { useState, useEffect } from 'react';
 
-// ─── FIX: BASE_URL must point to port 5000 on localhost ──────────────────────
+// ─── Base URL ─────────────────────────────────────────────────────────────────
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000'
-    : 'https://m-tms.thedesigns.live';
+    : 'https://m-tms.thedesigns.live';   // same origin in production
+
+// ─── API helper ───────────────────────────────────────────────────────────────
+function api(path, opts = {}) {
+  const isForm = opts.body instanceof FormData;
+  return fetch(BASE_URL + path, {
+    credentials: 'include',
+    headers: isForm ? {} : { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts,
+  });
+}
+
+// ─── OTP generator ───────────────────────────────────────────────────────────
+function generateOtp() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passRx  = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const T = {
@@ -24,23 +44,6 @@ const T = {
   danger:   '#d9534f',
   dangerBg: '#fef2f2',
 };
-
-// ─── API helper — always uses BASE_URL with credentials ──────────────────────
-function api(path, opts = {}) {
-  const isForm = opts.body instanceof FormData;
-  return fetch(BASE_URL + path, {
-    credentials: 'include',
-    headers: isForm ? {} : { 'Content-Type': 'application/json', ...(opts.headers || {}) },
-    ...opts,
-  });
-}
-
-function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const passRx  = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function useToast() {
@@ -216,7 +219,7 @@ function Sheet({ open, onClose, title, children, accentColor }) {
   );
 }
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
+// ─── Step Indicator ───────────────────────────────────────────────────────────
 function Steps({ current, total, labels }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22, gap: 0 }}>
@@ -316,7 +319,7 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
         showToast(data.message || 'Failed to send OTP.', 'error');
       }
     } catch {
-      showToast('Network error. Check your connection and try again.', 'error');
+      showToast('Network error. Check your connection.', 'error');
     }
     setLoading(false);
   }
@@ -342,7 +345,7 @@ function ChangePasswordSheet({ open, onClose, userEmail, showToast }) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Password updated successfully.');
+        showToast('Password updated successfully ✅');
         handleClose();
       } else {
         showToast(data.message || 'Update failed.', 'error');
@@ -451,7 +454,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
 
   async function sendNewOtp() {
     if (!emailRx.test(newEmail)) { setErr({ newEmail: 'Enter a valid email address.' }); return; }
-    if (newEmail === userEmail) { setErr({ newEmail: 'New email must be different from current email.' }); return; }
+    if (newEmail === userEmail)  { setErr({ newEmail: 'New email must differ from current.' }); return; }
     setLoading(true);
     const g = generateOtp(); setNewOtp(g);
     try {
@@ -477,7 +480,7 @@ function ChangeEmailSheet({ open, onClose, userEmail, onEmailChanged, showToast 
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Email updated successfully.');
+        showToast('Email updated successfully ✅');
         onEmailChanged(newEmail);
         handleClose();
       } else {
@@ -680,11 +683,7 @@ function DeleteProfileSheet({ open, onClose, userEmail, isAdmin, showToast, onDe
 
       {step === 0 && (
         <>
-          <div style={{
-            ...S.infoBanner,
-            background: '#fef2f2',
-            borderColor: 'rgba(217,83,79,0.2)',
-          }}>
+          <div style={{ ...S.infoBanner, background: '#fef2f2', borderColor: 'rgba(217,83,79,0.2)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.danger} strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="12"/>
@@ -766,14 +765,33 @@ function SettingsItem({ icon, label, subtitle, onClick, danger }) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  MAIN SETTINGS PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-export default function SettingsPage({ session, onLogout }) {
-  // auth.js stores adminName / userName (not generic "name")
-  const resolvedName = session?.adminName || session?.userName || session?.name || '';
+export default function SettingsPage({ onLogout }) {
+  // ── Fetch session on mount ──────────────────────────────────────────────────
+  const [session, setSession]     = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [userEmail, setUserEmail] = useState('');
 
-  const [userEmail, setUserEmail] = useState(session?.email || '');
-  const [userRole]                = useState(session?.role || 'user');
-  const [userName]                = useState(resolvedName);
+  useEffect(() => {
+    api('/api/auth/session')
+      .then(r => r.json())
+      .then(data => {
+        if (data.loggedIn) {
+          setSession(data);
+          setUserEmail(data.email || '');
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
+  // ── Derive name / role from session ────────────────────────────────────────
+  // auth.js stores adminName for admin, userName for user
+  const userName  = session?.adminName || session?.userName || session?.name || '';
+  const userRole  = session?.role || 'user';
+  const isAdmin   = userRole === 'admin';
+  const initial   = userName?.[0]?.toUpperCase() || '?';
+
+  // ── Sheet open state ────────────────────────────────────────────────────────
   const [pwdOpen,    setPwdOpen]    = useState(false);
   const [emailOpen,  setEmailOpen]  = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -781,8 +799,25 @@ export default function SettingsPage({ session, onLogout }) {
 
   const { toast, showToast } = useToast();
 
-  const initial = userName?.[0]?.toUpperCase() || '?';
-  const isAdmin = userRole === 'admin';
+  // ── Handle logout ───────────────────────────────────────────────────────────
+  function handleLogout() {
+    if (typeof onLogout === 'function') {
+      onLogout();
+    } else {
+      window.location.href = '/';
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: T.page, fontFamily: "'DM Sans', sans-serif", color: T.muted, fontSize: 15,
+      }}>
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div style={S.page}>
@@ -803,7 +838,7 @@ export default function SettingsPage({ session, onLogout }) {
             </div>
           </div>
         </div>
-        {/* Wave */}
+        {/* Decorative wave */}
         <svg
           viewBox="0 0 390 38"
           preserveAspectRatio="none"
@@ -816,7 +851,7 @@ export default function SettingsPage({ session, onLogout }) {
       {/* ── Body ── */}
       <div style={S.body}>
 
-        {/* Account section */}
+        {/* Account */}
         <div style={S.sectionLabel}>Account</div>
         <div style={S.card}>
           <SettingsItem
@@ -843,7 +878,7 @@ export default function SettingsPage({ session, onLogout }) {
           />
         </div>
 
-        {/* Session section */}
+        {/* Session */}
         <div style={S.sectionLabel}>Session</div>
         <div style={S.card}>
           <SettingsItem
@@ -860,7 +895,7 @@ export default function SettingsPage({ session, onLogout }) {
           />
         </div>
 
-        {/* Danger zone */}
+        {/* Danger Zone */}
         <div style={S.sectionLabel}>Danger Zone</div>
         <div style={{ ...S.card, borderColor: 'rgba(217,83,79,0.2)' }}>
           <SettingsItem
@@ -916,7 +951,7 @@ export default function SettingsPage({ session, onLogout }) {
         open={logoutOpen}
         onClose={() => setLogoutOpen(false)}
         userEmail={userEmail}
-        onLogout={onLogout}
+        onLogout={handleLogout}
       />
       <DeleteProfileSheet
         open={deleteOpen}
@@ -924,7 +959,7 @@ export default function SettingsPage({ session, onLogout }) {
         userEmail={userEmail}
         isAdmin={isAdmin}
         showToast={showToast}
-        onDeleted={onLogout}
+        onDeleted={handleLogout}
       />
 
       {/* ── Toast ── */}
@@ -1032,6 +1067,7 @@ const S = {
     boxSizing: 'border-box',
     boxShadow: '0 -8px 48px rgba(4,52,44,0.18)',
     WebkitOverflowScrolling: 'touch',
+    animation: 'settSlide .3s ease',
   },
   sheetPill: {
     width: 40, height: 4, background: T.bg50, borderRadius: 4, margin: '12px auto 0',
@@ -1069,16 +1105,21 @@ const S = {
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
-  @keyframes settFade  { from { opacity: 0 } to { opacity: 1 } }
-  @keyframes settSlide { from { transform: translateY(64px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-  @keyframes settShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)} }
+  @keyframes settSlide {
+    from { transform: translateY(64px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes settShake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-6px); }
+    60%     { transform: translateX(6px); }
+  }
 
   .sett-input:focus {
     border-color: #1d9e75 !important;
     box-shadow: 0 0 0 3px rgba(29,158,117,0.14) !important;
     background: #fff !important;
   }
-
   .sett-input-err {
     border-color: #e24b4a !important;
     animation: settShake .36s ease;
@@ -1109,30 +1150,31 @@ const CSS = `
     pointer-events: none;
     max-width: calc(100vw - 40px);
   }
-
   .sett-toast.show {
     bottom: 96px;
     opacity: 1;
   }
-
   @media (min-width: 600px) {
     .sett-toast.show { bottom: 36px; }
   }
-
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .sett-toast.show {
       bottom: calc(96px + env(safe-area-inset-bottom));
     }
     @media (min-width: 600px) {
-      .sett-toast.show {
-        bottom: calc(36px + env(safe-area-inset-bottom));
-      }
+      .sett-toast.show { bottom: calc(36px + env(safe-area-inset-bottom)); }
     }
   }
-
   .sett-item { -webkit-tap-highlight-color: transparent; }
 
+  /* Responsive sheet — centered on desktop */
   @media (min-width: 600px) {
-    .sett-backdrop-el { align-items: center !important; }
+    [role="dialog"] {
+      border-radius: 22px !important;
+      max-height: 85vh !important;
+    }
+    [style*="align-items: flex-end"] {
+      align-items: center !important;
+    }
   }
 `;
