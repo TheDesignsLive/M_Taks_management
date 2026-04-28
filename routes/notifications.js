@@ -17,17 +17,17 @@ router.get('/', async (req, res) => {
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        // 1. Check Specific Permissions
-        // Announcements manage: Admin, Owner control, Admin control
+        // --- 1. Permissions Check (Exactly like your desktop app) ---
+        // Add/Edit/Delete Announcement: Admin OR Owner Control OR Admin Control
         const canManageAnnounce = (role === 'admin' || control_type === 'OWNER' || control_type === 'ADMIN');
         
-        // Member Requests manage: ONLY Admin and Owner control (NOT Admin control)
+        // Member Requests: ONLY Admin OR User with OWNER control (Strictly NOT Admin control)
         const canManageMembers = (role === 'admin' || control_type === 'OWNER');
 
-        // 2. Fetch Teams for Dropdown (Instead of Roles)
+        // --- 2. Fetch Teams for Dropdown (Current Admin's Teams) ---
         const [teams] = await con.query("SELECT id, name FROM teams WHERE admin_id = ?", [adminId]);
 
-        // 3. Announcements Logic
+        // --- 3. Announcements Logic ---
         let annQuery = `
             SELECT a.*, 
             IF(a.role_id=0, 'All Members', t.name) AS target_team_name,
@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
         
         let annParams = [adminId];
         
-        // If not a manager, filter by team or "All"
+        // If normal user (no management rights), filter by their team or "All"
         if (!canManageAnnounce) {
             annQuery += ` AND (a.role_id = (SELECT team_id FROM roles WHERE id=?) OR a.role_id=0) `;
             annParams.push(role_id);
@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
         annQuery += ` ORDER BY a.created_at DESC`;
         const [announcements] = await con.query(annQuery, annParams);
 
-        // 4. Member & Deletion Requests (Based on canManageMembers)
+        // --- 4. Member Requests (Based on canManageMembers) ---
         let memberRequests = [];
         let deletionRequests = [];
         if (canManageMembers) {
@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
             deletionRequests = dReqs;
         }
 
-        // 5. Mark as Seen
+        // --- 5. Mark as Seen ---
         for (let ann of announcements) {
             await con.query("INSERT IGNORE INTO announcement_seen (announcement_id, user_id, role, admin_id) VALUES (?,?,?,?)", 
             [ann.id, sessionUserId, role, adminId]);
