@@ -924,7 +924,7 @@ const S = {
   },
   cardEmail: {
     fontSize: 11, color: '#aaa', marginTop: 2,
-    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',  textAlign: 'left'  ,
   },
   statusDot: {
     width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
