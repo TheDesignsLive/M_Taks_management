@@ -306,17 +306,15 @@ export default function ViewTeams({ onBack }) {
         {/* Nav pills + Add button row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-            <button style={S.navPill} className="vt-nav-pill" onClick={() => onBack && onBack()}>
-              Members
-            </button>
-            <button style={S.navPillActive} className="vt-nav-pill-active">
-              Departments
-            </button>
-
-                      {/* Add this button here */}
-            <button style={S.navPill} className="vt-nav-pill" onClick={() => setShowRoles(true)}>
-              Roles
-            </button>
+       <button style={S.navPill} className="vt-nav-pill" onClick={() => onBack && onBack()} title="Members">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+</button>
+<button style={S.navPillActive} className="vt-nav-pill-active" title="Departments">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="16" width="6" height="4" rx="1"/><rect x="17" y="16" width="6" height="4" rx="1"/><path d="M12 5v4M12 9h-8v7M12 9h8v7"/></svg>
+</button>
+<button style={S.navPill} className="vt-nav-pill" onClick={() => setShowRoles(true)} title="Roles">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+</button>
             
           </div>
           <button style={S.addBtn} className="vt-add-btn" onClick={() => { setAddName(''); setAddError(''); setAddOpen(true); }}>
@@ -752,7 +750,7 @@ const CSS = `
   .vt-icon-btn:hover  { background: rgba(255,255,255,0.15) !important; }
   .vt-close:hover     { background: rgba(15,137,137,0.15) !important; }
 
-  .vt-input:focus { border-color: #0F8989 !important; box-shadow: 0 0 0 3px rgba(15,137,137,0.15) !important; }
+  input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !important; }
 
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: #2E2D2D; }

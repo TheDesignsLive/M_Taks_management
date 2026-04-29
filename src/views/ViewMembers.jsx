@@ -489,18 +489,18 @@ if (showRoles) {
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
 
               {/* ✅ MEMBERS (DEFAULT ACTIVE) */}
-             <button style={S.navPillActive} className="vt-nav-pill-active">
-            Members
-          </button>
+         <button style={S.navPillActive} className="vt-nav-pill-active" title="Members">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  </button>
           
             {isAdminLike && (
               <>
-                <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)}>
-                  Departments
-                </button>
-                <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowRoles(true)}>
-            Roles
-          </button>
+               <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)} title="Departments">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="16" width="6" height="4" rx="1"/><rect x="17" y="16" width="6" height="4" rx="1"/><path d="M12 5v4M12 9h-8v7M12 9h8v7"/></svg>
+</button>
+<button style={S.navPill} className="vm-nav-pill" onClick={() => setShowRoles(true)} title="Roles">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+</button>
               </>
             )}
           </div>
@@ -886,30 +886,25 @@ const S = {
     letterSpacing: 0.3,
     whiteSpace: 'nowrap',
   },
-  navPill: {
-    background: 'rgba(15,137,137,0.12)',
-    border: '1px solid rgba(15,137,137,0.25)',
-    color: '#14b8a6',
-    borderRadius: 20,
-    padding: '6px 16px',
-    fontSize: 12, fontWeight: 700, cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    fontFamily: "Arial, sans-serif",
-    letterSpacing: 0.3,
-  },
-  navPillActive: {
-   background: 'rgba(15,137,137,0.3)',
+navPill: {
+  background: 'rgba(15,137,137,0.12)',
+  border: '1px solid rgba(15,137,137,0.25)',
+  color: '#14b8a6',
+  borderRadius: 20,
+  padding: '8px 14px',
+  cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontFamily: "Arial, sans-serif",
+},
+navPillActive: {
+  background: 'rgba(15,137,137,0.3)',
   border: '1px solid rgba(15,137,137,0.6)',
   color: '#CDF4F4',
   borderRadius: 20,
-  padding: '6px 16px',
-  fontSize: 12,
-  fontWeight: 700,
+  padding: '8px 14px',
   cursor: 'default',
-  whiteSpace: 'nowrap',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
   fontFamily: "Arial, sans-serif",
-  letterSpacing: 0.3,
-
 },
   searchWrap: {
     position: 'relative',
@@ -1137,7 +1132,7 @@ const CSS = `
   .vm-icon-btn:hover  { background: rgba(255,255,255,0.15) !important; }
   .vm-close:hover     { background: rgba(15,137,137,0.15) !important; }
 
-  input:focus, select:focus { border-color: #0F8989 !important; box-shadow: 0 0 0 3px rgba(15,137,137,0.15) !important; }
+input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !important; }
   select option { background: #2E2D2D; color: #eee; }
 
   ::-webkit-scrollbar { width: 5px; }
