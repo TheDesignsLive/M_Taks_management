@@ -306,6 +306,7 @@ const Layout = () => {
 
   return (
     <div style={s.layoutContainer}>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
       <style>{customCSS}</style>
 
       {/* ─── TOP BAR ─── */}
