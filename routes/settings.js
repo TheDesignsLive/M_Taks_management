@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import con from '../config/db.js';
 import bcrypt from 'bcryptjs';
+import fetch from 'node-fetch';
 
 // MAIN DATA
 router.get('/data', async (req, res) => {
@@ -28,12 +29,11 @@ router.post('/request-otp', async (req, res) => {
     try {
         // COMMENTED: CALLING SENT MAIL ROUTER
         
-        await fetch(`${req.protocol}://${req.get('host')}/api/sentmail/send-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contact: email, otp, sent_for: reason })
-        });
-        
+      await fetch(`http://127.0.0.1:5000/api/sentmail/send-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contact: email, otp, sent_for: reason })
+});
         console.log(`\n-----------------------------------------`);
         console.log(`[MAIL SERVER] Sending OTP to: ${email}`);
         console.log(`[MAIL SERVER] Reason: ${reason}`);
