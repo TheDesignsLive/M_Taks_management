@@ -516,7 +516,7 @@ export default function AssignByMe() {
         {activeTab === 'pending' && (
           <>
             {openTasks.length === 0 ? (
-              <EmptyState icon="📋" title="No pending tasks" sub="Tasks you assign to others appear here" />
+              <EmptyState icon="" title="No pending tasks" sub="Tasks you assign to others appear here" />
             ) : (
               openTasks.map(task => (
                 <TaskCard key={task.id} task={task} {...sharedProps} isCompleted={false} />
@@ -528,7 +528,7 @@ export default function AssignByMe() {
         {activeTab === 'completed' && (
           <>
             {completedTasks.length === 0 ? (
-              <EmptyState icon="✅" title="No completed tasks" sub="Completed tasks will show here" />
+              <EmptyState icon="" title="No completed tasks" sub="Completed tasks will show here" />
             ) : (
               completedTasks.map(task => (
                 <TaskCard key={task.id} task={task} {...sharedProps} isCompleted={true} />
