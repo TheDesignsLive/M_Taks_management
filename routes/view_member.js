@@ -1,229 +1,309 @@
-// view_member.js  — ES module, drop-in replacement
+// routes/view_member.js
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 import fs from 'fs';
-import bcrypt from 'bcrypt';
+import { fileURLToPath } from 'url';
+import con from '../config/db.js';
 
 const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// ── multer setup (same as original) ─────────────────────────────────────────
+// ─── MULTER CONFIG ────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'public/images';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
-  },
-  limits: { fileSize: 5 * 1024 * 1024 },
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '..', 'public', 'images');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        cb(null, `member_${Date.now()}${ext}`);
+    },
 });
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-function getAdminId(req) {
-  return req.session.role === 'admin' ? req.session.adminId : null;
-}
-
-async function resolveAdminId(con, req) {
-  if (req.session.role === 'admin') return { adminId: req.session.adminId, controlType: 'ADMIN' };
-  const [rows] = await con.query(
-    'SELECT u.admin_id, r.control_type, r.team_id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.id=?',
-    [req.session.userId]
-  );
-  if (!rows.length) return null;
-  return { adminId: rows[0].admin_id, controlType: rows[0].control_type, teamId: rows[0].team_id };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// GET /api/view_member  — load page data
-// ═══════════════════════════════════════════════════════════════════════════
-router.get('/', async (req, res) => {
-  if (!req.session.role) return res.status(401).json({ success: false, message: 'Not authenticated' });
-
-  try {
-    const con = req.db; // injected via app.use or import — adjust if you use require('../config/db')
-    let users = [], roles = [], teams = [], adminName = null;
-    const sessionRole = req.session.role;
-
-    if (sessionRole === 'admin') {
-      const adminId = req.session.adminId;
-      const [aRows] = await con.query('SELECT name FROM admins WHERE id=?', [adminId]);
-      adminName = aRows[0]?.name || null;
-
-      const [tRows] = await con.query('SELECT id, name FROM teams WHERE admin_id=? ORDER BY name ASC', [adminId]);
-      teams = tRows;
-
-      const [uRows] = await con.query(
-        `SELECT u.*, r.role_name, r.team_id
-         FROM users u JOIN roles r ON u.role_id=r.id
-         WHERE u.admin_id=?`, [adminId]
-      );
-      users = uRows;
-
-      const [rRows] = await con.query('SELECT id, role_name, team_id FROM roles WHERE admin_id=?', [adminId]);
-      roles = rRows;
-
+const fileFilter = (req, file, cb) => {
+    const allowedMime = /^image\/(jpeg|jpg|png|gif|webp)$/;
+    const allowedExt = /\.(jpeg|jpg|png|gif|webp)$/i;
+    if (allowedMime.test(file.mimetype) && allowedExt.test(file.originalname)) {
+        cb(null, true);
     } else {
-      const info = await resolveAdminId(con, req);
-      if (!info) return res.status(403).json({ success: false, message: 'Forbidden' });
-      const { adminId, controlType, teamId } = info;
-
-      const [aRows] = await con.query('SELECT name FROM admins WHERE id=?', [adminId]);
-      adminName = aRows[0]?.name || null;
-
-      if (controlType === 'ADMIN' || controlType === 'OWNER') {
-        const [tRows] = await con.query('SELECT id, name FROM teams WHERE admin_id=? ORDER BY name ASC', [adminId]);
-        teams = tRows;
-        const [rRows] = await con.query('SELECT id, role_name, team_id FROM roles WHERE admin_id=?', [adminId]);
-        roles = rRows;
-        const [uRows] = await con.query(
-          `SELECT u.*, r.role_name, r.team_id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.admin_id=?`, [adminId]
-        );
-        users = uRows;
-      } else if (teamId) {
-        const [tRows] = await con.query('SELECT id, name FROM teams WHERE id=?', [teamId]);
-        teams = tRows;
-        const [rRows] = await con.query('SELECT id, role_name, team_id FROM roles WHERE admin_id=? AND team_id=?', [adminId, teamId]);
-        roles = rRows;
-        const [uRows] = await con.query(
-          `SELECT u.*, r.role_name, r.team_id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.admin_id=? AND r.team_id=?`,
-          [adminId, teamId]
-        );
-        users = uRows;
-      } else {
-        const [uRows] = await con.query(
-          `SELECT u.*, r.role_name, r.team_id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.id=?`,
-          [req.session.userId]
-        );
-        users = uRows;
-      }
+        cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
     }
+};
 
-    res.json({ success: true, users, roles, teams, adminName, sessionRole });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error loading members' });
-  }
-});
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// POST /api/view_member/add  — add member
-// ═══════════════════════════════════════════════════════════════════════════
-router.post('/add', upload.single('profile_pic'), async (req, res) => {
-  if (!req.session.role) return res.status(401).json({ success: false });
-  try {
-    const con = req.db;
-    const { name, email, phone, password, role_id } = req.body;
-    const adminId = req.session.role === 'admin'
-      ? req.session.adminId
-      : (await resolveAdminId(con, req))?.adminId;
+// ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+    if (!req.session?.role) {
+        return res.status(401).json({ success: false, message: 'Not authenticated. Please log in.' });
+    }
+    next();
+}
 
-    if (!adminId) return res.status(403).json({ success: false, message: 'Forbidden' });
+// ─── HELPER: safe delete file ─────────────────────────────────────────────────
+function safeDeleteFile(filename) {
+    if (!filename) return;
+    try {
+        const filePath = path.join(__dirname, '..', 'public', 'images', filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (err) {
+        console.error('[view_member] file delete error:', err.message);
+    }
+}
 
-    const [existing] = await con.query('SELECT id FROM users WHERE email=? AND admin_id=?', [email, adminId]);
-    if (existing.length) return res.json({ success: false, message: 'Email already exists' });
+// ─── HELPER: get adminId based on session ────────────────────────────────────
+async function getAdminId(session) {
+    if (session.role === 'admin') return session.adminId;
+    const [rows] = await con.query('SELECT admin_id FROM users WHERE id=?', [session.userId]);
+    return rows.length ? rows[0].admin_id : null;
+}
 
-    const hashed = await bcrypt.hash(password, 10);
-    const profile_pic = req.file ? req.file.filename : null;
-
-    await con.query(
-      'INSERT INTO users (admin_id, name, email, phone, password, role_id, profile_pic, status) VALUES (?,?,?,?,?,?,?,?)',
-      [adminId, name, email, phone || null, hashed, role_id, profile_pic, 'ACTIVE']
+// ─── HELPER: get control_type ────────────────────────────────────────────────
+async function getControlInfo(session) {
+    if (session.role === 'admin') return { controlType: 'ADMIN', teamId: null };
+    const [rows] = await con.query(
+        'SELECT r.control_type, r.team_id FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id=?',
+        [session.userId]
     );
+    if (!rows.length) return { controlType: 'NONE', teamId: null };
+    return { controlType: rows[0].control_type, teamId: rows[0].team_id };
+}
 
-    if (req.io) req.io.emit('update_members');
-    res.json({ success: true, message: 'Member added successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+// ════════════════════════════════════════════════════════════
+// GET /api/view_member  — fetch all members, roles, teams
+// ════════════════════════════════════════════════════════════
+router.get('/', requireAuth, async (req, res) => {
+    try {
+        const adminId = await getAdminId(req.session);
+        if (!adminId) return res.status(403).json({ success: false, message: 'Admin not found.' });
+
+        const { controlType, teamId } = await getControlInfo(req.session);
+
+        let users = [], roles = [], teams = [];
+
+        if (controlType === 'ADMIN' || controlType === 'OWNER' || req.session.role === 'admin') {
+            const [teamRows] = await con.query(
+                'SELECT id, name FROM teams WHERE admin_id=? ORDER BY name ASC', [adminId]
+            );
+            teams = teamRows;
+
+            const [roleRows] = await con.query(
+                'SELECT id, role_name, team_id FROM roles WHERE admin_id=?', [adminId]
+            );
+            roles = roleRows;
+
+            const [userRows] = await con.query(
+                `SELECT u.*, r.role_name, r.team_id as role_team_id
+                 FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 WHERE u.admin_id=?
+                 ORDER BY u.name ASC`,
+                [adminId]
+            );
+            users = userRows;
+        } else if (teamId) {
+            const [teamRows] = await con.query('SELECT id, name FROM teams WHERE id=?', [teamId]);
+            teams = teamRows;
+
+            const [roleRows] = await con.query(
+                'SELECT id, role_name, team_id FROM roles WHERE admin_id=? AND team_id=?',
+                [adminId, teamId]
+            );
+            roles = roleRows;
+
+            const [userRows] = await con.query(
+                `SELECT u.*, r.role_name, r.team_id as role_team_id
+                 FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 WHERE u.admin_id=? AND r.team_id=?
+                 ORDER BY u.name ASC`,
+                [adminId, teamId]
+            );
+            users = userRows;
+        } else {
+            const [userRows] = await con.query(
+                `SELECT u.*, r.role_name, r.team_id as role_team_id
+                 FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 WHERE u.id=?`,
+                [req.session.userId]
+            );
+            users = userRows;
+        }
+
+        return res.json({
+            success: true,
+            users,
+            roles,
+            teams,
+            sessionRole: req.session.role,
+            sessionUserId: req.session.userId || null,
+        });
+
+    } catch (err) {
+        console.error('[view_member GET]', err);
+        return res.status(500).json({ success: false, message: 'Error fetching members.' });
+    }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// POST /api/view_member/edit/:id  — edit member
-// ═══════════════════════════════════════════════════════════════════════════
-router.post('/edit/:id', upload.single('profile_pic'), async (req, res) => {
-  if (!req.session.role) return res.status(401).json({ success: false });
-  try {
-    const con = req.db;
-    const userId = req.params.id;
-    const { name, email, phone, password, role_id } = req.body;
+// ════════════════════════════════════════════════════════════
+// POST /api/view_member/add  — add a new member
+// ════════════════════════════════════════════════════════════
+router.post('/add', requireAuth, (req, res) => {
+    upload.single('profile_pic')(req, res, async (uploadErr) => {
+        if (uploadErr) return res.status(400).json({ success: false, message: uploadErr.message });
 
-    const fields = ['name=?', 'email=?', 'phone=?', 'role_id=?'];
-    const values = [name, email, phone || null, role_id];
+        const { name, email, phone, password, role_id, team_id } = req.body;
+        const profilePic = req.file ? req.file.filename : null;
 
-    if (password && password.trim()) {
-      const hashed = await bcrypt.hash(password, 10);
-      fields.push('password=?');
-      values.push(hashed);
-    }
-    if (req.file) {
-      fields.push('profile_pic=?');
-      values.push(req.file.filename);
-    }
+        if (!name || !email || !password || !role_id) {
+            if (profilePic) safeDeleteFile(profilePic);
+            return res.status(400).json({ success: false, message: 'Name, email, password, and role are required.' });
+        }
 
-    values.push(userId);
-    await con.query(`UPDATE users SET ${fields.join(', ')} WHERE id=?`, values);
+        try {
+            const adminId = await getAdminId(req.session);
+            if (!adminId) {
+                if (profilePic) safeDeleteFile(profilePic);
+                return res.status(403).json({ success: false, message: 'Admin not found.' });
+            }
 
-    if (req.io) req.io.emit('update_members');
-    res.json({ success: true, message: 'Member updated successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+            const [existing] = await con.query('SELECT id FROM users WHERE email=?', [email]);
+            if (existing.length) {
+                if (profilePic) safeDeleteFile(profilePic);
+                return res.status(400).json({ success: false, message: 'Email already exists.' });
+            }
+
+            const hashed = await bcrypt.hash(password, 10);
+            await con.query(
+                'INSERT INTO users (admin_id, name, email, phone, password, role_id, profile_pic, status) VALUES (?,?,?,?,?,?,?,?)',
+                [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
+            );
+
+            if (req.io) req.io.emit('update_members');
+
+            return res.json({ success: true, message: 'Member added successfully.' });
+        } catch (err) {
+            console.error('[view_member ADD]', err);
+            if (profilePic) safeDeleteFile(profilePic);
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ success: false, message: 'Email already exists.' });
+            }
+            return res.status(500).json({ success: false, message: 'Failed to add member.' });
+        }
+    });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GET /api/view_member/suspend/:id  — toggle suspend
-// ═══════════════════════════════════════════════════════════════════════════
-router.get('/suspend/:id', async (req, res) => {
-  if (!req.session.role) return res.status(401).json({ success: false });
-  try {
-    const con = req.db;
-    const [rows] = await con.query('SELECT status FROM users WHERE id=?', [req.params.id]);
-    if (!rows.length) return res.json({ success: false, message: 'User not found' });
+// ════════════════════════════════════════════════════════════
+// POST /api/view_member/edit/:id  — edit a member
+// ════════════════════════════════════════════════════════════
+router.post('/edit/:id', requireAuth, (req, res) => {
+    upload.single('profile_pic')(req, res, async (uploadErr) => {
+        if (uploadErr) return res.status(400).json({ success: false, message: uploadErr.message });
 
-    const newStatus = rows[0].status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    await con.query('UPDATE users SET status=? WHERE id=?', [newStatus, req.params.id]);
+        const { id } = req.params;
+        const { name, email, phone, password, role_id } = req.body;
+        const newPic = req.file ? req.file.filename : null;
 
-    if (req.io) req.io.emit('update_members');
-    res.json({ success: true, message: `Member ${newStatus === 'ACTIVE' ? 'activated' : 'suspended'} successfully` });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+        if (!name || !email || !role_id) {
+            if (newPic) safeDeleteFile(newPic);
+            return res.status(400).json({ success: false, message: 'Name, email, and role are required.' });
+        }
+
+        try {
+            const adminId = await getAdminId(req.session);
+            if (!adminId) {
+                if (newPic) safeDeleteFile(newPic);
+                return res.status(403).json({ success: false, message: 'Admin not found.' });
+            }
+
+            const [userRows] = await con.query('SELECT * FROM users WHERE id=? AND admin_id=?', [id, adminId]);
+            if (!userRows.length) {
+                if (newPic) safeDeleteFile(newPic);
+                return res.status(404).json({ success: false, message: 'Member not found.' });
+            }
+
+            const user = userRows[0];
+            let finalPic = user.profile_pic;
+
+            if (newPic) {
+                safeDeleteFile(user.profile_pic);
+                finalPic = newPic;
+            }
+
+            if (password && password.trim()) {
+                const hashed = await bcrypt.hash(password.trim(), 10);
+                await con.query(
+                    'UPDATE users SET name=?, email=?, phone=?, role_id=?, profile_pic=?, password=? WHERE id=?',
+                    [name.trim(), email.trim(), phone?.trim() || '', role_id, finalPic, hashed, id]
+                );
+            } else {
+                await con.query(
+                    'UPDATE users SET name=?, email=?, phone=?, role_id=?, profile_pic=? WHERE id=?',
+                    [name.trim(), email.trim(), phone?.trim() || '', role_id, finalPic, id]
+                );
+            }
+
+            if (req.io) req.io.emit('update_members');
+
+            return res.json({ success: true, message: 'Member updated successfully.' });
+        } catch (err) {
+            console.error('[view_member EDIT]', err);
+            if (newPic) safeDeleteFile(newPic);
+            return res.status(500).json({ success: false, message: 'Failed to update member.' });
+        }
+    });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GET /api/view_member/delete/:id  — delete member
-// ═══════════════════════════════════════════════════════════════════════════
-router.get('/delete/:id', async (req, res) => {
-  if (!req.session.role) return res.status(401).json({ success: false });
-  try {
-    const con = req.db;
-    const sessionRole = req.session.role;
+// ════════════════════════════════════════════════════════════
+// GET /api/view_member/suspend/:id  — toggle suspend/activate
+// ════════════════════════════════════════════════════════════
+router.get('/suspend/:id', requireAuth, async (req, res) => {
+    try {
+        const adminId = await getAdminId(req.session);
+        const { id } = req.params;
 
-    if (sessionRole === 'user') {
-      // non-admin: send delete request (your original logic)
-      res.json({ success: true, message: 'Delete request sent to admin' });
-      return;
+        const [rows] = await con.query('SELECT status FROM users WHERE id=? AND admin_id=?', [id, adminId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Member not found.' });
+
+        const newStatus = rows[0].status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        await con.query('UPDATE users SET status=? WHERE id=?', [newStatus, id]);
+
+        if (req.io) req.io.emit('update_members');
+
+        const msg = newStatus === 'ACTIVE' ? 'Member activated successfully.' : 'Member suspended successfully.';
+        return res.json({ success: true, message: msg, newStatus });
+    } catch (err) {
+        console.error('[view_member SUSPEND]', err);
+        return res.status(500).json({ success: false, message: 'Failed to update status.' });
     }
+});
 
-    await con.query('DELETE FROM users WHERE id=?', [req.params.id]);
-    if (req.io) req.io.emit('update_members');
-    res.json({ success: true, message: 'Member deleted successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
+// ════════════════════════════════════════════════════════════
+// GET /api/view_member/delete/:id  — delete a member
+// ════════════════════════════════════════════════════════════
+router.get('/delete/:id', requireAuth, async (req, res) => {
+    try {
+        const adminId = await getAdminId(req.session);
+        const { id } = req.params;
+
+        const [rows] = await con.query('SELECT profile_pic FROM users WHERE id=? AND admin_id=?', [id, adminId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Member not found.' });
+
+        safeDeleteFile(rows[0].profile_pic);
+        await con.query('DELETE FROM users WHERE id=?', [id]);
+
+        if (req.io) req.io.emit('update_members');
+
+        return res.json({ success: true, message: 'Member deleted successfully.' });
+    } catch (err) {
+        console.error('[view_member DELETE]', err);
+        return res.status(500).json({ success: false, message: 'Failed to delete member.' });
+    }
 });
 
 export default router;
