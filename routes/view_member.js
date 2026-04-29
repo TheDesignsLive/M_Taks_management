@@ -171,22 +171,66 @@ router.post('/add', requireAuth, (req, res) => {
                 if (profilePic) safeDeleteFile(profilePic);
                 return res.status(403).json({ success: false, message: 'Admin not found.' });
             }
+// ── CHECK: admin or owner → insert into users
+            //           any other user  → insert into member_requests
+            // Re-read control_type fresh from DB (don't trust stale session value)
+            const sessionRole = req.session.role; // 'admin' | 'owner' | 'user'
 
-            const [existing] = await con.query('SELECT id FROM users WHERE email=?', [email]);
-            if (existing.length) {
-                if (profilePic) safeDeleteFile(profilePic);
-                return res.status(400).json({ success: false, message: 'Email already exists.' });
+            let freshControlType = req.session.control_type; // fallback
+            if (req.session.userId) {
+                const [ctRows] = await con.query(
+                    'SELECT r.control_type FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id=?',
+                    [req.session.userId]
+                );
+                if (ctRows.length) freshControlType = ctRows[0].control_type;
             }
 
+            const canDirectInsert =
+                sessionRole === 'admin' ||
+                sessionRole === 'owner' ||
+                freshControlType === 'OWNER';
+
             const hashed = await bcrypt.hash(password, 10);
-            await con.query(
-                'INSERT INTO users (admin_id, name, email, phone, password, role_id, profile_pic, status) VALUES (?,?,?,?,?,?,?,?)',
-                [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
-            );
 
-            if (req.io) req.io.emit('update_members');
+            if (canDirectInsert) {
+                // ── DIRECT INSERT INTO USERS ──────────────────────────────
+                const [existing] = await con.query('SELECT id FROM users WHERE email=?', [email]);
+                if (existing.length) {
+                    if (profilePic) safeDeleteFile(profilePic);
+                    return res.status(400).json({ success: false, message: 'Email already exists.' });
+                }
 
-            return res.json({ success: true, message: 'Member added successfully.' });
+                await con.query(
+                    'INSERT INTO users (admin_id, name, email, phone, password, role_id, profile_pic, status) VALUES (?,?,?,?,?,?,?,?)',
+                    [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
+                );
+
+                if (req.io) req.io.emit('update_members');
+
+                return res.json({ success: true, message: 'Member added successfully.' });
+
+            } else {
+                // ── INSERT INTO MEMBER_REQUESTS ───────────────────────────
+                const [existing] = await con.query(
+                    'SELECT id FROM member_requests WHERE email=? AND status="PENDING"', [email]
+                );
+                if (existing.length) {
+                    if (profilePic) safeDeleteFile(profilePic);
+                    return res.status(400).json({ success: false, message: 'A pending request for this email already exists.' });
+                }
+
+                const requestedBy = req.session.userId; // the user who is requesting
+
+                await con.query(
+                    'INSERT INTO member_requests (admin_id, role_id, requested_by, name, email, password, profile_pic, created_by, status) VALUES (?,?,?,?,?,?,?,?,?)',
+                    [adminId, role_id, requestedBy, name.trim(), email.trim(), hashed, profilePic || null, requestedBy, 'PENDING']
+                );
+
+                if (req.io) req.io.emit('update_member_requests');
+
+                return res.json({ success: true, message: 'Member request submitted. Awaiting admin approval.', isRequest: true });
+            }
+
         } catch (err) {
             console.error('[view_member ADD]', err);
             if (profilePic) safeDeleteFile(profilePic);
