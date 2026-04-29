@@ -231,7 +231,7 @@ export default function Profile() {
         {/* Wave curve bottom */}
         <svg viewBox="0 0 390 38" preserveAspectRatio="none"
           style={{ position: 'absolute', bottom: 0, left: 0, right: 0, width: '100%', height: 38, display: 'block' }}>
-          <path d="M0 38 Q98 0 195 18 Q292 36 390 8 L390 38 Z" fill="#121212" />
+          <path d="M0 38 Q98 0 195 18 Q292 36 390 8 L390 38 Z" fill="#3d3b3b" />
         </svg>
       </div>
 
