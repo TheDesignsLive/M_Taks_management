@@ -36,7 +36,7 @@ function Avatar({ profilePic, name, size = 40 }) {
       background: 'linear-gradient(135deg, #095959 0%, #0F8989 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: Math.round(size * 0.38), fontWeight: 700, color: '#b2f0f0',
-      fontFamily: "'DM Mono', monospace",
+      fontFamily: "Arial, sans-serif",
     }}>
       {letter}
     </div>
@@ -126,10 +126,10 @@ function ConfirmModal({ open, icon, title, message, confirmLabel, confirmClass, 
         <div style={S.modalPill} />
         <div style={{ textAlign: 'center', padding: '20px 16px 8px' }}>
           <div style={{ marginBottom: 12 }}>{icon}</div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#e8f5f5', marginBottom: 8 }}>{title}</div>
-          <div style={{ fontSize: 13, color: '#8abad0', marginBottom: 22, lineHeight: 1.6 }}>{message}</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#CDF4F4', marginBottom: 8 }}>{title}</div>
+          <div style={{ fontSize: 13, color: '#aaa', marginBottom: 22, lineHeight: 1.6 }}>{message}</div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button style={{ ...S.btn, background: '#2a3a3a', color: '#8abad0' }} onClick={onCancel}>Cancel</button>
+            <button style={{ ...S.btn, background: 'rgba(255,255,255,0.07)', color: '#aaa', border: '1px solid rgba(255,255,255,0.12)' }} onClick={onCancel}>Cancel</button>
             <button
               style={{ ...S.btn, background: confirmClass === 'danger' ? '#e74c3c' : '#0F8989', color: '#fff', opacity: loading ? 0.7 : 1 }}
               onClick={onConfirm} disabled={loading}>
@@ -151,8 +151,8 @@ function AlertModal({ open, icon, title, message, onClose }) {
         <div style={S.modalPill} />
         <div style={{ textAlign: 'center', padding: '20px 16px 8px' }}>
           <div style={{ marginBottom: 12 }}>{icon}</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#e8f5f5', marginBottom: 8 }}>{title}</div>
-          <div style={{ fontSize: 13, color: '#8abad0', marginBottom: 22, lineHeight: 1.6 }}>{message}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#CDF4F4', marginBottom: 8 }}>{title}</div>
+          <div style={{ fontSize: 13, color: '#aaa', marginBottom: 22, lineHeight: 1.6 }}>{message}</div>
           <button style={{ ...S.btn, background: '#0F8989', color: '#fff', width: '100%' }} onClick={onClose}>Okay</button>
         </div>
       </div>
@@ -438,7 +438,7 @@ export default function ViewMember() {
         <style>{CSS}</style>
         <div style={{ textAlign: 'center' }}>
           <div style={S.spinner} />
-          <p style={{ color: '#0F8989', marginTop: 16, fontFamily: "'DM Mono', monospace", fontSize: 13 }}>Loading members…</p>
+          <p style={{ color: '#14b8a6', marginTop: 16, fontFamily: "Arial, sans-serif", fontSize: 13 }}>Loading members…</p>
         </div>
       </div>
     );
@@ -454,30 +454,41 @@ export default function ViewMember() {
       {/* ── HEADER ── */}
       <div style={S.header}>
         <div style={S.headerInner}>
-          <div style={S.headerLeft}>
-            <div style={S.headerIcon}><UserIcon /></div>
-            <div>
-              <div style={S.headerTitle}>Members</div>
-              <div style={S.headerSub}>{data.users.length} total members</div>
+          <div>
+            <div style={S.headerTitle}>Members</div>
+            <div style={S.headerSub}>{data.users.length} total members</div>
+          </div>
+          <div style={S.statsRow}>
+            <div style={S.statPill}>
+              <span style={S.statNum}>{data.users.length}</span>
+              <span style={S.statLbl}>Total</span>
             </div>
+            <div style={{ ...S.statPill, background: 'rgba(15,137,137,0.2)', border: '1px solid rgba(15,137,137,0.4)' }}>
+              <span style={{ ...S.statNum, color: '#14b8a6' }}>{data.users.filter(u => u.status === 'ACTIVE').length}</span>
+              <span style={S.statLbl}>Active</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Nav pills + Add button row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
+            {isAdminLike && (
+              <>
+                <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-teams'}>
+                  Departments
+                </button>
+                <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-roles'}>
+                  Roles
+                </button>
+              </>
+            )}
           </div>
           <button style={S.addBtn} className="vm-add-btn" onClick={() => { resetAdd(); setAddOpen(true); }}>
             <PlusIcon />
             <span style={{ marginLeft: 6 }}>Add</span>
           </button>
         </div>
-
-        {/* Nav pills */}
-        {isAdminLike && (
-          <div style={S.navPills}>
-            <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-teams'}>
-              Departments
-            </button>
-            <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-roles'}>
-              Roles
-            </button>
-          </div>
-        )}
 
         {/* Search */}
         <div style={S.searchWrap}>
@@ -496,10 +507,11 @@ export default function ViewMember() {
       <div style={S.body}>
         {filtered.length === 0 ? (
           <div style={S.empty}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>👥</div>
-            <div style={{ color: '#8abad0', fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#aaa', marginBottom: 6 }}>
               {search ? 'No members match your search.' : 'No members found.'}
             </div>
+            <div style={{ fontSize: 13, color: '#777' }}>Members you add will appear here</div>
           </div>
         ) : (
           <div style={S.grid}>
@@ -532,8 +544,8 @@ export default function ViewMember() {
               {!hasRoles ? (
                 <div style={{ textAlign: 'center', padding: '30px 16px' }}>
                   <div style={{ marginBottom: 14 }}><AlertIcon /></div>
-                  <div style={{ color: '#e8f5f5', fontWeight: 700, marginBottom: 8 }}>No Roles Found</div>
-                  <div style={{ color: '#8abad0', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+                  <div style={{ color: '#CDF4F4', fontWeight: 700, marginBottom: 8 }}>No Roles Found</div>
+                  <div style={{ color: '#aaa', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
                     Please create a role in the Roles Panel before adding a member.
                   </div>
                   <button style={{ ...S.btn, background: '#0F8989', color: '#fff' }} onClick={() => window.location.href = '/view-roles'}>
@@ -552,8 +564,8 @@ export default function ViewMember() {
                       <button style={S.camBtn} onClick={() => addFileRef.current?.click()} type="button"><CamIcon /></button>
                     </div>
                     <div style={{ marginLeft: 14 }}>
-                      <div style={{ fontSize: 13, color: '#8abad0' }}>Tap to set profile picture</div>
-                      <div style={{ fontSize: 11, color: '#4a7080', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
+                      <div style={{ fontSize: 13, color: '#aaa' }}>Tap to set profile picture</div>
+                      <div style={{ fontSize: 11, color: '#666', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
                     </div>
                   </div>
                   <input ref={addFileRef} type="file" accept="image/*" style={{ display: 'none' }}
@@ -607,7 +619,7 @@ export default function ViewMember() {
                   />
                   {addErrors.confirmPassword && <div style={{ ...S.errText, marginTop: -10, marginBottom: 14 }}>{addErrors.confirmPassword}</div>}
 
-                  <button style={{ ...S.btn, background: 'linear-gradient(135deg, #095959, #0F8989)', color: '#fff', width: '100%', opacity: addLoading ? 0.7 : 1 }}
+                  <button style={{ ...S.btnSave, width: '100%', opacity: addLoading ? 0.7 : 1 }}
                     onClick={handleAddSubmit} disabled={addLoading}>
                     {addLoading ? 'Adding…' : 'Add Member'}
                   </button>
@@ -638,8 +650,8 @@ export default function ViewMember() {
                   <button style={S.camBtn} onClick={() => editFileRef.current?.click()} type="button"><CamIcon /></button>
                 </div>
                 <div style={{ marginLeft: 14 }}>
-                  <div style={{ fontSize: 13, color: '#8abad0' }}>Tap to change profile picture</div>
-                  <div style={{ fontSize: 11, color: '#4a7080', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
+                  <div style={{ fontSize: 13, color: '#aaa' }}>Tap to change profile picture</div>
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
                 </div>
               </div>
               <input ref={editFileRef} type="file" accept="image/*" style={{ display: 'none' }}
@@ -696,7 +708,7 @@ export default function ViewMember() {
                 </>
               )}
 
-              <button style={{ ...S.btn, background: 'linear-gradient(135deg, #095959, #0F8989)', color: '#fff', width: '100%', opacity: editLoading ? 0.7 : 1 }}
+              <button style={{ ...S.btnSave, width: '100%', opacity: editLoading ? 0.7 : 1 }}
                 onClick={handleEditSubmit} disabled={editLoading}>
                 {editLoading ? 'Updating…' : 'Update Member'}
               </button>
@@ -743,7 +755,7 @@ export default function ViewMember() {
       {/* ── TOAST ── */}
       <div
         className={`vm-toast${toast.show ? ' show' : ''}`}
-        style={{ background: toast.type === 'error' ? '#a32d2d' : '#095959' }}
+        style={{ background: toast.type === 'error' ? '#7f1d1d' : '#095959' }}
       >
         <span style={{ marginRight: 8, display: 'inline-flex' }}>
           {toast.type === 'error' ? <DotErr /> : <DotOk />}
@@ -806,78 +818,68 @@ function MemberCard({ user, index, sessionRole, sessionUserId, onEdit, onSuspend
 const S = {
   page: {
     minHeight: '100%',
-    background: '#3C3A3A',
-    fontFamily: "'DM Mono', 'Courier New', monospace",
-    paddingBottom: 60,
+    background: '#3C3A3A',           // ← same as AssignByMe
+    fontFamily: "Arial, sans-serif",
+    paddingBottom: 100,
   },
 
-  // Header
+  // Header — same as AssignByMe
   header: {
-    background: 'linear-gradient(180deg, #111a1a 0%, #1a2a2a 100%)',
-    padding: '20px 16px 0',
-    borderBottom: '1px solid rgba(15,137,137,0.2)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-    boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+    background: '#2E2D2D',           // ← same as AssignByMe
+    padding: '20px 18px 16px',
+    borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
   headerInner: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginBottom: 14,
   },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerIcon: {
-    width: 40, height: 40,
-    background: 'rgba(15,137,137,0.15)',
-    border: '1px solid rgba(15,137,137,0.3)',
-    borderRadius: 10,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#0F8989',
-  },
   headerTitle: {
-    fontSize: 18, fontWeight: 700, color: '#e8f5f5',
-    letterSpacing: 0.5,
+    margin: 0, fontSize: 20, fontWeight: 800,
+    color: '#CDF4F4',                // ← same as AssignByMe
+    letterSpacing: -0.3,
   },
   headerSub: {
-    fontSize: 11, color: '#4a7080', marginTop: 2,
+    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
   },
+  statsRow: { display: 'flex', gap: 8, marginTop: 4 },
+  statPill: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: 12, padding: '6px 14px',
+    minWidth: 54,
+  },
+  statNum: { fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1 },
+  statLbl: { fontSize: 9.5, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
+
   addBtn: {
     display: 'flex', alignItems: 'center',
-    background: 'linear-gradient(135deg, #095959, #0F8989)',
+    background: '#0F8989',           // ← same as AssignByMe btnSave
     color: '#fff',
     border: 'none', borderRadius: 24,
     padding: '9px 18px',
     fontSize: 13, fontWeight: 700, cursor: 'pointer',
-    fontFamily: "'DM Mono', monospace",
+    fontFamily: "Arial, sans-serif",
     boxShadow: '0 4px 16px rgba(15,137,137,0.3)',
     letterSpacing: 0.3,
-  },
-  navPills: {
-    display: 'flex', gap: 8,
-    marginBottom: 14,
-    overflowX: 'auto',
-    paddingBottom: 2,
+    whiteSpace: 'nowrap',
   },
   navPill: {
     background: 'rgba(15,137,137,0.12)',
     border: '1px solid rgba(15,137,137,0.25)',
-    color: '#0F8989',
+    color: '#14b8a6',
     borderRadius: 20,
     padding: '6px 16px',
     fontSize: 12, fontWeight: 700, cursor: 'pointer',
     whiteSpace: 'nowrap',
-    fontFamily: "'DM Mono', monospace",
+    fontFamily: "Arial, sans-serif",
     letterSpacing: 0.3,
   },
   searchWrap: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   searchIcon: {
     position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
@@ -886,21 +888,20 @@ const S = {
   searchInput: {
     width: '100%', boxSizing: 'border-box',
     padding: '11px 14px 11px 42px',
-    background: 'rgba(15,137,137,0.08)',
-    border: '1px solid rgba(15,137,137,0.2)',
+    background: '#3C3A3A',           // ← same as AssignByMe formInput bg
+    border: '1.5px solid rgba(15,137,137,0.3)',
     borderRadius: 24,
-    color: '#e8f5f5',
+    color: '#eee',
     fontSize: 13,
-    fontFamily: "'DM Mono', monospace",
+    fontFamily: "Arial, sans-serif",
     outline: 'none',
   },
 
   // Body
-  body: { padding: '16px 12px' },
+  body: { padding: '16px 14px', maxWidth: 960, margin: '0 auto' },
   empty: {
     textAlign: 'center',
     padding: '60px 20px',
-    color: '#4a7080',
   },
   grid: {
     display: 'grid',
@@ -908,21 +909,21 @@ const S = {
     gap: 12,
   },
 
-  // Card
+  // Card — same as AssignByMe taskCard
   card: {
-    background: 'linear-gradient(135deg, #1a2a2a 0%, #1e3030 100%)',
-    border: '1px solid rgba(15,137,137,0.18)',
-    borderRadius: 16,
-    padding: '16px',
-    boxShadow: '0 2px 16px rgba(0,0,0,0.3)',
-    transition: 'transform 0.18s, box-shadow 0.18s',
+    background: '#444',              // ← same as AssignByMe taskCard
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderLeft: '4px solid rgba(15,137,137,0.5)',
+    borderRadius: 8,
+    padding: '14px 16px',
+    transition: 'transform 0.15s, box-shadow 0.15s',
   },
   cardName: {
-    fontSize: 14, fontWeight: 700, color: '#e8f5f5',
+    fontSize: 14, fontWeight: 700, color: '#fff',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
   cardEmail: {
-    fontSize: 11, color: '#4a7080', marginTop: 2,
+    fontSize: 11, color: '#aaa', marginTop: 2,
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
   statusDot: {
@@ -934,9 +935,9 @@ const S = {
     marginBottom: 12,
   },
   metaChip: {
-    background: 'rgba(15,137,137,0.12)',
-    border: '1px solid rgba(15,137,137,0.2)',
-    color: '#0F8989',
+    background: 'rgba(15,137,137,0.18)',
+    border: '1px solid rgba(15,137,137,0.35)',
+    color: '#14b8a6',
     borderRadius: 20, padding: '3px 12px',
     fontSize: 11, fontWeight: 700,
     maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -953,7 +954,7 @@ const S = {
   },
   cardActions: {
     display: 'flex', alignItems: 'center', gap: 8,
-    borderTop: '1px solid rgba(15,137,137,0.1)',
+    borderTop: '1px solid rgba(255,255,255,0.08)',
     paddingTop: 12,
   },
   actionBtn: {
@@ -961,29 +962,30 @@ const S = {
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8, cursor: 'pointer',
     fontSize: 12, fontWeight: 700,
-    fontFamily: "'DM Mono', monospace",
+    fontFamily: "Arial, sans-serif",
     transition: 'opacity 0.15s',
   },
   iconBtn: {
     width: 34, height: 34,
-    background: 'rgba(255,255,255,0.05)',
+    background: 'rgba(255,255,255,0.08)',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'background 0.15s',
   },
 
-  // Modal
+  // Modal — same sheet style as AssignByMe
   backdrop: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.7)',
+    background: 'rgba(0,0,0,0.75)',
     zIndex: 1300,
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    animation: 'vmFade 0.15s ease',
   },
   modal: {
     width: '100%', maxWidth: 560,
-    background: '#111a1a',
-    borderRadius: '20px 20px 0 0',
+    background: '#2E2D2D',           // ← same as AssignByMe pickerSheet
+    borderRadius: '22px 22px 0 0',
     padding: '0 18px 24px',
     maxHeight: '88dvh',
     overflowY: 'auto',
@@ -991,26 +993,29 @@ const S = {
     border: '1px solid rgba(15,137,137,0.2)',
     borderBottom: 'none',
     boxShadow: '0 -8px 48px rgba(0,0,0,0.5)',
+    animation: 'vmSlide 0.24s cubic-bezier(.22,.68,0,1.18)',
   },
   modalPill: {
     width: 40, height: 4,
-    background: 'rgba(15,137,137,0.3)',
+    background: 'rgba(15,137,137,0.4)',
     borderRadius: 4, margin: '12px auto 0',
   },
   modalHead: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '16px 0 14px',
-    borderBottom: '1px solid rgba(15,137,137,0.15)',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
     marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 16, fontWeight: 700, color: '#e8f5f5', letterSpacing: 0.3,
+    fontSize: 16, fontWeight: 800,
+    color: '#CDF4F4',                // ← same as AssignByMe pickerTitle
+    letterSpacing: -0.2,
   },
   closeBtn: {
     width: 32, height: 32, borderRadius: '50%',
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    color: '#8abad0', cursor: 'pointer',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    color: '#aaa', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 0,
   },
@@ -1024,42 +1029,52 @@ const S = {
   camBtn: {
     position: 'absolute', bottom: 0, right: 0,
     width: 24, height: 24, borderRadius: '50%',
-    background: 'linear-gradient(135deg, #095959, #0F8989)',
-    border: '2px solid #111a1a',
+    background: '#0F8989',
+    border: '2px solid #2E2D2D',
     cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 0,
   },
 
-  // Form
+  // Form — same as AssignByMe formLabel / formInput
   label: {
     display: 'block',
-    fontSize: 10, fontWeight: 700,
-    color: '#0F8989',
+    fontSize: 10.5, fontWeight: 800,
+    color: '#14b8a6',                // ← same as AssignByMe formLabel
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
+    letterSpacing: 0.7,
+    marginBottom: 5, marginTop: 14,
   },
   input: {
     width: '100%', boxSizing: 'border-box',
-    padding: '11px 14px',
-    background: 'rgba(15,137,137,0.07)',
-    border: '1.5px solid rgba(15,137,137,0.2)',
-    borderRadius: 10, fontSize: 14,
-    fontFamily: "'DM Mono', monospace",
-    color: '#e8f5f5', outline: 'none',
+    padding: '10px 12px',
+    background: '#3C3A3A',           // ← same as AssignByMe formInput
+    border: '1.5px solid rgba(15,137,137,0.3)',
+    borderRadius: 8, fontSize: 14,
+    fontFamily: "Arial, sans-serif",
+    color: '#eee', outline: 'none',
     transition: 'border-color 0.18s',
   },
   errText: {
-    fontSize: 11, color: '#e74c3c', marginTop: 5, fontWeight: 600,
+    fontSize: 11, color: '#ef4444', marginTop: 5, fontWeight: 600,
   },
   btn: {
     padding: '12px 20px',
-    border: 'none', borderRadius: 10,
+    border: 'none', borderRadius: 12,
     fontSize: 13, fontWeight: 700, cursor: 'pointer',
-    fontFamily: "'DM Mono', monospace",
+    fontFamily: "Arial, sans-serif",
     transition: 'opacity 0.15s',
     letterSpacing: 0.3,
+    flex: 1,
+  },
+  btnSave: {
+    padding: '13px',
+    background: '#0F8989',           // ← same as AssignByMe btnSave
+    border: 'none', borderRadius: 12,
+    color: '#fff', fontSize: 14, fontWeight: 700,
+    cursor: 'pointer', fontFamily: "Arial, sans-serif",
+    boxShadow: '0 4px 16px rgba(15,137,137,0.3)',
+    transition: 'opacity 0.15s',
   },
 
   // Spinner
@@ -1075,8 +1090,6 @@ const S = {
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&display=swap');
-
   @keyframes vmSpin  { to { transform: rotate(360deg); } }
   @keyframes vmSlide { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   @keyframes vmFade  { from { opacity: 0; } to { opacity: 1; } }
@@ -1087,43 +1100,39 @@ const CSS = `
   .vm-search:focus    { border-color: #0F8989 !important; box-shadow: 0 0 0 3px rgba(15,137,137,0.12) !important; }
   .vm-card:hover      { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,0,0,0.4) !important; }
   .vm-action-btn:hover { opacity: 0.8; }
-  .vm-icon-btn:hover  { background: rgba(255,255,255,0.1) !important; }
+  .vm-icon-btn:hover  { background: rgba(255,255,255,0.15) !important; }
   .vm-close:hover     { background: rgba(15,137,137,0.15) !important; }
 
   input:focus, select:focus { border-color: #0F8989 !important; box-shadow: 0 0 0 3px rgba(15,137,137,0.15) !important; }
-  select option { background: #111a1a; color: #e8f5f5; }
-  
+  select option { background: #2E2D2D; color: #eee; }
+
   ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: #1a2a2a; }
+  ::-webkit-scrollbar-track { background: #2E2D2D; }
   ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 10px; }
 
   .vm-toast {
     position: fixed;
     bottom: -80px; left: 50%;
     transform: translateX(-50%);
-    color: #fff;
+    color: #e2e8f0;
     padding: 11px 22px;
     border-radius: 32px;
-    font-size: 13px; font-weight: 700;
-    font-family: 'DM Mono', monospace;
+    font-size: 13px; font-weight: 600;
+    font-family: Arial, sans-serif;
     box-shadow: 0 6px 28px rgba(0,0,0,0.4);
     z-index: 9999;
     white-space: nowrap;
     display: flex; align-items: center;
-    transition: bottom 0.32s cubic-bezier(.34,1.56,.64,1), opacity 0.28s;
+    transition: bottom 0.32s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
     opacity: 0; pointer-events: none;
     max-width: calc(100vw - 40px);
+    border: 1px solid rgba(15,137,137,0.25);
     letter-spacing: 0.2px;
   }
   .vm-toast.show { bottom: 28px; opacity: 1; }
 
   @media (min-width: 600px) {
     .vm-toast.show { bottom: 36px; }
-    .vm-backdrop { align-items: center !important; }
-  }
-
-  @media (min-width: 768px) {
-    .vm-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
