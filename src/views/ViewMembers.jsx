@@ -1,5 +1,6 @@
 // view_member.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ViewTeams from './view_teams';
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -219,6 +220,7 @@ export default function ViewMember() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const { toast, showToast } = useToast();
+  const [showTeams, setShowTeams] = useState(false);
 
   // Add dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -413,7 +415,7 @@ export default function ViewMember() {
     setEditFile(null); setEditPreview(null); setEditErrors({});
   }
 
-  // ── OPEN EDIT ─────────────────────────────────────────────────────────────
+  // ── OPEN EDIT ──────────────────────────────────────────────────────────
   function openEdit(user) {
     setEditId(user.id);
     setEditForm({
@@ -431,6 +433,7 @@ export default function ViewMember() {
     setEditOpen(true);
   }
 
+
   // ── LOADING STATE ─────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -443,6 +446,10 @@ export default function ViewMember() {
       </div>
     );
   }
+
+  if (showTeams) {
+  return <ViewTeams onBack={() => setShowTeams(false)} />;
+}
 
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
   const hasRoles = data.roles.length > 0;
@@ -475,7 +482,7 @@ export default function ViewMember() {
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
             {isAdminLike && (
               <>
-                <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-teams'}>
+                <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)}>
                   Departments
                 </button>
                 <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-roles'}>

@@ -1,4 +1,4 @@
-// Profile.jsx - Updated to Teal & Black/Gray Theme
+// Profile.jsx  Updated to Teal & Black/Gray Theme
 import React, { useState, useRef, useEffect } from 'react';
 
 const BASE_URL =
@@ -828,4 +828,4 @@ const CSS = `
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .pg-toast.show { bottom: calc(26px + env(safe-area-inset-bottom)); }
   }
-`;
+`; 
