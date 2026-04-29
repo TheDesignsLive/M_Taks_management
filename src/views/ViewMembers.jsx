@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ViewTeams from './view_teams';
 
-// import ViewRoles from './view_roles';
+import ViewRoles from './ViewRoles'
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -223,7 +223,7 @@ export default function ViewMember() {
   const [search, setSearch] = useState('');
   const { toast, showToast } = useToast();
   const [showTeams, setShowTeams] = useState(false);
-  // const [showRoles, setShowRoles] = useState(false);
+  const [showRoles, setShowRoles] = useState(false);
 
   // Add dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -454,9 +454,9 @@ export default function ViewMember() {
   return <ViewTeams onBack={() => setShowTeams(false)} />;
 }
 
-// if (showRoles) {
-//   return <ViewRoles onBack={() => setShowRoles(false)} />;
-// }
+if (showRoles) {
+  return <ViewRoles onBack={() => setShowRoles(false)} />;
+}
 
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
   const hasRoles = data.roles.length > 0;
@@ -487,6 +487,12 @@ export default function ViewMember() {
         {/* Nav pills + Add button row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
+
+              {/* ✅ MEMBERS (DEFAULT ACTIVE) */}
+             <button style={S.navPillActive} className="vt-nav-pill-active">
+            Members
+          </button>
+          
             {isAdminLike && (
               <>
                 <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)}>
@@ -891,6 +897,20 @@ const S = {
     fontFamily: "Arial, sans-serif",
     letterSpacing: 0.3,
   },
+  navPillActive: {
+   background: 'rgba(15,137,137,0.3)',
+  border: '1px solid rgba(15,137,137,0.6)',
+  color: '#CDF4F4',
+  borderRadius: 20,
+  padding: '6px 16px',
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: 'default',
+  whiteSpace: 'nowrap',
+  fontFamily: "Arial, sans-serif",
+  letterSpacing: 0.3,
+
+},
   searchWrap: {
     position: 'relative',
     marginBottom: 4,

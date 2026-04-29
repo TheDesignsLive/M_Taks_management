@@ -1,5 +1,6 @@
 // view_teams.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import ViewRoles from './ViewRoles';
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -144,6 +145,9 @@ export default function ViewTeams({ onBack }) {
   const [search, setSearch] = useState('');
   const { toast, showToast } = useToast();
 
+  // Add this new state line
+  const [showRoles, setShowRoles] = useState(false);
+
   // Add modal
   const [addOpen, setAddOpen] = useState(false);
   const [addName, setAddName] = useState('');
@@ -268,6 +272,11 @@ export default function ViewTeams({ onBack }) {
     );
   }
 
+  // Add this logic block before the return statement
+  if (showRoles) {
+    return <ViewRoles onBack={() => setShowRoles(false)} />;
+  }
+
   return (
     <div style={S.page}>
       <style>{CSS}</style>
@@ -303,6 +312,12 @@ export default function ViewTeams({ onBack }) {
             <button style={S.navPillActive} className="vt-nav-pill-active">
               Departments
             </button>
+
+                      {/* Add this button here */}
+            <button style={S.navPill} className="vt-nav-pill" onClick={() => setShowRoles(true)}>
+              Roles
+            </button>
+            
           </div>
           <button style={S.addBtn} className="vt-add-btn" onClick={() => { setAddName(''); setAddError(''); setAddOpen(true); }}>
             <PlusIcon />

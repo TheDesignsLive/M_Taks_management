@@ -13,7 +13,7 @@ import Settings from './routes/settings.js';
 import assign_by_me from './routes/assign_by_me.js';
 import view_member from './routes/view_member.js';
 import teams from './routes/view_teams.js';
-// import roles from './routes/view_roles.js';
+import roles from './routes/view_roles.js';
 
 
 const app = express();
@@ -56,7 +56,7 @@ app.use('/api/sentmail', sentmail);
 app.use('/api/assign_by_me', assign_by_me);
 app.use('/api/view_member', view_member);
 app.use('/api/teams', teams);
-// app.use('/api/roles', roles);
+app.use('/api/roles', roles);
 // app.use('/api/sent-mail', sent_mail);
 app.use(express.static('dist'));
 app.use('/public', express.static('public'));
