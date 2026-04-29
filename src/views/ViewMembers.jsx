@@ -334,10 +334,14 @@ export default function ViewMember() {
       if (addFile) fd.append('profile_pic', addFile);
       const res = await fetch(`${BASE_URL}/api/view_member/add`, { method: 'POST', credentials: 'include', body: fd });
       const json = await res.json();
-      if (json.success) {
+ if (json.success) {
         setAddOpen(false);
         resetAdd();
-        showAlert('Member Added!', json.message, true);
+        showAlert(
+          json.isRequest ? 'Request Submitted!' : 'Member Added!',
+          json.message,
+          true
+        );
         fetchData();
       } else {
         showToast(json.message, 'error');
