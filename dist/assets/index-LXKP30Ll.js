@@ -146,315 +146,39 @@ Error generating stack: `+e.message+`
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .pg-toast.show { bottom: calc(26px + env(safe-area-inset-bottom)); }
   }
-`,et=window.location.hostname===`localhost`||window.location.hostname===`127.0.0.1`?`http://localhost:5000`:`https://m-tms.thedesigns.live`,tt=[{value:`High`,color:`#e53935`},{value:`Medium`,color:`#f59e0b`},{value:`Low`,color:`#1a73e8`}];function nt(){return new Date().toISOString().split(`T`)[0]}function rt(e){if(!e)return`Today`;let t=new Date(e+`T00:00:00`),n=new Date;n.setHours(0,0,0,0);let r=new Date(n);return r.setDate(n.getDate()+1),t.setHours(0,0,0,0),t.getTime()===n.getTime()?`Today`:t.getTime()===r.getTime()?`Tom`:t.toLocaleDateString(`en-IN`,{day:`2-digit`,month:`short`})}function it(e,t){let n=new Date(e,t,1).getDay(),r=new Date(e,t+1,0).getDate(),i=Array(n).fill(null);for(let e=1;e<=r;e++)i.push(e);for(;i.length%7!=0;)i.push(null);return i}function at({value:e,onChange:t,onClose:n}){let r=new Date;r.setHours(0,0,0,0);let i=e?new Date(e+`T00:00:00`):r,[a,o]=(0,_.useState)(i.getFullYear()),[s,c]=(0,_.useState)(i.getMonth()),l=[`Su`,`Mo`,`Tu`,`We`,`Th`,`Fr`,`Sa`],u=[`Jan`,`Feb`,`Mar`,`Apr`,`May`,`Jun`,`Jul`,`Aug`,`Sep`,`Oct`,`Nov`,`Dec`],d=it(a,s);function f(){s===0?(o(e=>e-1),c(11)):c(e=>e-1)}function p(){s===11?(o(e=>e+1),c(0)):c(e=>e+1)}function m(e){if(!e)return;let i=new Date(a,s,e);i.setHours(0,0,0,0),!(i<r)&&(t(`${a}-${String(s+1).padStart(2,`0`)}-${String(e).padStart(2,`0`)}`),n())}return(0,b.jsxs)(`div`,{className:`atb-cal-popup`,onClick:e=>e.stopPropagation(),children:[(0,b.jsxs)(`div`,{className:`atb-cal-hdr`,children:[(0,b.jsx)(`button`,{className:`atb-cal-nav atb-cal-nav-lg`,onClick:f,children:`‹`}),(0,b.jsxs)(`div`,{className:`atb-cal-month-wrap`,children:[(0,b.jsx)(`span`,{className:`atb-cal-month`,children:u[s]}),(0,b.jsx)(`span`,{className:`atb-cal-year`,children:a})]}),(0,b.jsx)(`button`,{className:`atb-cal-nav atb-cal-nav-lg`,onClick:p,children:`›`})]}),(0,b.jsxs)(`div`,{className:`atb-cal-grid`,children:[l.map(e=>(0,b.jsx)(`div`,{className:`atb-cal-wday`,children:e},e)),d.map((t,n)=>{let i=t?new Date(a,s,t):null;i&&i.setHours(0,0,0,0);let o=i&&i<r,c=t&&e===`${a}-${String(s+1).padStart(2,`0`)}-${String(t).padStart(2,`0`)}`,l=i&&i.getTime()===r.getTime();return(0,b.jsx)(`div`,{className:[`atb-cal-day`,t?``:`atb-cal-empty`,o?`atb-cal-past`:``,c?`atb-cal-sel`:``,l&&!c?`atb-cal-today`:``].filter(Boolean).join(` `),onClick:()=>m(t),children:t||``},n)})]})]})}function ot({rect:e,width:t,children:n,forceUp:r}){if(!e)return null;let i=e.top,a=window.innerHeight-e.bottom,o=window.innerWidth<600,s=r||o||a<300&&i>a;return(0,b.jsx)(`div`,{style:{position:`fixed`,left:Math.min(e.left,window.innerWidth-t-8),width:t,zIndex:99999,...s?{bottom:window.innerHeight-e.top+8}:{top:e.bottom+6}},onClick:e=>e.stopPropagation(),children:n})}function st({children:e}){return e}var ct=()=>{let[e,t]=(0,_.useState)(!1),[n,r]=(0,_.useState)(`home`),[i,a]=(0,_.useState)(0),[o,s]=(0,_.useState)(!1),[c,l]=(0,_.useState)(!1),[u,d]=(0,_.useState)(``),[f,p]=(0,_.useState)(``),[m,h]=(0,_.useState)(nt()),[g,v]=(0,_.useState)(`Medium`),[y,S]=(0,_.useState)(`self`),[C,w]=(0,_.useState)(`Myself`),[ee,T]=(0,_.useState)(!1),[E,ne]=(0,_.useState)(!1),[D,re]=(0,_.useState)(!1),[ie,O]=(0,_.useState)(null),[ae,oe]=(0,_.useState)(!1),[k,se]=(0,_.useState)([]),[j,ce]=(0,_.useState)({}),[le,ue]=(0,_.useState)([]),[M,de]=(0,_.useState)(!1),[fe,pe]=(0,_.useState)(``),[me,he]=(0,_.useState)(!1),ge=(0,_.useRef)(null),_e=(0,_.useRef)(null),ve=(0,_.useRef)(null),ye=(0,_.useRef)(null),be=(0,_.useRef)(null),[xe,Se]=(0,_.useState)(null),[Ce,we]=(0,_.useState)(null),[Te,Ee]=(0,_.useState)(null);(0,_.useEffect)(()=>{c&&fetch(`${et}/api/tasks/get-teams`,{credentials:`include`}).then(e=>e.json()).then(e=>{e.success&&se(e.teams||[])}).catch(()=>{})},[c]),(0,_.useEffect)(()=>{c&&setTimeout(()=>ge.current?.focus(),120)},[c]),(0,_.useEffect)(()=>{function e(e){_e.current&&!_e.current.contains(e.target)&&(T(!1),ne(!1),re(!1))}return document.addEventListener(`mousedown`,e),()=>document.removeEventListener(`mousedown`,e)},[]);function De(){T(!1),ne(!1),re(!1)}function Oe(e){pe(e),setTimeout(()=>pe(``),2800)}async function ke(e){if(!j[e])try{let t=await(await fetch(`${et}/api/tasks/get-team-members/${e}`,{credentials:`include`})).json();t.success&&ce(n=>({...n,[e]:t.members}))}catch{}}async function je(){if(!le.length)try{let e=await(await fetch(`${et}/api/tasks/get-other-employees`,{credentials:`include`})).json();e.success&&ue(e.members||[])}catch{}}function N(e,t){S(e),w(t),re(!1),O(null),oe(!1)}function Me(){d(``),p(``),h(nt()),v(`Medium`),S(`self`),w(`Myself`),he(!1),T(!1),ne(!1),re(!1),O(null),oe(!1)}async function Ne(){if(!u.trim()){he(!0),setTimeout(()=>he(!1),600),ge.current?.focus();return}de(!0);try{let e=await(await fetch(`${et}/api/tasks/add-task`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({title:u.trim(),description:f.trim()||null,date:m,priority:g,assignedTo:y})})).json();e.success?(Oe(`✓ Task added successfully!`),Me(),l(!1)):Oe(e.message||`Failed to add task.`)}catch{Oe(`Network error. Please try again.`)}de(!1)}function P(e){e.key===`Enter`&&!e.shiftKey&&(e.preventDefault(),Ne())}let Fe=()=>t(!e),Ie=()=>{switch(n){case`home`:return(0,b.jsx)(x,{});case`notifications`:return(0,b.jsx)(te,{});case`assigned`:return(0,b.jsx)(A,{});case`members`:return(0,b.jsx)(Ae,{});case`settings`:return(0,b.jsx)(Pe,{});case`profile`:return(0,b.jsx)(ze,{});default:return(0,b.jsx)(x,{})}},Le=async()=>{try{(await(await fetch(`${et}/api/auth/logout`,{method:`POST`,credentials:`include`})).json()).status===`success`?window.location.href=`/`:alert(`Logout failed. Please try again.`)}catch(e){console.error(`Logout Error:`,e),window.location.href=`/`}},Re=tt.find(e=>e.value===g)?.color||`#f59e0b`;return(0,b.jsxs)(`div`,{style:L.layoutContainer,children:[(0,b.jsx)(`style`,{children:lt}),(0,b.jsxs)(`header`,{style:L.topBar,children:[(0,b.jsxs)(`div`,{style:L.menuIcon,onClick:Fe,children:[(0,b.jsx)(`div`,{className:`bar`}),(0,b.jsx)(`div`,{className:`bar`}),(0,b.jsx)(`div`,{className:`bar`})]}),(0,b.jsx)(`div`,{style:L.brandName,children:`TMS Workspace`}),(0,b.jsx)(`div`,{style:{width:`30px`}})]}),(0,b.jsxs)(`div`,{className:`drawer ${e?`open`:``}`,children:[(0,b.jsx)(`div`,{style:L.drawerHeader,children:(0,b.jsx)(`h3`,{children:`Menu`})}),(0,b.jsxs)(`nav`,{style:L.navLinks,children:[[{key:`home`,icon:`fa-house`,label:`Home`},{key:`notifications`,icon:`fa-bell`,label:`Notifications`,badge:i},{key:`assigned`,icon:`fa-file-signature`,label:`Assigned By Me`},{key:`members`,icon:`fa-users`,label:`View Members`},{key:`settings`,icon:`fa-gear`,label:`Settings`},{key:`profile`,icon:`fa-user`,label:`Profile`}].map(({key:e,icon:t,label:i,badge:a})=>(0,b.jsxs)(`div`,{style:n===e?L.activeLink:L.navItem,onClick:()=>{r(e),Fe()},children:[(0,b.jsx)(`i`,{className:`fa-solid ${t}`}),` `,i,a>0&&(0,b.jsx)(`span`,{style:L.badge,children:a})]},e)),(0,b.jsxs)(`div`,{style:L.logoutItem,onClick:()=>{s(!0),t(!1)},children:[(0,b.jsx)(`i`,{className:`fa-solid fa-right-from-bracket`}),` Logout`]})]})]}),e&&(0,b.jsx)(`div`,{style:L.overlay,onClick:Fe}),(0,b.jsx)(`main`,{style:L.mainContent,children:Ie()}),(0,b.jsx)(`div`,{style:L.fab,className:`atb-fab-btn`,onClick:()=>l(!0),children:(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`white`,strokeWidth:`2.8`,width:`26`,height:`26`,children:[(0,b.jsx)(`line`,{x1:`12`,y1:`5`,x2:`12`,y2:`19`}),(0,b.jsx)(`line`,{x1:`5`,y1:`12`,x2:`19`,y2:`12`})]})}),c&&(0,b.jsx)(`div`,{className:`atb-backdrop`,onClick:()=>{De(),l(!1)},children:(0,b.jsxs)(`div`,{className:`atb-modal`,ref:_e,onClick:e=>e.stopPropagation(),children:[(0,b.jsx)(`div`,{className:`atb-handle`}),(0,b.jsxs)(`div`,{className:`atb-mhdr`,children:[(0,b.jsxs)(`div`,{className:`atb-mtitle`,children:[(0,b.jsx)(`div`,{className:`atb-mtitle-icon`,children:(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#fff`,strokeWidth:`2.5`,width:`16`,height:`16`,children:[(0,b.jsx)(`line`,{x1:`12`,y1:`5`,x2:`12`,y2:`19`}),(0,b.jsx)(`line`,{x1:`5`,y1:`12`,x2:`19`,y2:`12`})]})}),`Add New Task`]}),(0,b.jsx)(`button`,{className:`atb-xbtn`,onClick:()=>{Me(),l(!1)},children:`✕`})]}),(0,b.jsxs)(`div`,{className:`atb-field`,children:[(0,b.jsx)(`label`,{className:`atb-label`,children:`Task Title *`}),(0,b.jsx)(`input`,{ref:ge,className:`atb-input${me?` error`:``}`,placeholder:`What needs to be done?`,value:u,onChange:e=>d(e.target.value),onKeyDown:P,maxLength:200})]}),(0,b.jsxs)(`div`,{className:`atb-field`,children:[(0,b.jsxs)(`label`,{className:`atb-label`,children:[`Description`,` `,(0,b.jsx)(`span`,{style:{color:`#aaa`,fontWeight:400,textTransform:`none`,fontSize:`10px`},children:`(optional)`})]}),(0,b.jsx)(`textarea`,{className:`atb-input atb-textarea`,placeholder:`Add more details...`,value:f,onChange:e=>p(e.target.value),rows:2})]}),(0,b.jsxs)(`div`,{className:`atb-pills-row`,children:[(0,b.jsx)(st,{onOpen:e=>Se(e),isOpen:ee,children:(0,b.jsxs)(`div`,{className:`atb-pill`,onClick:()=>{let e=ve.current?.getBoundingClientRect();Se(e),T(e=>!e),ne(!1),re(!1)},ref:ve,children:[(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#14b8a6`,strokeWidth:`2`,width:`15`,height:`15`,children:[(0,b.jsx)(`rect`,{x:`3`,y:`4`,width:`18`,height:`18`,rx:`3`}),(0,b.jsx)(`line`,{x1:`16`,y1:`2`,x2:`16`,y2:`6`}),(0,b.jsx)(`line`,{x1:`8`,y1:`2`,x2:`8`,y2:`6`}),(0,b.jsx)(`line`,{x1:`3`,y1:`10`,x2:`21`,y2:`10`})]}),(0,b.jsx)(`span`,{className:`atb-pill-text`,children:rt(m)})]})}),(0,b.jsx)(st,{onOpen:e=>we(e),isOpen:E,children:(0,b.jsxs)(`div`,{className:`atb-pill`,onClick:()=>{let e=ye.current?.getBoundingClientRect();we(e),ne(e=>!e),T(!1),re(!1)},ref:ye,children:[(0,b.jsx)(`span`,{className:`atb-dot`,style:{background:Re}}),(0,b.jsx)(`span`,{className:`atb-pill-text`,style:{color:Re},children:g}),(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#888`,strokeWidth:`2.5`,width:`11`,height:`11`,children:(0,b.jsx)(`path`,{d:`M6 9l6 6 6-6`})})]})}),(0,b.jsx)(`div`,{style:{position:`relative`,flex:1},children:(0,b.jsxs)(`div`,{className:`atb-pill atb-pill-assign`,ref:be,onClick:()=>{let e=be.current?.getBoundingClientRect();Ee(e),re(e=>!e),T(!1),ne(!1)},children:[(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#14b8a6`,strokeWidth:`2`,width:`15`,height:`15`,children:[(0,b.jsx)(`circle`,{cx:`12`,cy:`8`,r:`4`}),(0,b.jsx)(`path`,{d:`M4 20c0-4 3.6-7 8-7s8 3 8 7`})]}),(0,b.jsx)(`span`,{className:`atb-pill-text`,style:{flex:1,overflow:`hidden`,textOverflow:`ellipsis`,whiteSpace:`nowrap`},children:C}),(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#888`,strokeWidth:`2.5`,width:`11`,height:`11`,children:(0,b.jsx)(`path`,{d:`M6 9l6 6 6-6`})})]})}),(0,b.jsx)(`button`,{className:`atb-send-btn`,onClick:Ne,disabled:M,title:`Add Task`,children:M?(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`white`,strokeWidth:`2.5`,width:`18`,height:`18`,className:`atb-spin`,children:(0,b.jsx)(`circle`,{cx:`12`,cy:`12`,r:`10`,strokeDasharray:`30`,strokeDashoffset:`10`})}):(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#fff`,strokeWidth:`2.5`,width:`18`,height:`18`,children:[(0,b.jsx)(`line`,{x1:`22`,y1:`2`,x2:`11`,y2:`13`}),(0,b.jsx)(`polygon`,{points:`22 2 15 22 11 13 2 9 22 2`})]})})]}),ee&&xe&&(0,b.jsx)(ot,{rect:xe,width:272,forceUp:!0,children:(0,b.jsx)(at,{value:m,onChange:h,onClose:()=>T(!1)})}),E&&Ce&&(0,b.jsx)(ot,{rect:Ce,width:170,children:(0,b.jsx)(`div`,{className:`atb-drop-portal`,children:tt.map(e=>(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>{v(e.value),ne(!1)},style:{fontWeight:g===e.value?700:400},children:[(0,b.jsx)(`span`,{className:`atb-dot`,style:{background:e.color}}),(0,b.jsx)(`span`,{style:{flex:1,color:e.color},children:e.value}),g===e.value&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]},e.value))})}),D&&Te&&(0,b.jsx)(ot,{rect:Te,width:220,children:(0,b.jsxs)(`div`,{className:`atb-drop-portal`,children:[(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>N(`self`,`Myself`),children:[(0,b.jsx)(`span`,{children:`👤`}),(0,b.jsx)(`span`,{style:{flex:1},children:`Myself`}),y===`self`&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]}),(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>N(`all`,`All Members`),children:[(0,b.jsx)(`span`,{children:`👥`}),(0,b.jsx)(`span`,{style:{flex:1},children:`All Members`}),y===`all`&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]}),k.length>0&&(0,b.jsx)(`div`,{className:`atb-drop-sep`}),k.map(e=>(0,b.jsxs)(`div`,{children:[(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>{O(t=>t===e.id?null:e.id),ke(e.id),oe(!1)},children:[(0,b.jsx)(`span`,{children:`🏷`}),(0,b.jsx)(`span`,{style:{flex:1},children:e.name}),(0,b.jsx)(`span`,{style:{color:ie===e.id?`#14b8a6`:`#bbb`,fontSize:12,transition:`transform 0.2s`,display:`inline-block`,transform:ie===e.id?`rotate(90deg)`:`rotate(0deg)`},children:`›`})]}),ie===e.id&&(0,b.jsxs)(`div`,{className:`atb-sub-inline`,children:[(0,b.jsxs)(`div`,{className:`atb-drop-item atb-sub-hdr-inline`,onClick:()=>N(`team_${e.id}`,`All ${e.name}`),children:[(0,b.jsx)(`span`,{style:{color:`#14b8a6`,marginRight:6},children:`↳`}),` All `,e.name,y===`team_${e.id}`&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`,marginLeft:`auto`},children:`✓`})]}),(j[e.id]||[]).map(e=>(0,b.jsxs)(`div`,{className:`atb-drop-item atb-sub-indent`,onClick:()=>N(String(e.id),e.name),children:[(0,b.jsx)(`span`,{style:{flex:1},children:e.name}),y===String(e.id)&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]},e.id))]})]},e.id)),(0,b.jsx)(`div`,{className:`atb-drop-sep`}),(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>{oe(e=>!e),O(null),je()},children:[(0,b.jsx)(`span`,{children:`🔖`}),(0,b.jsx)(`span`,{style:{flex:1},children:`Other Employees`}),(0,b.jsx)(`span`,{style:{color:ae?`#14b8a6`:`#bbb`,fontSize:12,display:`inline-block`,transform:ae?`rotate(90deg)`:`rotate(0deg)`,transition:`transform 0.2s`},children:`›`})]}),ae&&(0,b.jsx)(`div`,{className:`atb-sub-inline`,children:le.length===0?(0,b.jsx)(`div`,{className:`atb-drop-item`,style:{color:`#aaa`},children:`None found`}):le.map(e=>(0,b.jsxs)(`div`,{className:`atb-drop-item atb-sub-indent`,onClick:()=>N(String(e.id),e.name),children:[(0,b.jsx)(`span`,{style:{flex:1},children:e.name}),y===String(e.id)&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]},e.id))})]})})]})}),o&&(0,b.jsx)(`div`,{className:`modal-overlay`,children:(0,b.jsxs)(`div`,{className:`modal-card`,children:[(0,b.jsx)(`i`,{className:`fa-solid fa-circle-exclamation`,style:{fontSize:`40px`,color:`#ef4444`,marginBottom:`15px`}}),(0,b.jsx)(`h3`,{children:`Confirm Logout`}),(0,b.jsx)(`p`,{children:`Are you sure you want to destroy your session and exit?`}),(0,b.jsxs)(`div`,{style:L.modalButtons,children:[(0,b.jsx)(`button`,{style:L.btnCancel,onClick:()=>s(!1),children:`Cancel`}),(0,b.jsx)(`button`,{style:L.btnLogout,onClick:Le,children:`Logout`})]})]})}),(0,b.jsx)(`div`,{className:`atb-toast${fe?` show`:``}`,children:fe})]})},L={layoutContainer:{height:`100vh`,width:`100vw`,background:`#f8fafc`,display:`flex`,flexDirection:`column`,overflow:`hidden`,position:`relative`},topBar:{height:`60px`,background:`#095959`,display:`flex`,alignItems:`center`,justifyContent:`space-between`,padding:`0 20px`,color:`white`,boxShadow:`0 2px 10px rgba(0,0,0,0.2)`,zIndex:100,flexShrink:0},menuIcon:{cursor:`pointer`,display:`flex`,flexDirection:`column`,gap:`4px`},brandName:{fontSize:`18px`,fontWeight:`700`,letterSpacing:`1px`,fontFamily:`Segoe UI, sans-serif`},mainContent:{flex:1,overflowY:`auto`,position:`relative`,background:`#f1f5f9`},page:{padding:`20px`,textAlign:`center`,color:`#334155`},drawerHeader:{padding:`20px`,background:`#095959`,color:`white`,textAlign:`center`},navLinks:{display:`flex`,flexDirection:`column`},navItem:{padding:`16px 20px`,color:`#475569`,fontSize:`15px`,cursor:`pointer`,borderBottom:`1px solid #f1f5f9`,display:`flex`,alignItems:`center`,gap:`15px`,transition:`0.2s`},activeLink:{padding:`16px 20px`,color:`#095959`,background:`#f0fdfa`,fontSize:`15px`,fontWeight:`700`,borderLeft:`5px solid #095959`,display:`flex`,alignItems:`center`,gap:`15px`},logoutItem:{padding:`16px 20px`,color:`#ef4444`,cursor:`pointer`,display:`flex`,alignItems:`center`,gap:`15px`,fontWeight:`600`},badge:{background:`#ff3b3b`,color:`white`,fontSize:`10px`,padding:`2px 6px`,borderRadius:`10px`,marginLeft:`auto`},overlay:{position:`fixed`,inset:0,background:`rgba(0,0,0,0.5)`,backdropFilter:`blur(2px)`,zIndex:900},fab:{position:`fixed`,bottom:`25px`,right:`25px`,width:`58px`,height:`58px`,background:`linear-gradient(135deg, #095959 0%, #14b8a6 100%)`,color:`white`,borderRadius:`50%`,display:`flex`,justifyContent:`center`,alignItems:`center`,boxShadow:`0 5px 20px rgba(9,89,89,0.45)`,cursor:`pointer`,zIndex:800,transition:`transform 0.2s, box-shadow 0.2s`},modalButtons:{display:`flex`,gap:`10px`,marginTop:`25px`},btnCancel:{flex:1,padding:`12px`,border:`none`,borderRadius:`8px`,background:`#f1f5f9`,color:`#475569`,fontWeight:`600`,cursor:`pointer`},btnLogout:{flex:1,padding:`12px`,border:`none`,borderRadius:`8px`,background:`#ef4444`,color:`white`,fontWeight:`600`,cursor:`pointer`}},lt=`
-  /* ── Drawer ── */
-  .drawer {
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 280px;
-    height: 100%;
-    background: white;
-    z-index: 1000;
-    transition: 0.3s ease-in-out;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.1);
-  }
+`,et=window.location.hostname===`localhost`||window.location.hostname===`127.0.0.1`?`http://localhost:5000`:`https://m-tms.thedesigns.live`,tt=[{value:`High`,color:`#e53935`},{value:`Medium`,color:`#f59e0b`},{value:`Low`,color:`#1a73e8`}];function nt(){return new Date().toISOString().split(`T`)[0]}function rt(e){if(!e)return`Today`;let t=new Date(e+`T00:00:00`),n=new Date;n.setHours(0,0,0,0);let r=new Date(n);return r.setDate(n.getDate()+1),t.setHours(0,0,0,0),t.getTime()===n.getTime()?`Today`:t.getTime()===r.getTime()?`Tom`:t.toLocaleDateString(`en-IN`,{day:`2-digit`,month:`short`})}function it(e,t){let n=new Date(e,t,1).getDay(),r=new Date(e,t+1,0).getDate(),i=Array(n).fill(null);for(let e=1;e<=r;e++)i.push(e);for(;i.length%7!=0;)i.push(null);return i}function at({value:e,onChange:t,onClose:n}){let r=new Date;r.setHours(0,0,0,0);let i=e?new Date(e+`T00:00:00`):r,[a,o]=(0,_.useState)(i.getFullYear()),[s,c]=(0,_.useState)(i.getMonth()),l=[`Su`,`Mo`,`Tu`,`We`,`Th`,`Fr`,`Sa`],u=[`Jan`,`Feb`,`Mar`,`Apr`,`May`,`Jun`,`Jul`,`Aug`,`Sep`,`Oct`,`Nov`,`Dec`],d=it(a,s);function f(){s===0?(o(e=>e-1),c(11)):c(e=>e-1)}function p(){s===11?(o(e=>e+1),c(0)):c(e=>e+1)}function m(e){if(!e)return;let i=new Date(a,s,e);i.setHours(0,0,0,0),!(i<r)&&(t(`${a}-${String(s+1).padStart(2,`0`)}-${String(e).padStart(2,`0`)}`),n())}return(0,b.jsxs)(`div`,{className:`atb-cal-popup`,onClick:e=>e.stopPropagation(),children:[(0,b.jsxs)(`div`,{className:`atb-cal-hdr`,children:[(0,b.jsx)(`button`,{className:`atb-cal-nav atb-cal-nav-lg`,onClick:f,children:`‹`}),(0,b.jsxs)(`div`,{className:`atb-cal-month-wrap`,children:[(0,b.jsx)(`span`,{className:`atb-cal-month`,children:u[s]}),(0,b.jsx)(`span`,{className:`atb-cal-year`,children:a})]}),(0,b.jsx)(`button`,{className:`atb-cal-nav atb-cal-nav-lg`,onClick:p,children:`›`})]}),(0,b.jsxs)(`div`,{className:`atb-cal-grid`,children:[l.map(e=>(0,b.jsx)(`div`,{className:`atb-cal-wday`,children:e},e)),d.map((t,n)=>{let i=t?new Date(a,s,t):null;i&&i.setHours(0,0,0,0);let o=i&&i<r,c=t&&e===`${a}-${String(s+1).padStart(2,`0`)}-${String(t).padStart(2,`0`)}`,l=i&&i.getTime()===r.getTime();return(0,b.jsx)(`div`,{className:[`atb-cal-day`,t?``:`atb-cal-empty`,o?`atb-cal-past`:``,c?`atb-cal-sel`:``,l&&!c?`atb-cal-today`:``].filter(Boolean).join(` `),onClick:()=>m(t),children:t||``},n)})]})]})}function ot({rect:e,width:t,children:n,forceUp:r}){if(!e)return null;let i=e.top,a=window.innerHeight-e.bottom,o=window.innerWidth<600,s=r||o||a<300&&i>a;return(0,b.jsx)(`div`,{style:{position:`fixed`,left:Math.min(e.left,window.innerWidth-t-8),width:t,zIndex:99999,...s?{bottom:window.innerHeight-e.top+8}:{top:e.bottom+6}},onClick:e=>e.stopPropagation(),children:n})}function st({children:e}){return e}var ct=()=>{let[e,t]=(0,_.useState)(!1),[n,r]=(0,_.useState)(`home`),[i,a]=(0,_.useState)(0),[o,s]=(0,_.useState)(!1),[c,l]=(0,_.useState)(!1),[u,d]=(0,_.useState)(``),[f,p]=(0,_.useState)(``),[m,h]=(0,_.useState)(nt()),[g,v]=(0,_.useState)(`Medium`),[y,S]=(0,_.useState)(`self`),[C,w]=(0,_.useState)(`Myself`),[ee,T]=(0,_.useState)(!1),[E,ne]=(0,_.useState)(!1),[D,re]=(0,_.useState)(!1),[ie,O]=(0,_.useState)(null),[ae,oe]=(0,_.useState)(!1),[k,se]=(0,_.useState)([]),[j,ce]=(0,_.useState)({}),[le,ue]=(0,_.useState)([]),[M,de]=(0,_.useState)(!1),[fe,pe]=(0,_.useState)(``),[me,he]=(0,_.useState)(!1),ge=(0,_.useRef)(null),_e=(0,_.useRef)(null),ve=(0,_.useRef)(null),ye=(0,_.useRef)(null),be=(0,_.useRef)(null),[xe,Se]=(0,_.useState)(null),[Ce,we]=(0,_.useState)(null),[Te,Ee]=(0,_.useState)(null);(0,_.useEffect)(()=>{c&&fetch(`${et}/api/tasks/get-teams`,{credentials:`include`}).then(e=>e.json()).then(e=>{e.success&&se(e.teams||[])}).catch(()=>{})},[c]),(0,_.useEffect)(()=>{c&&setTimeout(()=>ge.current?.focus(),120)},[c]),(0,_.useEffect)(()=>{function e(e){_e.current&&!_e.current.contains(e.target)&&(T(!1),ne(!1),re(!1))}return document.addEventListener(`mousedown`,e),()=>document.removeEventListener(`mousedown`,e)},[]);function De(){T(!1),ne(!1),re(!1)}function Oe(e){pe(e),setTimeout(()=>pe(``),2800)}async function ke(e){if(!j[e])try{let t=await(await fetch(`${et}/api/tasks/get-team-members/${e}`,{credentials:`include`})).json();t.success&&ce(n=>({...n,[e]:t.members}))}catch{}}async function je(){if(!le.length)try{let e=await(await fetch(`${et}/api/tasks/get-other-employees`,{credentials:`include`})).json();e.success&&ue(e.members||[])}catch{}}function N(e,t){S(e),w(t),re(!1),O(null),oe(!1)}function Me(){d(``),p(``),h(nt()),v(`Medium`),S(`self`),w(`Myself`),he(!1),T(!1),ne(!1),re(!1),O(null),oe(!1)}async function Ne(){if(!u.trim()){he(!0),setTimeout(()=>he(!1),600),ge.current?.focus();return}de(!0);try{let e=await(await fetch(`${et}/api/tasks/add-task`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({title:u.trim(),description:f.trim()||null,date:m,priority:g,assignedTo:y})})).json();e.success?(Oe(`✓ Task added successfully!`),Me(),l(!1)):Oe(e.message||`Failed to add task.`)}catch{Oe(`Network error. Please try again.`)}de(!1)}function P(e){e.key===`Enter`&&!e.shiftKey&&(e.preventDefault(),Ne())}let Fe=()=>t(!e),Ie=()=>{switch(n){case`home`:return(0,b.jsx)(x,{});case`notifications`:return(0,b.jsx)(te,{});case`assigned`:return(0,b.jsx)(A,{});case`members`:return(0,b.jsx)(Ae,{});case`settings`:return(0,b.jsx)(Pe,{});case`profile`:return(0,b.jsx)(ze,{});default:return(0,b.jsx)(x,{})}},Le=async()=>{try{(await(await fetch(`${et}/api/auth/logout`,{method:`POST`,credentials:`include`})).json()).status===`success`?window.location.href=`/`:alert(`Logout failed. Please try again.`)}catch(e){console.error(`Logout Error:`,e),window.location.href=`/`}},Re=tt.find(e=>e.value===g)?.color||`#f59e0b`;return(0,b.jsxs)(`div`,{style:L.layoutContainer,children:[(0,b.jsx)(`style`,{children:lt}),(0,b.jsxs)(`header`,{style:L.topBar,children:[(0,b.jsxs)(`div`,{style:L.menuIcon,onClick:Fe,children:[(0,b.jsx)(`div`,{className:`bar`}),(0,b.jsx)(`div`,{className:`bar`}),(0,b.jsx)(`div`,{className:`bar`})]}),(0,b.jsx)(`div`,{style:L.brandName,children:`TMS Workspace`}),(0,b.jsx)(`div`,{style:{width:`30px`}})]}),(0,b.jsxs)(`div`,{className:`drawer ${e?`open`:``}`,children:[(0,b.jsx)(`div`,{style:L.drawerHeader,children:(0,b.jsx)(`h3`,{children:`Menu`})}),(0,b.jsxs)(`nav`,{style:L.navLinks,children:[[{key:`home`,icon:`fa-house`,label:`Home`},{key:`notifications`,icon:`fa-bell`,label:`Notifications`,badge:i},{key:`assigned`,icon:`fa-file-signature`,label:`Assigned By Me`},{key:`members`,icon:`fa-users`,label:`View Members`},{key:`settings`,icon:`fa-gear`,label:`Settings`},{key:`profile`,icon:`fa-circle-user`,label:`Profile`}].map(({key:e,icon:t,label:i,badge:a})=>(0,b.jsxs)(`div`,{style:n===e?L.activeLink:L.navItem,onClick:()=>{r(e),Fe()},children:[(0,b.jsx)(`i`,{className:`fa-solid ${t} nav-icon`}),(0,b.jsx)(`span`,{style:{marginLeft:`10px`},children:i}),a>0&&(0,b.jsx)(`span`,{style:L.badge,children:a})]},e)),(0,b.jsxs)(`div`,{style:L.logoutItem,onClick:()=>{s(!0),t(!1)},children:[(0,b.jsx)(`i`,{className:`fa-solid fa-right-from-bracket nav-icon`}),(0,b.jsx)(`span`,{style:{marginLeft:`10px`},children:`Logout`})]})]})]}),e&&(0,b.jsx)(`div`,{style:L.overlay,onClick:Fe}),(0,b.jsx)(`main`,{style:L.mainContent,children:Ie()}),(0,b.jsx)(`div`,{style:L.fab,className:`atb-fab-btn`,onClick:()=>l(!0),children:(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`white`,strokeWidth:`2.8`,width:`26`,height:`26`,children:[(0,b.jsx)(`line`,{x1:`12`,y1:`5`,x2:`12`,y2:`19`}),(0,b.jsx)(`line`,{x1:`5`,y1:`12`,x2:`19`,y2:`12`})]})}),c&&(0,b.jsx)(`div`,{className:`atb-backdrop`,onClick:()=>{De(),l(!1)},children:(0,b.jsxs)(`div`,{className:`atb-modal`,ref:_e,onClick:e=>e.stopPropagation(),children:[(0,b.jsx)(`div`,{className:`atb-handle`}),(0,b.jsxs)(`div`,{className:`atb-mhdr`,children:[(0,b.jsxs)(`div`,{className:`atb-mtitle`,children:[(0,b.jsx)(`div`,{className:`atb-mtitle-icon`,children:(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#fff`,strokeWidth:`2.5`,width:`16`,height:`16`,children:[(0,b.jsx)(`line`,{x1:`12`,y1:`5`,x2:`12`,y2:`19`}),(0,b.jsx)(`line`,{x1:`5`,y1:`12`,x2:`19`,y2:`12`})]})}),`Add New Task`]}),(0,b.jsx)(`button`,{className:`atb-xbtn`,onClick:()=>{Me(),l(!1)},children:`✕`})]}),(0,b.jsxs)(`div`,{className:`atb-field`,children:[(0,b.jsx)(`label`,{className:`atb-label`,children:`Task Title *`}),(0,b.jsx)(`input`,{ref:ge,className:`atb-input${me?` error`:``}`,placeholder:`What needs to be done?`,value:u,onChange:e=>d(e.target.value),onKeyDown:P,maxLength:200})]}),(0,b.jsxs)(`div`,{className:`atb-field`,children:[(0,b.jsxs)(`label`,{className:`atb-label`,children:[`Description `,(0,b.jsx)(`span`,{style:{color:`#aaa`,fontWeight:400,textTransform:`none`,fontSize:`10px`},children:`(optional)`})]}),(0,b.jsx)(`textarea`,{className:`atb-input atb-textarea`,placeholder:`Add more details...`,value:f,onChange:e=>p(e.target.value),rows:2})]}),(0,b.jsxs)(`div`,{className:`atb-pills-row`,children:[(0,b.jsx)(st,{onOpen:e=>Se(e),isOpen:ee,children:(0,b.jsxs)(`div`,{className:`atb-pill`,onClick:()=>{let e=ve.current?.getBoundingClientRect();Se(e),T(e=>!e),ne(!1),re(!1)},ref:ve,children:[(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#14b8a6`,strokeWidth:`2`,width:`15`,height:`15`,children:[(0,b.jsx)(`rect`,{x:`3`,y:`4`,width:`18`,height:`18`,rx:`3`}),(0,b.jsx)(`line`,{x1:`16`,y1:`2`,x2:`16`,y2:`6`}),(0,b.jsx)(`line`,{x1:`8`,y1:`2`,x2:`8`,y2:`6`}),(0,b.jsx)(`line`,{x1:`3`,y1:`10`,x2:`21`,y2:`10`})]}),(0,b.jsx)(`span`,{className:`atb-pill-text`,children:rt(m)})]})}),(0,b.jsx)(st,{onOpen:e=>we(e),isOpen:E,children:(0,b.jsxs)(`div`,{className:`atb-pill`,onClick:()=>{let e=ye.current?.getBoundingClientRect();we(e),ne(e=>!e),T(!1),re(!1)},ref:ye,children:[(0,b.jsx)(`span`,{className:`atb-dot`,style:{background:Re}}),(0,b.jsx)(`span`,{className:`atb-pill-text`,style:{color:Re},children:g}),(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#888`,strokeWidth:`2.5`,width:`11`,height:`11`,children:(0,b.jsx)(`path`,{d:`M6 9l6 6 6-6`})})]})}),(0,b.jsx)(`div`,{style:{position:`relative`,flex:1},children:(0,b.jsxs)(`div`,{className:`atb-pill atb-pill-assign`,ref:be,onClick:()=>{let e=be.current?.getBoundingClientRect();Ee(e),re(e=>!e),T(!1),ne(!1)},children:[(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#14b8a6`,strokeWidth:`2`,width:`15`,height:`15`,children:[(0,b.jsx)(`circle`,{cx:`12`,cy:`8`,r:`4`}),(0,b.jsx)(`path`,{d:`M4 20c0-4 3.6-7 8-7s8 3 8 7`})]}),(0,b.jsx)(`span`,{className:`atb-pill-text`,style:{flex:1,overflow:`hidden`,textOverflow:`ellipsis`,whiteSpace:`nowrap`},children:C}),(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#888`,strokeWidth:`2.5`,width:`11`,height:`11`,children:(0,b.jsx)(`path`,{d:`M6 9l6 6 6-6`})})]})}),(0,b.jsx)(`button`,{className:`atb-send-btn`,onClick:Ne,disabled:M,children:M?(0,b.jsx)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`white`,strokeWidth:`2.5`,width:`18`,height:`18`,className:`atb-spin`,children:(0,b.jsx)(`circle`,{cx:`12`,cy:`12`,r:`10`,strokeDasharray:`30`,strokeDashoffset:`10`})}):(0,b.jsxs)(`svg`,{viewBox:`0 0 24 24`,fill:`none`,stroke:`#fff`,strokeWidth:`2.5`,width:`18`,height:`18`,children:[(0,b.jsx)(`line`,{x1:`22`,y1:`2`,x2:`11`,y2:`13`}),(0,b.jsx)(`polygon`,{points:`22 2 15 22 11 13 2 9 22 2`})]})})]}),ee&&xe&&(0,b.jsx)(ot,{rect:xe,width:272,forceUp:!0,children:(0,b.jsx)(at,{value:m,onChange:h,onClose:()=>T(!1)})}),E&&Ce&&(0,b.jsx)(ot,{rect:Ce,width:170,children:(0,b.jsx)(`div`,{className:`atb-drop-portal`,children:tt.map(e=>(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>{v(e.value),ne(!1)},style:{fontWeight:g===e.value?700:400},children:[(0,b.jsx)(`span`,{className:`atb-dot`,style:{background:e.color}}),(0,b.jsx)(`span`,{style:{flex:1,color:e.color},children:e.value}),g===e.value&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]},e.value))})}),D&&Te&&(0,b.jsx)(ot,{rect:Te,width:220,children:(0,b.jsxs)(`div`,{className:`atb-drop-portal`,children:[(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>N(`self`,`Myself`),children:[(0,b.jsx)(`span`,{children:`👤`}),(0,b.jsx)(`span`,{style:{flex:1},children:`Myself`}),y===`self`&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]}),(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>N(`all`,`All Members`),children:[(0,b.jsx)(`span`,{children:`👥`}),(0,b.jsx)(`span`,{style:{flex:1},children:`All Members`}),y===`all`&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]}),k.length>0&&(0,b.jsx)(`div`,{className:`atb-drop-sep`}),k.map(e=>(0,b.jsxs)(`div`,{children:[(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>{O(t=>t===e.id?null:e.id),ke(e.id),oe(!1)},children:[(0,b.jsx)(`span`,{children:`🏷`}),(0,b.jsx)(`span`,{style:{flex:1},children:e.name}),(0,b.jsx)(`span`,{style:{color:ie===e.id?`#14b8a6`:`#bbb`,fontSize:12,transition:`transform 0.2s`,display:`inline-block`,transform:ie===e.id?`rotate(90deg)`:`rotate(0deg)`},children:`›`})]}),ie===e.id&&(0,b.jsxs)(`div`,{className:`atb-sub-inline`,children:[(0,b.jsxs)(`div`,{className:`atb-drop-item atb-sub-hdr-inline`,onClick:()=>N(`team_${e.id}`,`All ${e.name}`),children:[(0,b.jsx)(`span`,{style:{color:`#14b8a6`,marginRight:6},children:`↳`}),` All `,e.name,y===`team_${e.id}`&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`,marginLeft:`auto`},children:`✓`})]}),(j[e.id]||[]).map(e=>(0,b.jsxs)(`div`,{className:`atb-drop-item atb-sub-indent`,onClick:()=>N(String(e.id),e.name),children:[(0,b.jsx)(`span`,{style:{flex:1},children:e.name}),y===String(e.id)&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]},e.id))]})]},e.id)),(0,b.jsx)(`div`,{className:`atb-drop-sep`}),(0,b.jsxs)(`div`,{className:`atb-drop-item`,onClick:()=>{oe(e=>!e),O(null),je()},children:[(0,b.jsx)(`span`,{children:`🔖`}),(0,b.jsx)(`span`,{style:{flex:1},children:`Other Employees`}),(0,b.jsx)(`span`,{style:{color:ae?`#14b8a6`:`#bbb`,fontSize:12,display:`inline-block`,transform:ae?`rotate(90deg)`:`rotate(0deg)`,transition:`transform 0.2s`},children:`›`})]}),ae&&(0,b.jsx)(`div`,{className:`atb-sub-inline`,children:le.length===0?(0,b.jsx)(`div`,{className:`atb-drop-item`,style:{color:`#aaa`},children:`None found`}):le.map(e=>(0,b.jsxs)(`div`,{className:`atb-drop-item atb-sub-indent`,onClick:()=>N(String(e.id),e.name),children:[(0,b.jsx)(`span`,{style:{flex:1},children:e.name}),y===String(e.id)&&(0,b.jsx)(`span`,{style:{color:`#14b8a6`},children:`✓`})]},e.id))})]})})]})}),o&&(0,b.jsx)(`div`,{className:`modal-overlay`,children:(0,b.jsxs)(`div`,{className:`modal-card`,children:[(0,b.jsx)(`i`,{className:`fa-solid fa-circle-exclamation`,style:{fontSize:`40px`,color:`#ef4444`,marginBottom:`15px`}}),(0,b.jsx)(`h3`,{children:`Confirm Logout`}),(0,b.jsx)(`p`,{children:`Are you sure you want to destroy your session and exit?`}),(0,b.jsxs)(`div`,{style:L.modalButtons,children:[(0,b.jsx)(`button`,{style:L.btnCancel,onClick:()=>s(!1),children:`Cancel`}),(0,b.jsx)(`button`,{style:L.btnLogout,onClick:Le,children:`Logout`})]})]})}),(0,b.jsx)(`div`,{className:`atb-toast${fe?` show`:``}`,children:fe})]})},L={layoutContainer:{height:`100vh`,width:`100vw`,background:`#f8fafc`,display:`flex`,flexDirection:`column`,overflow:`hidden`,position:`relative`},topBar:{height:`50px`,background:`#095959`,display:`flex`,alignItems:`center`,justifyContent:`space-between`,padding:`0 15px`,color:`white`,boxShadow:`0 2px 10px rgba(0,0,0,0.2)`,zIndex:100,flexShrink:0},menuIcon:{cursor:`pointer`,display:`flex`,flexDirection:`column`,gap:`4px`},brandName:{fontSize:`18px`,fontWeight:`700`,letterSpacing:`1px`,fontFamily:`Segoe UI, sans-serif`},mainContent:{flex:1,overflowY:`auto`,position:`relative`,background:`#f1f5f9`},drawerHeader:{padding:`20px`,background:`#095959`,color:`white`,textAlign:`center`},navLinks:{display:`flex`,flexDirection:`column`},navItem:{padding:`16px 20px`,color:`#475569`,fontSize:`15px`,cursor:`pointer`,borderBottom:`1px solid #f1f5f9`,display:`flex`,alignItems:`center`,gap:`15px`,transition:`0.2s`},activeLink:{padding:`16px 20px`,color:`#095959`,background:`#f0fdfa`,fontSize:`15px`,fontWeight:`700`,borderLeft:`5px solid #095959`,display:`flex`,alignItems:`center`,gap:`15px`},logoutItem:{padding:`16px 20px`,color:`#ef4444`,cursor:`pointer`,display:`flex`,alignItems:`center`,gap:`15px`,fontWeight:`600`},badge:{background:`#ff3b3b`,color:`white`,fontSize:`10px`,padding:`2px 6px`,borderRadius:`10px`,marginLeft:`auto`},overlay:{position:`fixed`,inset:0,background:`rgba(0,0,0,0.5)`,backdropFilter:`blur(2px)`,zIndex:900},fab:{position:`fixed`,bottom:`25px`,right:`25px`,width:`58px`,height:`58px`,background:`linear-gradient(135deg, #095959 0%, #14b8a6 100%)`,color:`white`,borderRadius:`50%`,display:`flex`,justifyContent:`center`,alignItems:`center`,boxShadow:`0 5px 20px rgba(9,89,89,0.45)`,cursor:`pointer`,zIndex:800,transition:`transform 0.2s, box-shadow 0.2s`},modalButtons:{display:`flex`,gap:`10px`,marginTop:`25px`},btnCancel:{flex:1,padding:`12px`,border:`none`,borderRadius:`8px`,background:`#f1f5f9`,color:`#475569`,fontWeight:`600`,cursor:`pointer`},btnLogout:{flex:1,padding:`12px`,border:`none`,borderRadius:`8px`,background:`#ef4444`,color:`white`,fontWeight:`600`,cursor:`pointer`}},lt=`
+  .drawer { position: fixed; top: 0; left: -240px; width: 240px; height: 100%; background: white; z-index: 1000; transition: 0.3s ease-in-out; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
   .drawer.open { left: 0; }
-  .bar {
-    width: 22px;
-    height: 2px;
-    background-color: white;
-    margin: 4px 0;
-    border-radius: 2px;
-  }
-
-  /* ── FAB hover ── */
+  .bar { width: 18px; height: 2px; background-color: white; margin: 3.5px 0; border-radius: 2px; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; }
   .atb-fab-btn:hover { transform: scale(1.08) !important; box-shadow: 0 8px 28px rgba(9,89,89,0.55) !important; }
-  .atb-fab-btn:active { transform: scale(0.94) !important; }
-
-  /* ── Task Modal Backdrop ── */
-  .atb-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.42);
-    z-index: 1300;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    animation: atbFadeIn 0.18s ease;
-  }
-  @media (min-width: 600px) {
-    .atb-backdrop { align-items: center; }
-  }
-  @keyframes atbFadeIn { from{opacity:0} to{opacity:1} }
-
-/* ── Task Modal ── */
-  .atb-modal {
-    width: 100%;
-    max-width: 540px;
-    background: #fff;
-    border-radius: 22px 22px 0 0;
-    padding: 0 16px 28px;
-    box-shadow: 0 -8px 40px rgba(0,0,0,0.14);
-    max-height: 92dvh;
-    overflow-y: auto;
-    overflow-x: visible;
-    box-sizing: border-box;
-    animation: atbSlideUp 0.26s cubic-bezier(.22,.68,0,1.2);
-  }
-  @media (min-width: 600px) {
-    .atb-modal {
-      border-radius: 20px;
-      padding: 0 24px 28px;
-      max-height: 88dvh;
-      overflow: visible;
-    }
-  }
-  @keyframes atbSlideUp {
-    from { transform: translateY(70px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-
-  /* Drag handle */
-  .atb-handle {
-    width: 40px; height: 4px; border-radius: 3px;
-    background: #dde8e7;
-    margin: 13px auto 0;
-  }
+  .atb-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.42); z-index: 1300; display: flex; align-items: flex-end; justify-content: center; }
+  @media (min-width: 600px) { .atb-backdrop { align-items: center; } }
+  .atb-modal { width: 100%; max-width: 540px; background: #fff; border-radius: 22px 22px 0 0; padding: 0 16px 28px; box-shadow: 0 -8px 40px rgba(0,0,0,0.14); max-height: 92dvh; overflow-y: auto; overflow-x: visible; }
+  @media (min-width: 600px) { .atb-modal { border-radius: 20px; padding: 0 24px 28px; max-height: 88dvh; overflow: visible; } }
+  .atb-handle { width: 40px; height: 4px; border-radius: 3px; background: #dde8e7; margin: 13px auto 0; }
   @media (min-width: 600px) { .atb-handle { display: none; } }
-
-  /* Modal Header */
-  .atb-mhdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 18px;
-    margin-bottom: 16px;
-  }
-  .atb-mtitle {
-    font-size: 16px; font-weight: 700; color: #0b3d3a;
-    font-family: 'Segoe UI', sans-serif;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .atb-mtitle-icon {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: linear-gradient(135deg, #095959, #14b8a6);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .atb-xbtn {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: #f0f7f6; border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px; color: #666; transition: background 0.15s;
-  }
-  .atb-xbtn:hover { background: #dbeeed; }
-
-  /* Fields */
+  .atb-mhdr { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; margin-bottom: 16px; }
+  .atb-mtitle { font-size: 16px; font-weight: 700; color: #0b3d3a; display: flex; align-items: center; gap: 8px; }
+  .atb-mtitle-icon { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #095959, #14b8a6); display: flex; align-items: center; justify-content: center; }
+  .atb-xbtn { width: 30px; height: 30px; border-radius: 50%; background: #f0f7f6; border: none; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center; }
   .atb-field { margin-bottom: 12px; }
-  .atb-label {
-    display: block;
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
-    text-transform: uppercase; color: #14b8a6;
-    margin-bottom: 5px;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  .atb-input {
-    width: 100%; box-sizing: border-box;
-    border: 1.6px solid #e2eded;
-    border-radius: 12px; padding: 10px 13px;
-    font-size: 14px; font-family: 'Segoe UI', sans-serif;
-    color: #1a1a1a; background: #fafefe;
-    outline: none; transition: border-color 0.18s, box-shadow 0.18s;
-  }
-  .atb-input:focus {
-    border-color: #14b8a6;
-    box-shadow: 0 0 0 3px rgba(20,184,166,0.12);
-    background: #fff;
-  }
-  .atb-input.error {
-    border-color: #e53935 !important;
-    animation: atbShake 0.42s ease;
-  }
-  @keyframes atbShake {
-    0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)}
-    40%{transform:translateX(7px)}   60%{transform:translateX(-4px)}
-    80%{transform:translateX(4px)}
-  }
-  .atb-textarea { resize: none; min-height: 62px; }
-/* ── PILLS ROW ── */
-  .atb-pills-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-    flex-wrap: nowrap;
-    overflow: visible;
-  }
-
-  /* Individual pill */
-  .atb-pill {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: #f1faf9;
-    border: 1.5px solid #cce9e6;
-    border-radius: 30px;
-    padding: 7px 10px;
-    cursor: pointer;
-    font-size: 12px;
-    color: #0b3d3a;
-    font-family: 'Segoe UI', sans-serif;
-    font-weight: 500;
-    user-select: none;
-    position: relative;
-    transition: background 0.15s, border-color 0.15s;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .atb-pill:hover { background: #daf2ef; border-color: #14b8a6; }
-  .atb-pill-assign { flex: 1; min-width: 0; }
-  .atb-pill-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
-
-  /* Priority dot */
+  .atb-label { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #14b8a6; margin-bottom: 5px; }
+  .atb-input { width: 100%; border: 1.6px solid #e2eded; border-radius: 12px; padding: 10px 13px; font-size: 14px; color: #1a1a1a; background: #fafefe; outline: none; }
+  .atb-input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,0.12); }
+  .atb-pills-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap; overflow: visible; }
+  .atb-pill { display: flex; align-items: center; gap: 4px; background: #f1faf9; border: 1.5px solid #cce9e6; border-radius: 30px; padding: 7px 10px; cursor: pointer; font-size: 12px; color: #0b3d3a; white-space: nowrap; flex-shrink: 0; }
   .atb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-  /* Send button */
-  .atb-send-btn {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #095959, #14b8a6);
-    border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 3px 12px rgba(9,89,89,0.4);
-    transition: transform 0.18s, opacity 0.18s;
-    flex-shrink: 0;
-  }
-  .atb-send-btn:hover:not(:disabled) { transform: scale(1.08); }
-  .atb-send-btn:active:not(:disabled) { transform: scale(0.92); }
-  .atb-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .atb-spin { animation: spin 0.9s linear infinite; }
-
-  /* ── Calendar Popup ── */
-
-.atb-cal-popup {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(0,0,0,0.22);
-    padding: 14px 12px 12px;
-    z-index: 9000;
-    width: 268px;
-    animation: atbFadeIn 0.15s ease;
-  }
-  .atb-cal-hdr {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .atb-cal-month-wrap {
-    display: flex; flex-direction: column; align-items: center; gap: 1px;
-  }
-  .atb-cal-month { font-weight: 700; font-size: 15px; color: #0b3d3a; line-height: 1.2; }
-  .atb-cal-year  { font-size: 11px; color: #14b8a6; font-weight: 600; }
-  .atb-cal-nav {
-    background: #f1faf9; border: none; border-radius: 10px;
-    width: 36px; height: 36px; cursor: pointer;
-    font-size: 22px; color: #14b8a6; line-height: 1;
-    transition: background 0.14s;
-    display: flex; align-items: center; justify-content: center;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-  .atb-cal-nav:hover { background: #daf2ef; }
-  .atb-cal-nav:active { background: #b2e8e3; transform: scale(0.93); }
-  .atb-cal-nav-lg { width: 40px; height: 40px; font-size: 24px; border-radius: 12px; }
+  .atb-send-btn { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #095959, #14b8a6); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(9,89,89,0.4); }
+  .atb-cal-popup { background: #fff; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.22); padding: 14px 12px 12px; width: 268px; }
   .atb-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
-  .atb-cal-wday { text-align:center; font-size:10px; font-weight:700; color:#14b8a6; padding:2px 0 6px; }
-  .atb-cal-day {
-    text-align:center; font-size:13px; padding:7px 2px;
-    border-radius:8px; cursor:pointer; color:#333; transition: background 0.12s;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-  }
-  .atb-cal-day:hover:not(.atb-cal-past):not(.atb-cal-empty) { background: #e0f7f5; }
-  .atb-cal-today  { font-weight:700; color:#14b8a6; }
-  .atb-cal-sel    { background:#14b8a6 !important; color:#fff !important; font-weight:700; border-radius:8px; }
-  .atb-cal-past   { color:#ccc; cursor:default; }
-  .atb-cal-empty  { cursor:default; }
-
-/* ── Dropdown portal card ── */
-  .atb-drop-portal {
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 10px 36px rgba(0,0,0,0.18);
-    overflow: hidden;
-    animation: atbFadeIn 0.14s ease;
-    max-height: 320px;
-    overflow-y: auto;
-  }
-  .atb-drop-item {
-    padding: 10px 14px; font-size: 13px; cursor: pointer;
-    color: #222; display: flex; align-items: center; gap: 8px;
-    transition: background 0.12s;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  .atb-drop-item:hover { background: #e9f2ef; }
-  .atb-drop-sep { height: 1px; background: #f0f0f0; }
-  /* Inline sub-menu (expands in place, no second dropdown) */
-  .atb-sub-inline {
-    background: #f7fdfb;
-    border-top: 1px solid #e8f5f3;
-    border-bottom: 1px solid #e8f5f3;
-  }
-  .atb-sub-hdr-inline {
-    font-weight: 700; color: #0f9d9a;
-    font-size: 12px; padding: 8px 14px 8px 20px;
-    display: flex; align-items: center; gap: 6px; cursor: pointer;
-  }
-  .atb-sub-hdr-inline:hover { background: #e0f5f2; }
-  .atb-sub-indent {
-    padding-left: 28px !important;
-    font-size: 12.5px !important;
-    color: #334155 !important;
-  }
-
-  /* .atb-sub removed — now using atb-sub-inline inside portal */
-
-  /* ── Toast ── */
-  .atb-toast {
-    position: fixed;
-    bottom: -80px; left: 50%;
-    transform: translateX(-50%);
-    background: #095959; color: #fff;
-    padding: 11px 22px; border-radius: 30px;
-    font-size: 13px; font-family: 'Segoe UI', sans-serif;
-    box-shadow: 0 6px 22px rgba(0,0,0,0.2);
-    z-index: 9999; white-space: nowrap;
-    transition: bottom 0.32s ease, opacity 0.32s ease;
-    opacity: 0; pointer-events: none;
-  }
+  .atb-drop-portal { background: #fff; border-radius: 14px; box-shadow: 0 10px 36px rgba(0,0,0,0.18); overflow-y: auto; max-height: 320px; }
+  .atb-drop-item { padding: 10px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .atb-sub-inline { background: #f7fdfb; border-top: 1px solid #e8f5f3; border-bottom: 1px solid #e8f5f3; }
+  .atb-toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #095959; color: #fff; padding: 11px 22px; border-radius: 30px; font-size: 13px; z-index: 9999; transition: 0.32s; opacity: 0; }
   .atb-toast.show { bottom: 28px; opacity: 1; }
-
-  /* ── Logout Modal ── */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 2000;
-    animation: atbFadeIn 0.3s ease;
-  }
-  .modal-card {
-    background: white; padding: 30px; border-radius: 16px;
-    width: 85%; max-width: 350px; text-align: center;
-    animation: atbSlideUp 0.3s ease;
-  }
-
-  /* ── Mobile Responsive ── */
-  @media (max-width: 400px) {
-    .atb-pill { padding: 6px 8px; font-size: 11px; }
-    .atb-pill-text { max-width: 55px; }
-    .atb-modal { padding: 0 12px 24px; }
-    .atb-send-btn { width: 34px; height: 34px; }
-  }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+  .modal-card { background: white; padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; }
 `,ut=window.location.hostname===`localhost`||window.location.hostname===`127.0.0.1`?`http://localhost:5000`:`https://m-tms.thedesigns.live`;function dt({show:e,title:t,message:n,isSuccess:r,onClose:i}){return e?(0,b.jsx)(`div`,{className:`dialog-overlay`,style:{display:`flex`},children:(0,b.jsxs)(`div`,{className:`modal-content`,children:[(0,b.jsx)(`i`,{className:r?`fa-solid fa-circle-check`:`fa-solid fa-triangle-exclamation`,style:{fontSize:40,marginBottom:10,color:r?`#2ecc71`:`#e74c3c`}}),(0,b.jsx)(`h3`,{style:{marginTop:0},children:t}),(0,b.jsx)(`p`,{style:{color:`#555`,fontSize:15,marginBottom:10},children:n}),(0,b.jsx)(`div`,{className:`modal-buttons`,children:(0,b.jsx)(`button`,{className:`btn ${r?`btn-success`:`btn-danger`}`,onClick:i,children:`Okay`})})]})}):null}function ft({id:e,placeholder:t,value:n,onChange:r}){let[i,a]=(0,_.useState)(!1);return(0,b.jsxs)(`div`,{className:`input-group`,style:{position:`relative`},children:[(0,b.jsx)(`input`,{type:i?`text`:`password`,id:e,placeholder:t,value:n,onChange:r,required:!0}),(0,b.jsx)(`i`,{className:`fa-solid ${i?`fa-eye`:`fa-eye-slash`} toggle-password`,onClick:()=>a(!i)})]})}function pt(){let[e,t]=(0,_.useState)(!1),[n,r]=(0,_.useState)(0),[i,a]=(0,_.useState)(`auth`),[o,s]=(0,_.useState)(1),[c,l]=(0,_.useState)({show:!1,title:``,message:``,isSuccess:!1}),u=(e,t,n)=>l({show:!0,title:e,message:t,isSuccess:n}),d=()=>l(e=>({...e,show:!1})),[f,p]=(0,_.useState)(`user`),[m,h]=(0,_.useState)(``),[g,v]=(0,_.useState)(``),[y,x]=(0,_.useState)(``),[S,C]=(0,_.useState)(``),[w,ee]=(0,_.useState)(``),[te,T]=(0,_.useState)(null),[E,ne]=(0,_.useState)(``),[D,re]=(0,_.useState)(``),[ie,O]=(0,_.useState)(``),[ae,oe]=(0,_.useState)(``),[k,A]=(0,_.useState)(null),[se,j]=(0,_.useState)(``),[ce,le]=(0,_.useState)(``),[ue,M]=(0,_.useState)(``),[de,fe]=(0,_.useState)(``),[pe,me]=(0,_.useState)(``),[he,ge]=(0,_.useState)(null),[_e,ve]=(0,_.useState)(!1),[ye,be]=(0,_.useState)(``),[xe,Se]=(0,_.useState)(``),[Ce,we]=(0,_.useState)(``),[Te,Ee]=(0,_.useState)(``);(0,_.useEffect)(()=>{fetch(`${ut}/api/auth/session`,{credentials:`include`}).then(e=>e.json()).then(e=>{e.loggedIn&&t(!0)}).catch(()=>{})},[]);function De(e){r(e),a(`auth`),s(1)}async function Oe(e){e.preventDefault();try{(await(await fetch(`${ut}/api/auth/login`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({email:m,password:g,login_type:f})})).json()).status===`success`?t(!0):u(`Login Failed`,`Incorrect Email or Password`,!1)}catch{u(`Error`,`Network error. Please try again.`,!1)}}async function ke(){if(!y||!S){u(`Validation`,`Please fill all fields`,!1);return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S)){u(`Validation`,`Enter a valid email address.`,!1);return}try{if((await(await fetch(`${ut}/api/auth/check-email`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({email:S})})).json()).exists){u(`Error`,`Email already exists ❌`,!1),C(``);return}let e=Math.floor(1e5+Math.random()*9e5);T(e),s(2),await fetch(`${ut}/api/forgot-password/send-otp`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({contact:S,otp:e,sent_for:`signup`})})}catch{u(`Error`,`Server error`,!1)}}function Ae(){if(Number(w)!==te){u(`Error`,`Invalid OTP. Try again.`,!1);return}u(`Success`,`OTP Verified Successfully!`,!0),s(3)}async function je(e){e.preventDefault(),j(``),le(``),M(``);let n=!1;if(D.length!==10&&(j(`Please enter a valid 10-digit phone number.`),n=!0),/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(ie)||(le(`Weak password.`),n=!0),ie!==ae&&(M(`Passwords mismatch.`),n=!0),n)return;let r=new FormData;r.append(`name`,y),r.append(`company_name`,E),r.append(`email`,S),r.append(`phone`,D),r.append(`password`,ie),k&&r.append(`profile_pic`,k);try{let e=await(await fetch(`${ut}/api/auth/signup`,{method:`POST`,credentials:`include`,body:r})).json();e.status===`success`?(u(`Success`,`Account created!`,!0),setTimeout(()=>{t(!0)},1500)):u(`Signup Error`,e.message,!1)}catch{u(`Error`,`Network error. Try again.`,!1)}}async function N(){if(!de){u(`Error`,`Please enter email or phone`,!1);return}try{if((await(await fetch(`${ut}/api/forgot-password/check`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({contact:de})})).json()).status===`not_found`){u(`Not Found`,`Email or Phone not found in our records.`,!1),fe(``);return}let e=Math.floor(1e5+Math.random()*9e5);ge(e),ve(!0),await fetch(`${ut}/api/forgot-password/send-otp`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({contact:de,otp:e,sent_for:`forget_password`})})}catch{u(`Error`,`Server error`,!1)}}function Me(){Number(pe)===he?a(`reset`):(me(``),u(`Invalid`,`Incorrect OTP. Try again.`,!1))}async function Ne(){we(``),Ee(``);let e=!1;if(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(ye)||(we(`Weak password.`),e=!0),ye!==xe&&(Ee(`Passwords mismatch.`),e=!0),!ye||!xe){u(`Error`,`Please fill all fields`,!1);return}if(!e)try{let e=await(await fetch(`${ut}/api/forgot-password/reset`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({contact:de,new_password:ye})})).json();e.status===`success`?(u(`Success`,`Password reset successfully!`,!0),a(`auth`),r(0)):u(`Error`,e.message||`Error resetting password`,!1)}catch{u(`Error`,`Server error`,!1)}}return e?(0,b.jsx)(ct,{}):(0,b.jsxs)(b.Fragment,{children:[(0,b.jsx)(`style`,{children:mt}),(0,b.jsx)(`link`,{rel:`stylesheet`,href:`https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css`}),(0,b.jsx)(dt,{...c,onClose:d}),(0,b.jsxs)(`div`,{className:`bg-graphics`,children:[(0,b.jsx)(`div`,{className:`bg-mesh`}),(0,b.jsx)(`div`,{className:`shape shape-1`}),(0,b.jsx)(`div`,{className:`shape shape-2`}),(0,b.jsx)(`div`,{className:`shape shape-3`}),(0,b.jsx)(`div`,{className:`shape shape-4`})]}),(0,b.jsx)(`div`,{className:`auth-screen`,children:(0,b.jsx)(`div`,{className:`auth-wrapper`,children:(0,b.jsxs)(`div`,{className:`container`,children:[(0,b.jsx)(`div`,{className:`logo-container`,children:(0,b.jsx)(`img`,{src:`/images/tms_logo.jpeg`,alt:`TMS Logo`})}),i===`auth`&&(0,b.jsx)(`div`,{id:`authTabs`,children:(0,b.jsxs)(`div`,{className:`tabs`,children:[(0,b.jsx)(`div`,{className:`tab ${n===0?`active`:``}`,onClick:()=>De(0),children:`Login`}),(0,b.jsx)(`div`,{className:`tab ${n===1?`active`:``}`,onClick:()=>De(1),children:`Signup`}),(0,b.jsx)(`div`,{className:`underline`,style:{left:n*50+`%`}})]})}),i===`auth`&&n===0&&(0,b.jsxs)(`form`,{onSubmit:Oe,children:[(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsxs)(`select`,{value:f,onChange:e=>p(e.target.value),children:[(0,b.jsx)(`option`,{value:`user`,children:`Login as User`}),(0,b.jsx)(`option`,{value:`admin`,children:`Login as Admin`})]})}),(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`email`,placeholder:`Email`,value:m,onChange:e=>h(e.target.value),required:!0})}),(0,b.jsx)(ft,{id:`loginPassword`,placeholder:`Password`,value:g,onChange:e=>v(e.target.value)}),(0,b.jsx)(`button`,{type:`submit`,children:`Login`}),(0,b.jsx)(`span`,{onClick:()=>{a(`forgot`),ve(!1)},className:`forgot-password-link`,children:`Forgot Password?`})]}),i===`auth`&&n===1&&(0,b.jsxs)(`form`,{onSubmit:je,children:[o===1&&(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`text`,placeholder:`Full Name`,value:y,onChange:e=>x(e.target.value),required:!0})}),(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`email`,placeholder:`Email`,value:S,onChange:e=>C(e.target.value),required:!0})}),(0,b.jsx)(`button`,{type:`button`,onClick:ke,children:`Next`})]}),o===2&&(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`p`,{style:{textAlign:`center`,marginBottom:`15px`,color:`#555`,fontSize:`14px`},children:`Enter the verification code sent to your email`}),(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`text`,placeholder:`Verification Code`,value:w,onChange:e=>ee(e.target.value),required:!0})}),(0,b.jsxs)(`div`,{className:`input-group`,style:{display:`flex`,gap:10},children:[(0,b.jsx)(`button`,{type:`button`,style:{background:`#e2e8f0`,color:`#333`},onClick:()=>s(1),children:`Back`}),(0,b.jsx)(`button`,{type:`button`,onClick:Ae,children:`Verify`})]})]}),o===3&&(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`text`,placeholder:`Company Name`,value:E,onChange:e=>ne(e.target.value),required:!0})}),(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`text`,placeholder:`Phone Number`,maxLength:`10`,value:D,onChange:e=>re(e.target.value.replace(/[^0-9]/g,``)),required:!0})}),(0,b.jsx)(ft,{id:`signupPassword`,placeholder:`Password`,value:ie,onChange:e=>O(e.target.value)}),(0,b.jsx)(ft,{id:`confirmPassword`,placeholder:`Confirm Password`,value:ae,onChange:e=>oe(e.target.value)}),(0,b.jsxs)(`div`,{className:`input-group`,children:[(0,b.jsx)(`label`,{style:{fontWeight:`normal`,fontSize:12,color:`#666`},children:`Profile Picture (Optional)`}),(0,b.jsx)(`input`,{type:`file`,accept:`image/*`,onChange:e=>A(e.target.files[0])})]}),(0,b.jsx)(`button`,{type:`submit`,children:`Create Account`})]})]}),i===`forgot`&&(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`h2`,{style:{fontSize:`20px`,marginBottom:`15px`},children:`Forgot Password`}),(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`text`,placeholder:`Enter Email or Phone`,value:de,onChange:e=>fe(e.target.value)})}),(0,b.jsx)(`button`,{type:`button`,onClick:N,children:`Send OTP`}),_e&&(0,b.jsxs)(`div`,{style:{marginTop:`15px`},children:[(0,b.jsx)(`div`,{className:`input-group`,children:(0,b.jsx)(`input`,{type:`text`,placeholder:`Enter OTP`,value:pe,onChange:e=>me(e.target.value)})}),(0,b.jsx)(`button`,{type:`button`,onClick:Me,children:`Verify OTP`})]}),(0,b.jsx)(`span`,{onClick:()=>a(`auth`),className:`forgot-password-link`,children:`Back to Login`})]}),i===`reset`&&(0,b.jsxs)(`div`,{children:[(0,b.jsx)(`h2`,{style:{fontSize:`20px`,marginBottom:`15px`},children:`Reset Password`}),(0,b.jsx)(ft,{id:`newpass`,placeholder:`New Password`,value:ye,onChange:e=>be(e.target.value)}),(0,b.jsx)(ft,{id:`confpass`,placeholder:`Confirm Password`,value:xe,onChange:e=>Se(e.target.value)}),(0,b.jsx)(`button`,{type:`button`,onClick:Ne,children:`Reset Password`})]})]})})})]})}var mt=`
 * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,sans-serif; }
 body { background:#0f172a; overflow:hidden; }
