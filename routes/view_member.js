@@ -172,21 +172,45 @@ router.post('/add', requireAuth, (req, res) => {
                 return res.status(403).json({ success: false, message: 'Admin not found.' });
             }
 
-            const [existing] = await con.query('SELECT id FROM users WHERE email=?', [email]);
-            if (existing.length) {
+            // ── CHECK CONTROL TYPE FROM SESSION ──────────────────────────
+            const controlType = req.session.control_type || 'NONE';
+            const isDirectInsert = (controlType === 'ADMIN' || controlType === 'OWNER' || req.session.role === 'admin');
+
+            // ── CHECK DUPLICATE EMAIL ─────────────────────────────────────
+            const [existingUsers] = await con.query('SELECT id FROM users WHERE email=?', [email]);
+            const [existingReqs] = await con.query('SELECT id FROM member_requests WHERE email=? AND status="PENDING"', [email]);
+
+            if (existingUsers.length) {
                 if (profilePic) safeDeleteFile(profilePic);
                 return res.status(400).json({ success: false, message: 'Email already exists.' });
             }
+            if (existingReqs.length) {
+                if (profilePic) safeDeleteFile(profilePic);
+                return res.status(400).json({ success: false, message: 'A pending request with this email already exists.' });
+            }
 
             const hashed = await bcrypt.hash(password, 10);
-            await con.query(
-                'INSERT INTO users (admin_id, name, email, phone, password, role_id, profile_pic, status) VALUES (?,?,?,?,?,?,?,?)',
-                [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
-            );
 
-            if (req.io) req.io.emit('update_members');
+            if (isDirectInsert) {
+                // ── ADMIN / OWNER → insert directly into users ────────────
+                await con.query(
+                    'INSERT INTO users (admin_id, name, email, phone, password, role_id, profile_pic, status) VALUES (?,?,?,?,?,?,?,?)',
+                    [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
+                );
+                if (req.io) req.io.emit('update_members');
+                return res.json({ success: true, message: 'Member added successfully.' });
 
-            return res.json({ success: true, message: 'Member added successfully.' });
+            } else {
+                // ── OTHER ROLES → insert into member_requests ────────────
+                const requestedBy = req.session.userId;
+                await con.query(
+                    'INSERT INTO member_requests (admin_id, role_id, requested_by, name, email, password, profile_pic, created_by, status) VALUES (?,?,?,?,?,?,?,?,?)',
+                    [adminId, role_id, requestedBy, name.trim(), email.trim(), hashed, profilePic, requestedBy, 'PENDING']
+                );
+                if (req.io) req.io.emit('update_member_requests');
+                return res.json({ success: true, message: 'Member request submitted for approval.', isPending: true });
+            }
+
         } catch (err) {
             console.error('[view_member ADD]', err);
             if (profilePic) safeDeleteFile(profilePic);
@@ -305,5 +329,34 @@ router.get('/delete/:id', requireAuth, async (req, res) => {
         return res.status(500).json({ success: false, message: 'Failed to delete member.' });
     }
 });
+
+
+async function handleAddSubmit() {
+    const errs = validateAdd();
+    setAddErrors(errs);
+    if (Object.keys(errs).length) return;
+    setAddLoading(true);
+    try {
+      const fd = new FormData();
+      Object.entries(addForm).forEach(([k, v]) => { if (k !== 'confirmPassword') fd.append(k, v); });
+      if (addFile) fd.append('profile_pic', addFile);
+      const res = await fetch(`${BASE_URL}/api/view_member/add`, { method: 'POST', credentials: 'include', body: fd });
+      const json = await res.json();
+      if (json.success) {
+        setAddOpen(false);
+        resetAdd();
+        // ── show different title if request is pending approval ──
+        if (json.isPending) {
+          showAlert('Request Submitted!', json.message, true);
+        } else {
+          showAlert('Member Added!', json.message, true);
+          fetchData();
+        }
+      } else {
+        showToast(json.message, 'error');
+      }
+    } catch { showToast('Server error.', 'error'); }
+    setAddLoading(false);
+  }
 
 export default router;
