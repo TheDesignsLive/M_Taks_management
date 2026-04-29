@@ -1,624 +1,1132 @@
-import { useState, useEffect, useRef } from "react";
+// view_member.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// ── Notification helper (mirrors Notification.jsx contract) ──────────────────
-function Notification({ notifications, removeNotification }) {
+const BASE_URL =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://m-tms.thedesigns.live';
+
+// ─── TOAST HOOK ───────────────────────────────────────────────────────────────
+function useToast() {
+  const [toast, setToast] = useState({ msg: '', type: 'success', show: false });
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type, show: true });
+    setTimeout(() => setToast(t => ({ ...t, show: false })), 3200);
+  }
+  return { toast, showToast };
+}
+
+// ─── AVATAR ──────────────────────────────────────────────────────────────────
+function Avatar({ profilePic, name, size = 40 }) {
+  const [err, setErr] = useState(false);
+  const letter = name ? name.charAt(0).toUpperCase() : '?';
+  if (profilePic && !err) {
+    return (
+      <img
+        src={`${BASE_URL}/public/images/${profilePic}`}
+        alt={name}
+        onError={() => setErr(true)}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block', flexShrink: 0 }}
+      />
+    );
+  }
   return (
-    <div style={{ position: "fixed", top: 16, right: 16, zIndex: 9999, display: "flex", flexDirection: "column", gap: 10, maxWidth: 340, width: "calc(100vw - 32px)" }}>
-      {notifications.map((n) => (
-        <div key={n.id} style={{
-          background: n.type === "success" ? "#0F8989" : n.type === "error" ? "#e74c3c" : "#444",
-          color: "#fff", borderRadius: 10, padding: "13px 16px",
-          display: "flex", alignItems: "flex-start", gap: 10,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.35)",
-          animation: "slideIn 0.3s ease",
-        }}>
-          <span style={{ fontSize: 18, marginTop: 1 }}>
-            {n.type === "success" ? "✓" : n.type === "error" ? "✕" : "ℹ"}
-          </span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{n.title}</div>
-            <div style={{ fontSize: 12, opacity: 0.9 }}>{n.message}</div>
-          </div>
-          <button onClick={() => removeNotification(n.id)}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 16, padding: 0, lineHeight: 1 }}>✕</button>
-        </div>
-      ))}
-      <style>{`@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}`}</style>
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: 'linear-gradient(135deg, #095959 0%, #0F8989 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.round(size * 0.38), fontWeight: 700, color: '#b2f0f0',
+      fontFamily: "'DM Mono', monospace",
+    }}>
+      {letter}
     </div>
   );
 }
 
-function useNotifications() {
-  const [notifications, setNotifications] = useState([]);
-  const add = (type, title, message) => {
-    const id = Date.now();
-    setNotifications((p) => [...p, { id, type, title, message }]);
-    setTimeout(() => setNotifications((p) => p.filter((n) => n.id !== id)), 4000);
-  };
-  const remove = (id) => setNotifications((p) => p.filter((n) => n.id !== id));
-  return { notifications, add, remove };
-}
+// ─── ICONS ───────────────────────────────────────────────────────────────────
+const SearchIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+);
+const PlusIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15">
+    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+const PencilIcon = ({ size = 14 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width={size} height={size}>
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+const TrashIcon = ({ size = 14 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width={size} height={size}>
+    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
+const CloseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const EyeIcon = ({ open }) => open
+  ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+  : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>;
+const ChevronIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+const UserIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+  </svg>
+);
+const AlertIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="#f39c12" strokeWidth="2" width="36" height="36">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+const DangerIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2" width="36" height="36">
+    <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+  </svg>
+);
+const OkIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="#2ecc71" strokeWidth="2.5" width="36" height="36">
+    <circle cx="12" cy="12" r="10" /><polyline points="9 12 11 14 15 10" />
+  </svg>
+);
+const CamIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="12" height="12">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+const DotOk = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" width="14" height="14">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const DotErr = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" width="14" height="14">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
 
-// ── Avatar ───────────────────────────────────────────────────────────────────
-function Avatar({ user }) {
-  if (user.profile_pic) {
-    return <img src={`/images/${user.profile_pic}`} alt={user.name}
-      style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "2px solid #0F8989" }} />;
-  }
-  return (
-    <div style={{
-      width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#0F8989,#095959)",
-      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-      fontWeight: 700, fontSize: 14, textTransform: "uppercase", flexShrink: 0,
-      border: "2px solid rgba(15,137,137,0.4)",
-    }}>{user.name?.charAt(0)}</div>
-  );
-}
-
-// ── Icon components (SVG, no emoji) ─────────────────────────────────────────
-const Icon = {
-  Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-  Plus: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>,
-  Edit: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>,
-  Delete: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
-  Lock: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-  Unlock: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
-  Eye: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  EyeOff: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
-  Close: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>,
-  Warning: () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f39c12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
-  Trash2: () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
-  Check: () => <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-  Department: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>,
-  Roles: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  Image: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-  User: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  Mail: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-  Phone: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.29 6.29l1.28-1.28a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
-  Key: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
-};
-
-// ── Overlay / Modal shell ────────────────────────────────────────────────────
-function Modal({ open, onClose, children, maxWidth = 440 }) {
+// ─── CONFIRM MODAL ───────────────────────────────────────────────────────────
+function ConfirmModal({ open, icon, title, message, confirmLabel, confirmClass, onConfirm, onCancel, loading }) {
   if (!open) return null;
   return (
-    <div onClick={onClose} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 2000,
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: "#2a2828", borderRadius: 14, width: "100%", maxWidth,
-        maxHeight: "90vh", overflowY: "auto", position: "relative",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.07)",
-      }}>
-        {children}
+    <div style={S.backdrop} onClick={onCancel}>
+      <div style={{ ...S.modal, maxWidth: 360 }} onClick={e => e.stopPropagation()}>
+        <div style={S.modalPill} />
+        <div style={{ textAlign: 'center', padding: '20px 16px 8px' }}>
+          <div style={{ marginBottom: 12 }}>{icon}</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#e8f5f5', marginBottom: 8 }}>{title}</div>
+          <div style={{ fontSize: 13, color: '#8abad0', marginBottom: 22, lineHeight: 1.6 }}>{message}</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button style={{ ...S.btn, background: '#2a3a3a', color: '#8abad0' }} onClick={onCancel}>Cancel</button>
+            <button
+              style={{ ...S.btn, background: confirmClass === 'danger' ? '#e74c3c' : '#0F8989', color: '#fff', opacity: loading ? 0.7 : 1 }}
+              onClick={onConfirm} disabled={loading}>
+              {loading ? 'Please wait…' : confirmLabel}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Form Field ───────────────────────────────────────────────────────────────
-function Field({ label, icon, children, error }) {
+// ─── ALERT MODAL ─────────────────────────────────────────────────────────────
+function AlertModal({ open, icon, title, message, onClose }) {
+  if (!open) return null;
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#aaa", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
-        <span style={{ color: "#0F8989" }}>{icon}</span>{label}
-      </label>
-      {children}
-      {error && <p style={{ color: "#e74c3c", fontSize: 11, margin: "4px 0 0" }}>{error}</p>}
+    <div style={S.backdrop} onClick={onClose}>
+      <div style={{ ...S.modal, maxWidth: 340 }} onClick={e => e.stopPropagation()}>
+        <div style={S.modalPill} />
+        <div style={{ textAlign: 'center', padding: '20px 16px 8px' }}>
+          <div style={{ marginBottom: 12 }}>{icon}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#e8f5f5', marginBottom: 8 }}>{title}</div>
+          <div style={{ fontSize: 13, color: '#8abad0', marginBottom: 22, lineHeight: 1.6 }}>{message}</div>
+          <button style={{ ...S.btn, background: '#0F8989', color: '#fff', width: '100%' }} onClick={onClose}>Okay</button>
+        </div>
+      </div>
     </div>
   );
 }
 
-const inputStyle = {
-  width: "100%", padding: "10px 12px", background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff",
-  fontSize: 13, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
-};
+// ─── FORM FIELD ──────────────────────────────────────────────────────────────
+function Field({ label, error, children }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {label && <label style={S.label}>{label}</label>}
+      {children}
+      {error && <div style={S.errText}>{error}</div>}
+    </div>
+  );
+}
 
-const selectStyle = { ...inputStyle, cursor: "pointer" };
+function Input({ style: extra, ...props }) {
+  return <input style={{ ...S.input, ...extra }} {...props} />;
+}
 
-// ── Password Field ───────────────────────────────────────────────────────────
-function PasswordField({ id, placeholder, value, onChange, label, icon }) {
+function Select({ children, style: extra, ...props }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <select style={{ ...S.input, appearance: 'none', WebkitAppearance: 'none', paddingRight: 36, ...extra }} {...props}>
+        {children}
+      </select>
+      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#0F8989' }}>
+        <ChevronIcon />
+      </span>
+    </div>
+  );
+}
+
+function PasswordInput({ id, value, onChange, placeholder, label }) {
   const [show, setShow] = useState(false);
   return (
-    <Field label={label} icon={icon}>
-      <div style={{ position: "relative" }}>
-        <input id={id} type={show ? "text" : "password"} placeholder={placeholder}
-          value={value} onChange={onChange}
-          style={{ ...inputStyle, paddingRight: 38 }} />
-        <button type="button" onClick={() => setShow(!show)} style={{
-          position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-          background: "none", border: "none", cursor: "pointer", color: "#888", display: "flex",
-        }}>{show ? <Icon.EyeOff /> : <Icon.Eye />}</button>
+    <Field label={label}>
+      <div style={{ position: 'relative' }}>
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          style={{ ...S.input, paddingRight: 40 }}
+        />
+        <button
+          type="button"
+          onClick={() => setShow(v => !v)}
+          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#0F8989', padding: 0, display: 'flex' }}>
+          <EyeIcon open={show} />
+        </button>
       </div>
     </Field>
   );
 }
 
-// ── Confirm Dialog ───────────────────────────────────────────────────────────
-function ConfirmDialog({ open, onClose, onConfirm, icon, title, message, confirmLabel = "Confirm", danger = false }) {
-  return (
-    <Modal open={open} onClose={onClose} maxWidth={360}>
-      <div style={{ padding: "28px 24px", textAlign: "center" }}>
-        <div style={{ marginBottom: 12 }}>{icon}</div>
-        <h3 style={{ margin: "0 0 8px", color: "#fff", fontSize: 17 }}>{title}</h3>
-        <p style={{ color: "#aaa", fontSize: 13, margin: "0 0 24px" }}>{message}</p>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "10px 0", background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 8, color: "#ccc", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: "10px 0", background: danger ? "#e74c3c" : "#0F8989", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{confirmLabel}</button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-// ── PASS regex ───────────────────────────────────────────────────────────────
-const PASS_RE = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
-
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function ViewMember() {
-  const { notifications, add: notify, remove: removeNotif } = useNotifications();
-
-  const [data, setData] = useState({ users: [], roles: [], teams: [], sessionRole: "", adminName: "" });
+  const [data, setData] = useState({ users: [], roles: [], teams: [], sessionRole: '', sessionUserId: null });
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
+  const { toast, showToast } = useToast();
 
-  // dialogs
+  // Add dialog
   const [addOpen, setAddOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [suspendTarget, setSuspendTarget] = useState(null);   // { id, name, status }
-  const [deleteTarget, setDeleteTarget] = useState(null);     // { id, name }
-
-  // add form
-  const [addForm, setAddForm] = useState({ team_id: "", role_id: "", name: "", email: "", phone: "", password: "", confirm: "" });
-  const [addPic, setAddPic] = useState(null);
+  const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
+  const [addFile, setAddFile] = useState(null);
+  const [addPreview, setAddPreview] = useState(null);
   const [addErrors, setAddErrors] = useState({});
+  const [addLoading, setAddLoading] = useState(false);
+  const addFileRef = useRef(null);
 
-  // edit form
+  // Edit dialog
+  const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [editForm, setEditForm] = useState({ team_id: "", role_id: "", name: "", email: "", phone: "", password: "", confirm: "" });
-  const [editPic, setEditPic] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
+  const [editFile, setEditFile] = useState(null);
+  const [editPreview, setEditPreview] = useState(null);
   const [editErrors, setEditErrors] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+  const editFileRef = useRef(null);
 
-  const fetchData = async () => {
+  // Confirm modals
+  const [suspendModal, setSuspendModal] = useState({ open: false, userId: null, name: '', status: '', loading: false });
+  const [deleteModal, setDeleteModal] = useState({ open: false, userId: null, name: '', loading: false });
+
+  // Alert modal
+  const [alertModal, setAlertModal] = useState({ open: false, title: '', message: '', success: true });
+
+  const showAlert = (title, message, success = true) => setAlertModal({ open: true, title, message, success });
+
+  // ── FETCH DATA ───────────────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
     try {
-      const r = await fetch("/api/view_member");
-      const d = await r.json();
-      if (d.success) setData(d);
-    } catch { /* silent */ }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchData(); }, []);
-
-  // ── Socket.IO live refresh ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.io) {
-      const socket = window.io();
-      socket.on("update_members", fetchData);
-      return () => socket.disconnect();
+      const res = await fetch(`${BASE_URL}/api/view_member`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.success) {
+        setData(json);
+      } else {
+        showToast(json.message || 'Failed to load members', 'error');
+      }
+    } catch (err) {
+      showToast('Network error. Could not load members.', 'error');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // ── Filtered users ─────────────────────────────────────────────────────────
-  const filtered = data.users.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // ── FILTERED USERS ───────────────────────────────────────────────────────
+  const filtered = data.users.filter(u =>
+    u.name?.toLowerCase().includes(search.toLowerCase()) ||
+    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+    u.role_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ── Roles filtered by team ─────────────────────────────────────────────────
-  const rolesForTeam = (teamId) =>
-    data.roles.filter((r) =>
-      teamId ? String(r.team_id) === String(teamId) : !r.team_id
-    );
+  // ── ROLES BY TEAM ────────────────────────────────────────────────────────
+  function rolesForTeam(teamId) {
+    if (!teamId) return data.roles.filter(r => !r.team_id);
+    return data.roles.filter(r => r.team_id == teamId);
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ADD MEMBER
-  // ─────────────────────────────────────────────────────────────────────────
-  const validateAdd = () => {
-    const e = {};
-    if (!addForm.team_id) e.team_id = "Select department";
-    if (!addForm.role_id) e.role_id = "Select role";
-    if (!addForm.name.trim()) e.name = "Name required";
-    if (!addForm.email.trim()) e.email = "Email required";
-    if (addForm.phone && addForm.phone.length !== 10) e.phone = "Enter 10-digit number";
-    if (!PASS_RE.test(addForm.password)) e.password = "Min 8 chars, 1 upper, 1 lower, 1 number";
-    if (addForm.password !== addForm.confirm) e.confirm = "Passwords do not match";
-    setAddErrors(e);
-    return !Object.keys(e).length;
-  };
+  // ── FILE PICK ────────────────────────────────────────────────────────────
+  function handleFilePick(file, setFile, setPreview) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('File too large. Max 5MB.', 'error'); return; }
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowed.includes(file.type)) { showToast('Only image files allowed.', 'error'); return; }
+    setFile(file);
+    setPreview(URL.createObjectURL(file));
+  }
 
-  const submitAdd = async (e) => {
-    e.preventDefault();
-    if (!validateAdd()) return;
-    const fd = new FormData();
-    Object.entries({ name: addForm.name, email: addForm.email, phone: addForm.phone, password: addForm.password, role_id: addForm.role_id }).forEach(([k, v]) => fd.append(k, v));
-    if (addPic) fd.append("profile_pic", addPic);
+  // ── VALIDATE ─────────────────────────────────────────────────────────────
+  const passRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+
+  function validateAdd() {
+    const errs = {};
+    if (!addForm.name.trim()) errs.name = 'Name is required.';
+    if (!addForm.email.trim()) errs.email = 'Email is required.';
+    if (!addForm.team_id) errs.team_id = 'Select a department.';
+    if (!addForm.role_id) errs.role_id = 'Select a role.';
+    if (addForm.phone && !/^\d{10}$/.test(addForm.phone)) errs.phone = '10-digit phone required.';
+    if (!passRegex.test(addForm.password)) errs.password = 'Min 8 chars, 1 upper, 1 lower, 1 number.';
+    if (addForm.password !== addForm.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    return errs;
+  }
+
+  function validateEdit() {
+    const errs = {};
+    if (!editForm.name.trim()) errs.name = 'Name is required.';
+    if (!editForm.email.trim()) errs.email = 'Email is required.';
+    if (!editForm.role_id) errs.role_id = 'Select a role.';
+    if (editForm.phone && !/^\d{10}$/.test(editForm.phone)) errs.phone = '10-digit phone required.';
+    if (editForm.password && !passRegex.test(editForm.password)) errs.password = 'Min 8 chars, 1 upper, 1 lower, 1 number.';
+    if (editForm.password && editForm.password !== editForm.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    return errs;
+  }
+
+  // ── ADD SUBMIT ────────────────────────────────────────────────────────────
+  async function handleAddSubmit() {
+    const errs = validateAdd();
+    setAddErrors(errs);
+    if (Object.keys(errs).length) return;
+    setAddLoading(true);
     try {
-      const r = await fetch("/api/view_member/add", { method: "POST", body: fd });
-      const d = await r.json();
-      if (d.success) { setAddOpen(false); setAddForm({ team_id: "", role_id: "", name: "", email: "", phone: "", password: "", confirm: "" }); setAddPic(null); fetchData(); notify("success", "Member Added", d.message); }
-      else notify("error", "Failed", d.message);
-    } catch { notify("error", "Error", "Server error"); }
-  };
+      const fd = new FormData();
+      Object.entries(addForm).forEach(([k, v]) => { if (k !== 'confirmPassword') fd.append(k, v); });
+      if (addFile) fd.append('profile_pic', addFile);
+      const res = await fetch(`${BASE_URL}/api/view_member/add`, { method: 'POST', credentials: 'include', body: fd });
+      const json = await res.json();
+      if (json.success) {
+        setAddOpen(false);
+        resetAdd();
+        showAlert('Member Added!', json.message, true);
+        fetchData();
+      } else {
+        showToast(json.message, 'error');
+      }
+    } catch { showToast('Server error.', 'error'); }
+    setAddLoading(false);
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // EDIT MEMBER
-  // ─────────────────────────────────────────────────────────────────────────
-  const openEdit = (user) => {
+  // ── EDIT SUBMIT ───────────────────────────────────────────────────────────
+  async function handleEditSubmit() {
+    const errs = validateEdit();
+    setEditErrors(errs);
+    if (Object.keys(errs).length) return;
+    setEditLoading(true);
+    try {
+      const fd = new FormData();
+      Object.entries(editForm).forEach(([k, v]) => { if (k !== 'confirmPassword') fd.append(k, v); });
+      if (editFile) fd.append('profile_pic', editFile);
+      const res = await fetch(`${BASE_URL}/api/view_member/edit/${editId}`, { method: 'POST', credentials: 'include', body: fd });
+      const json = await res.json();
+      if (json.success) {
+        setEditOpen(false);
+        resetEdit();
+        showAlert('Member Updated!', json.message, true);
+        fetchData();
+      } else {
+        showToast(json.message, 'error');
+      }
+    } catch { showToast('Server error.', 'error'); }
+    setEditLoading(false);
+  }
+
+  // ── SUSPEND ───────────────────────────────────────────────────────────────
+  async function confirmSuspend() {
+    setSuspendModal(m => ({ ...m, loading: true }));
+    try {
+      const res = await fetch(`${BASE_URL}/api/view_member/suspend/${suspendModal.userId}`, { credentials: 'include' });
+      const json = await res.json();
+      setSuspendModal(m => ({ ...m, open: false, loading: false }));
+      if (json.success) {
+        showAlert('Done!', json.message, true);
+        fetchData();
+      } else {
+        showToast(json.message, 'error');
+      }
+    } catch {
+      setSuspendModal(m => ({ ...m, loading: false }));
+      showToast('Server error.', 'error');
+    }
+  }
+
+  // ── DELETE ────────────────────────────────────────────────────────────────
+  async function confirmDelete() {
+    setDeleteModal(m => ({ ...m, loading: true }));
+    try {
+      const res = await fetch(`${BASE_URL}/api/view_member/delete/${deleteModal.userId}`, { credentials: 'include' });
+      const json = await res.json();
+      setDeleteModal(m => ({ ...m, open: false, loading: false }));
+      if (json.success) {
+        showAlert('Deleted!', json.message, true);
+        fetchData();
+      } else {
+        showToast(json.message, 'error');
+      }
+    } catch {
+      setDeleteModal(m => ({ ...m, loading: false }));
+      showToast('Server error.', 'error');
+    }
+  }
+
+  // ── RESET FORMS ───────────────────────────────────────────────────────────
+  function resetAdd() {
+    setAddForm({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
+    setAddFile(null); setAddPreview(null); setAddErrors({});
+  }
+  function resetEdit() {
+    setEditForm({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
+    setEditFile(null); setEditPreview(null); setEditErrors({});
+  }
+
+  // ── OPEN EDIT ─────────────────────────────────────────────────────────────
+  function openEdit(user) {
     setEditId(user.id);
-    setEditForm({ team_id: user.team_id || "", role_id: user.role_id, name: user.name, email: user.email, phone: user.phone || "", password: "", confirm: "" });
-    setEditPic(null);
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      password: '',
+      confirmPassword: '',
+      role_id: String(user.role_id || ''),
+      team_id: String(user.role_team_id || user.team_id || ''),
+    });
+    setEditFile(null);
+    setEditPreview(null);
     setEditErrors({});
     setEditOpen(true);
-  };
+  }
 
-  const validateEdit = () => {
-    const e = {};
-    if (!editForm.team_id) e.team_id = "Select department";
-    if (!editForm.role_id) e.role_id = "Select role";
-    if (!editForm.name.trim()) e.name = "Name required";
-    if (!editForm.email.trim()) e.email = "Email required";
-    if (editForm.phone && editForm.phone.length !== 10) e.phone = "Enter 10-digit number";
-    if (editForm.password && !PASS_RE.test(editForm.password)) e.password = "Min 8 chars, 1 upper, 1 lower, 1 number";
-    if (editForm.password && editForm.password !== editForm.confirm) e.confirm = "Passwords do not match";
-    setEditErrors(e);
-    return !Object.keys(e).length;
-  };
-
-  const submitEdit = async (e) => {
-    e.preventDefault();
-    if (!validateEdit()) return;
-    const fd = new FormData();
-    Object.entries({ name: editForm.name, email: editForm.email, phone: editForm.phone, password: editForm.password, role_id: editForm.role_id }).forEach(([k, v]) => fd.append(k, v));
-    if (editPic) fd.append("profile_pic", editPic);
-    try {
-      const r = await fetch(`/api/view_member/edit/${editId}`, { method: "POST", body: fd });
-      const d = await r.json();
-      if (d.success) { setEditOpen(false); fetchData(); notify("success", "Updated", "Member updated successfully"); }
-      else notify("error", "Failed", d.message);
-    } catch { notify("error", "Error", "Server error"); }
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // SUSPEND / DELETE
-  // ─────────────────────────────────────────────────────────────────────────
-  const confirmSuspend = async () => {
-    try {
-      const r = await fetch(`/api/view_member/suspend/${suspendTarget.id}`);
-      const d = await r.json();
-      if (d.success) { fetchData(); notify("success", "Done", d.message); }
-      else notify("error", "Failed", d.message);
-    } catch { notify("error", "Error", "Server error"); }
-    setSuspendTarget(null);
-  };
-
-  const confirmDelete = async () => {
-    try {
-      const r = await fetch(`/api/view_member/delete/${deleteTarget.id}`);
-      const d = await r.json();
-      if (d.success) { fetchData(); notify("success", "Deleted", d.message); }
-      else notify("error", "Failed", d.message);
-    } catch { notify("error", "Error", "Server error"); }
-    setDeleteTarget(null);
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // STATUS BADGE
-  // ─────────────────────────────────────────────────────────────────────────
-  const StatusBadge = ({ status }) => (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px",
-      borderRadius: 20, fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-      background: status === "ACTIVE" ? "rgba(46,204,113,0.15)" : "rgba(231,76,60,0.15)",
-      color: status === "ACTIVE" ? "#2ecc71" : "#e74c3c",
-      border: `1px solid ${status === "ACTIVE" ? "rgba(46,204,113,0.3)" : "rgba(231,76,60,0.3)"}`,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: status === "ACTIVE" ? "#2ecc71" : "#e74c3c", display: "inline-block" }} />
-      {status}
-    </span>
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // MEMBER FORM (shared between Add / Edit)
-  // ─────────────────────────────────────────────────────────────────────────
-  const MemberForm = ({ mode }) => {
-    const isEdit = mode === "edit";
-    const form = isEdit ? editForm : addForm;
-    const setForm = isEdit ? setEditForm : setAddForm;
-    const errors = isEdit ? editErrors : addErrors;
-    const onSubmit = isEdit ? submitEdit : submitAdd;
-    const setPic = isEdit ? setEditPic : setAddPic;
-
-    const filteredRoles = rolesForTeam(form.team_id);
-
+  // ── LOADING STATE ─────────────────────────────────────────────────────────
+  if (loading) {
     return (
-      <form onSubmit={onSubmit}>
-        <div style={{ padding: "20px 20px 8px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <h3 style={{ margin: 0, color: "#fff", fontSize: 16, fontWeight: 700 }}>
-              {isEdit ? "Edit Member" : "Add Member"}
-            </h3>
-            <button type="button" onClick={() => isEdit ? setEditOpen(false) : setAddOpen(false)}
-              style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#aaa" }}>
-              <Icon.Close />
-            </button>
-          </div>
-
-          {/* Department */}
-          <Field label="Department" icon={<Icon.Department />} error={errors.team_id}>
-            <select value={form.team_id} onChange={(e) => setForm({ ...form, team_id: e.target.value, role_id: "" })} style={selectStyle} required>
-              <option value="" disabled>Select Department</option>
-              {data.teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </Field>
-
-          {/* Role */}
-          <Field label="Role" icon={<Icon.Roles />} error={errors.role_id}>
-            <select value={form.role_id} onChange={(e) => setForm({ ...form, role_id: e.target.value })} style={selectStyle} required>
-              <option value="" disabled>Select Role</option>
-              {filteredRoles.map((r) => <option key={r.id} value={r.id}>{r.role_name}</option>)}
-            </select>
-          </Field>
-
-          {/* Name */}
-          <Field label="Full Name" icon={<Icon.User />} error={errors.name}>
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" style={inputStyle} />
-          </Field>
-
-          {/* Email */}
-          <Field label="Email" icon={<Icon.Mail />} error={errors.email}>
-            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email address" style={inputStyle} />
-          </Field>
-
-          {/* Phone */}
-          <Field label="Phone" icon={<Icon.Phone />} error={errors.phone}>
-            <input type="tel" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })} placeholder="10-digit phone (optional)" style={inputStyle} />
-          </Field>
-
-          {/* Password */}
-          <PasswordField label={isEdit ? "New Password (optional)" : "Password"} icon={<Icon.Key />}
-            placeholder={isEdit ? "Leave blank to keep current" : "Password"}
-            value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-          {errors.password && <p style={{ color: "#e74c3c", fontSize: 11, margin: "-10px 0 10px" }}>{errors.password}</p>}
-
-          {/* Confirm */}
-          <PasswordField label="Confirm Password" icon={<Icon.Key />}
-            placeholder="Confirm password" value={form.confirm}
-            onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
-          {errors.confirm && <p style={{ color: "#e74c3c", fontSize: 11, margin: "-10px 0 10px" }}>{errors.confirm}</p>}
-
-          {/* Profile Pic */}
-          <Field label="Profile Picture" icon={<Icon.Image />}>
-            <label style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-              background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(255,255,255,0.15)",
-              borderRadius: 8, cursor: "pointer", color: "#aaa", fontSize: 12,
-            }}>
-              <Icon.Image />
-              <span>{isEdit ? (editPic?.name || "Choose new image…") : (addPic?.name || "Choose image…")}</span>
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => setPic(e.target.files[0])} />
-            </label>
-            <p style={{ color: "#555", fontSize: 10, margin: "4px 0 0" }}>jpeg, jpg, png, gif, webp — max 5 MB</p>
-          </Field>
+      <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <style>{CSS}</style>
+        <div style={{ textAlign: 'center' }}>
+          <div style={S.spinner} />
+          <p style={{ color: '#0F8989', marginTop: 16, fontFamily: "'DM Mono', monospace", fontSize: 13 }}>Loading members…</p>
         </div>
-
-        <div style={{ padding: "12px 20px 20px" }}>
-          <button type="submit" style={{
-            width: "100%", padding: "12px 0", background: "linear-gradient(135deg,#0F8989,#095959)",
-            border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 700,
-            cursor: "pointer", letterSpacing: "0.03em",
-          }}>{isEdit ? "Update Member" : "Add Member"}</button>
-        </div>
-      </form>
+      </div>
     );
-  };
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────────────────
+  const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
+  const hasRoles = data.roles.length > 0;
+
   return (
-    <div style={{ minHeight: "100vh", background: "#3C3A3A", color: "#fff", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      <Notification notifications={notifications} removeNotification={removeNotif} />
+    <div style={S.page}>
+      <style>{CSS}</style>
 
-      {/* ── Top Bar ── */}
-      <div style={{
-        position: "sticky", top: 0, zIndex: 100,
-        background: "linear-gradient(180deg,#2a2828 0%,rgba(42,40,40,0.95) 100%)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
-        backdropFilter: "blur(8px)",
-      }}>
-        {/* Title row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>Members</h1>
-            {data.adminName && <p style={{ margin: "2px 0 0", fontSize: 11, color: "#0F8989", fontWeight: 600 }}>{data.adminName}</p>}
+      {/* ── HEADER ── */}
+      <div style={S.header}>
+        <div style={S.headerInner}>
+          <div style={S.headerLeft}>
+            <div style={S.headerIcon}><UserIcon /></div>
+            <div>
+              <div style={S.headerTitle}>Members</div>
+              <div style={S.headerSub}>{data.users.length} total members</div>
+            </div>
           </div>
+          <button style={S.addBtn} className="vm-add-btn" onClick={() => { resetAdd(); setAddOpen(true); }}>
+            <PlusIcon />
+            <span style={{ marginLeft: 6 }}>Add</span>
+          </button>
+        </div>
 
-          {/* Icon buttons for Department / Roles / Add */}
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {(data.sessionRole === "admin" || data.sessionRole === "owner") && (
-              <IconNavBtn icon={<Icon.Department />} label="Dept" onClick={() => window.location.href = "/view-teams"} />
-            )}
-            <IconNavBtn icon={<Icon.Roles />} label="Roles" onClick={() => window.location.href = "/view-roles"} />
-            <button onClick={() => setAddOpen(true)} style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px",
-              background: "linear-gradient(135deg,#0F8989,#095959)", border: "none",
-              borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
-              letterSpacing: "0.02em", flexShrink: 0,
-            }}>
-              <Icon.Plus /> Add
+        {/* Nav pills */}
+        {isAdminLike && (
+          <div style={S.navPills}>
+            <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-teams'}>
+              Departments
+            </button>
+            <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-roles'}>
+              Roles
             </button>
           </div>
-        </div>
+        )}
 
         {/* Search */}
-        <div style={{ padding: "0 16px 12px", position: "relative" }}>
-          <div style={{ position: "absolute", left: 28, top: "50%", transform: "translateY(-50%)", color: "#888", pointerEvents: "none" }}>
-            <Icon.Search />
-          </div>
-          <input value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search member by name…"
-            style={{ ...inputStyle, paddingLeft: 38, background: "rgba(255,255,255,0.06)" }} />
+        <div style={S.searchWrap}>
+          <span style={S.searchIcon}><SearchIcon /></span>
+          <input
+            style={S.searchInput}
+            placeholder="Search by name, email or role…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="vm-search"
+          />
         </div>
       </div>
 
-      {/* ── Member count ── */}
-      <div style={{ padding: "10px 16px 4px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 11, color: "#888" }}>{filtered.length} member{filtered.length !== 1 ? "s" : ""}</span>
-      </div>
-
-      {/* ── Member Cards ── */}
-      <div style={{ padding: "6px 16px 100px" }}>
-        {loading ? (
-          <div style={{ textAlign: "center", color: "#555", padding: 60 }}>Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#555", padding: 60, fontSize: 14 }}>No members found</div>
-        ) : (
-          filtered.map((user, idx) => (
-            <div key={user.id} style={{
-              background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 14px",
-              marginBottom: 10, border: "1px solid rgba(255,255,255,0.07)",
-              display: "flex", alignItems: "center", gap: 12,
-              animation: `fadeUp 0.3s ease ${idx * 0.04}s both`,
-            }}>
-              {/* Avatar */}
-              <Avatar user={user} />
-
-              {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 140 }}>{user.name}</span>
-                  <StatusBadge status={user.status} />
-                </div>
-                <div style={{ fontSize: 11, color: "#888", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 10, color: "#0F8989", background: "rgba(15,137,137,0.12)", padding: "2px 7px", borderRadius: 20, fontWeight: 600, border: "1px solid rgba(15,137,137,0.25)" }}>{user.role_name}</span>
-                </div>
-              </div>
-
-              {/* Action icons */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", flexShrink: 0 }}>
-                {/* Suspend / Activate icon */}
-                <ActionIcon
-                  title={user.status === "ACTIVE" ? "Suspend" : "Activate"}
-                  color={user.status === "ACTIVE" ? "#e74c3c" : "#2ecc71"}
-                  bg={user.status === "ACTIVE" ? "rgba(231,76,60,0.1)" : "rgba(46,204,113,0.1)"}
-                  onClick={() => setSuspendTarget({ id: user.id, name: user.name, status: user.status })}
-                  icon={user.status === "ACTIVE" ? <Icon.Lock /> : <Icon.Unlock />}
-                />
-                <ActionIcon
-                  title="Edit"
-                  color="#FFD000"
-                  bg="rgba(255,208,0,0.1)"
-                  onClick={() => openEdit(user)}
-                  icon={<Icon.Edit />}
-                />
-                <ActionIcon
-                  title="Delete"
-                  color="#e74c3c"
-                  bg="rgba(231,76,60,0.1)"
-                  onClick={() => setDeleteTarget({ id: user.id, name: user.name })}
-                  icon={<Icon.Delete />}
-                />
-              </div>
+      {/* ── MEMBER CARDS ── */}
+      <div style={S.body}>
+        {filtered.length === 0 ? (
+          <div style={S.empty}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>👥</div>
+            <div style={{ color: '#8abad0', fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+              {search ? 'No members match your search.' : 'No members found.'}
             </div>
-          ))
+          </div>
+        ) : (
+          <div style={S.grid}>
+            {filtered.map((user, i) => (
+              <MemberCard
+                key={user.id}
+                user={user}
+                index={i}
+                sessionRole={data.sessionRole}
+                sessionUserId={data.sessionUserId}
+                onEdit={() => openEdit(user)}
+                onSuspend={() => setSuspendModal({ open: true, userId: user.id, name: user.name, status: user.status, loading: false })}
+                onDelete={() => setDeleteModal({ open: true, userId: user.id, name: user.name, loading: false })}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* ── Tablet+ Table View (hidden on mobile) ── */}
-      <style>{`
-        @media (min-width: 700px) {
-          .member-cards { display: none !important; }
-          .member-table-wrap { display: block !important; }
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        select option { background: #2a2828; color: #fff; }
-        input::placeholder { color: #555; }
-        input:focus, select:focus { border-color: #0F8989 !important; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-      `}</style>
+      {/* ── ADD MEMBER MODAL ── */}
+      {addOpen && (
+        <div style={S.backdrop} onClick={() => setAddOpen(false)}>
+          <div style={S.modal} onClick={e => e.stopPropagation()}>
+            <div style={S.modalPill} />
+            <div style={S.modalHead}>
+              <span style={S.modalTitle}>Add Member</span>
+              <button style={S.closeBtn} className="vm-close" onClick={() => setAddOpen(false)}><CloseIcon /></button>
+            </div>
+            <div style={{ overflowY: 'auto', maxHeight: 'calc(88dvh - 80px)', paddingBottom: 20 }}>
+              {!hasRoles ? (
+                <div style={{ textAlign: 'center', padding: '30px 16px' }}>
+                  <div style={{ marginBottom: 14 }}><AlertIcon /></div>
+                  <div style={{ color: '#e8f5f5', fontWeight: 700, marginBottom: 8 }}>No Roles Found</div>
+                  <div style={{ color: '#8abad0', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+                    Please create a role in the Roles Panel before adding a member.
+                  </div>
+                  <button style={{ ...S.btn, background: '#0F8989', color: '#fff' }} onClick={() => window.location.href = '/view-roles'}>
+                    Go to Roles Panel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Avatar picker */}
+                  <div style={S.avatarEditRow}>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      {addPreview
+                        ? <img src={addPreview} alt="preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid #0F8989' }} />
+                        : <Avatar name={addForm.name || 'M'} size={64} />
+                      }
+                      <button style={S.camBtn} onClick={() => addFileRef.current?.click()} type="button"><CamIcon /></button>
+                    </div>
+                    <div style={{ marginLeft: 14 }}>
+                      <div style={{ fontSize: 13, color: '#8abad0' }}>Tap to set profile picture</div>
+                      <div style={{ fontSize: 11, color: '#4a7080', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
+                    </div>
+                  </div>
+                  <input ref={addFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => handleFilePick(e.target.files[0], setAddFile, setAddPreview)} />
 
-      {/* ── ADD DIALOG ── */}
-      <Modal open={addOpen} onClose={() => setAddOpen(false)}>
-        {data.roles.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center" }}>
-            <Icon.Warning />
-            <h3 style={{ color: "#fff", marginTop: 12 }}>No Roles Found</h3>
-            <p style={{ color: "#aaa", fontSize: 13 }}>Create a role in the Roles Panel first.</p>
-            <button onClick={() => window.location.href = "/view-roles"} style={{ padding: "10px 24px", background: "#0F8989", border: "none", borderRadius: 8, color: "#fff", fontWeight: 700, cursor: "pointer", marginTop: 8 }}>Go to Roles Panel</button>
+                  <Field label="Department" error={addErrors.team_id}>
+                    <Select value={addForm.team_id}
+                      onChange={e => setAddForm(f => ({ ...f, team_id: e.target.value, role_id: '' }))}>
+                      <option value="" disabled>Select Department</option>
+                      {data.teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </Select>
+                  </Field>
+
+                  <Field label="Role" error={addErrors.role_id}>
+                    <Select value={addForm.role_id}
+                      onChange={e => setAddForm(f => ({ ...f, role_id: e.target.value }))}
+                      disabled={!addForm.team_id}>
+                      <option value="" disabled>Select Role</option>
+                      {rolesForTeam(addForm.team_id).map(r => <option key={r.id} value={r.id}>{r.role_name}</option>)}
+                    </Select>
+                  </Field>
+
+                  <Field label="Full Name" error={addErrors.name}>
+                    <Input placeholder="Full name" value={addForm.name}
+                      onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))} />
+                  </Field>
+
+                  <Field label="Email" error={addErrors.email}>
+                    <Input type="email" placeholder="Email address" value={addForm.email}
+                      onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))} />
+                  </Field>
+
+                  <Field label="Phone (optional)" error={addErrors.phone}>
+                    <Input placeholder="10-digit number" value={addForm.phone} inputMode="numeric"
+                      onChange={e => setAddForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))} maxLength={10} />
+                  </Field>
+
+                  <PasswordInput
+                    label="Password"
+                    value={addForm.password}
+                    onChange={e => setAddForm(f => ({ ...f, password: e.target.value }))}
+                    placeholder="Min 8 chars, upper, lower, number"
+                  />
+                  {addErrors.password && <div style={{ ...S.errText, marginTop: -10, marginBottom: 14 }}>{addErrors.password}</div>}
+
+                  <PasswordInput
+                    label="Confirm Password"
+                    value={addForm.confirmPassword}
+                    onChange={e => setAddForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                    placeholder="Repeat password"
+                  />
+                  {addErrors.confirmPassword && <div style={{ ...S.errText, marginTop: -10, marginBottom: 14 }}>{addErrors.confirmPassword}</div>}
+
+                  <button style={{ ...S.btn, background: 'linear-gradient(135deg, #095959, #0F8989)', color: '#fff', width: '100%', opacity: addLoading ? 0.7 : 1 }}
+                    onClick={handleAddSubmit} disabled={addLoading}>
+                    {addLoading ? 'Adding…' : 'Add Member'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        ) : <MemberForm mode="add" />}
-      </Modal>
+        </div>
+      )}
 
-      {/* ── EDIT DIALOG ── */}
-      <Modal open={editOpen} onClose={() => setEditOpen(false)}>
-        <MemberForm mode="edit" />
-      </Modal>
+      {/* ── EDIT MEMBER MODAL ── */}
+      {editOpen && (
+        <div style={S.backdrop} onClick={() => setEditOpen(false)}>
+          <div style={S.modal} onClick={e => e.stopPropagation()}>
+            <div style={S.modalPill} />
+            <div style={S.modalHead}>
+              <span style={S.modalTitle}>Edit Member</span>
+              <button style={S.closeBtn} className="vm-close" onClick={() => setEditOpen(false)}><CloseIcon /></button>
+            </div>
+            <div style={{ overflowY: 'auto', maxHeight: 'calc(88dvh - 80px)', paddingBottom: 20 }}>
+              {/* Avatar picker */}
+              <div style={S.avatarEditRow}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  {editPreview
+                    ? <img src={editPreview} alt="preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid #0F8989' }} />
+                    : <Avatar name={editForm.name || 'M'} size={64} />
+                  }
+                  <button style={S.camBtn} onClick={() => editFileRef.current?.click()} type="button"><CamIcon /></button>
+                </div>
+                <div style={{ marginLeft: 14 }}>
+                  <div style={{ fontSize: 13, color: '#8abad0' }}>Tap to change profile picture</div>
+                  <div style={{ fontSize: 11, color: '#4a7080', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
+                </div>
+              </div>
+              <input ref={editFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => handleFilePick(e.target.files[0], setEditFile, setEditPreview)} />
+
+              <Field label="Department">
+                <Select value={editForm.team_id}
+                  onChange={e => setEditForm(f => ({ ...f, team_id: e.target.value, role_id: '' }))}>
+                  <option value="" disabled>Select Department</option>
+                  {data.teams.map(t => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
+                </Select>
+              </Field>
+
+              <Field label="Role" error={editErrors.role_id}>
+                <Select value={editForm.role_id}
+                  onChange={e => setEditForm(f => ({ ...f, role_id: e.target.value }))}>
+                  <option value="" disabled>Select Role</option>
+                  {rolesForTeam(editForm.team_id).map(r => <option key={r.id} value={String(r.id)}>{r.role_name}</option>)}
+                </Select>
+              </Field>
+
+              <Field label="Full Name" error={editErrors.name}>
+                <Input placeholder="Full name" value={editForm.name}
+                  onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+              </Field>
+
+              <Field label="Email" error={editErrors.email}>
+                <Input type="email" placeholder="Email address" value={editForm.email}
+                  onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} />
+              </Field>
+
+              <Field label="Phone (optional)" error={editErrors.phone}>
+                <Input placeholder="10-digit number" value={editForm.phone} inputMode="numeric"
+                  onChange={e => setEditForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))} maxLength={10} />
+              </Field>
+
+              <PasswordInput
+                label="New Password (optional)"
+                value={editForm.password}
+                onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))}
+                placeholder="Leave blank to keep current"
+              />
+              {editErrors.password && <div style={{ ...S.errText, marginTop: -10, marginBottom: 14 }}>{editErrors.password}</div>}
+
+              {editForm.password && (
+                <>
+                  <PasswordInput
+                    label="Confirm New Password"
+                    value={editForm.confirmPassword}
+                    onChange={e => setEditForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                    placeholder="Repeat new password"
+                  />
+                  {editErrors.confirmPassword && <div style={{ ...S.errText, marginTop: -10, marginBottom: 14 }}>{editErrors.confirmPassword}</div>}
+                </>
+              )}
+
+              <button style={{ ...S.btn, background: 'linear-gradient(135deg, #095959, #0F8989)', color: '#fff', width: '100%', opacity: editLoading ? 0.7 : 1 }}
+                onClick={handleEditSubmit} disabled={editLoading}>
+                {editLoading ? 'Updating…' : 'Update Member'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SUSPEND CONFIRM ── */}
-      <ConfirmDialog
-        open={!!suspendTarget}
-        onClose={() => setSuspendTarget(null)}
-        onConfirm={confirmSuspend}
-        icon={<Icon.Warning />}
+      <ConfirmModal
+        open={suspendModal.open}
+        icon={<AlertIcon />}
         title="Confirm Action"
-        message={suspendTarget ? `${suspendTarget.status === "ACTIVE" ? "Suspend" : "Activate"} "${suspendTarget.name}"?` : ""}
-        confirmLabel={suspendTarget?.status === "ACTIVE" ? "Suspend" : "Activate"}
-        danger={suspendTarget?.status === "ACTIVE"}
+        message={`${suspendModal.status === 'ACTIVE' ? 'Suspend' : 'Activate'} "${suspendModal.name}"?`}
+        confirmLabel={suspendModal.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
+        confirmClass={suspendModal.status === 'ACTIVE' ? 'danger' : 'success'}
+        loading={suspendModal.loading}
+        onConfirm={confirmSuspend}
+        onCancel={() => setSuspendModal(m => ({ ...m, open: false }))}
       />
 
       {/* ── DELETE CONFIRM ── */}
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-        icon={<Icon.Trash2 />}
+      <ConfirmModal
+        open={deleteModal.open}
+        icon={<DangerIcon />}
         title="Delete Member"
-        message={deleteTarget ? `Permanently delete "${deleteTarget.name}"?` : ""}
+        message={`Permanently delete "${deleteModal.name}"? This cannot be undone.`}
         confirmLabel="Delete"
-        danger
+        confirmClass="danger"
+        loading={deleteModal.loading}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteModal(m => ({ ...m, open: false }))}
       />
+
+      {/* ── ALERT ── */}
+      <AlertModal
+        open={alertModal.open}
+        icon={alertModal.success ? <OkIcon /> : <DangerIcon />}
+        title={alertModal.title}
+        message={alertModal.message}
+        onClose={() => setAlertModal(a => ({ ...a, open: false }))}
+      />
+
+      {/* ── TOAST ── */}
+      <div
+        className={`vm-toast${toast.show ? ' show' : ''}`}
+        style={{ background: toast.type === 'error' ? '#a32d2d' : '#095959' }}
+      >
+        <span style={{ marginRight: 8, display: 'inline-flex' }}>
+          {toast.type === 'error' ? <DotErr /> : <DotOk />}
+        </span>
+        {toast.msg}
+      </div>
     </div>
   );
 }
 
-// ── Small helper components ─────────────────────────────────────────────────
-function IconNavBtn({ icon, label, onClick }) {
+// ─── MEMBER CARD ─────────────────────────────────────────────────────────────
+function MemberCard({ user, index, sessionRole, sessionUserId, onEdit, onSuspend, onDelete }) {
+  const isActive = user.status === 'ACTIVE';
+  const isSelf = sessionUserId && user.id === sessionUserId;
+
   return (
-    <button onClick={onClick} title={label} style={{
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-      background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 8, padding: "6px 10px", cursor: "pointer", color: "#ccc",
-      fontSize: 9, fontWeight: 600, letterSpacing: "0.04em", transition: "all 0.2s",
-    }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(15,137,137,0.2)"; e.currentTarget.style.color = "#0F8989"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "#ccc"; }}
-    >
-      {icon}<span>{label}</span>
-    </button>
+    <div style={S.card} className="vm-card" key={user.id}>
+      {/* Top row: avatar + name + status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <Avatar profilePic={user.profile_pic} name={user.name} size={44} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={S.cardName}>{user.name}</span>
+            {isSelf && <span style={S.selfBadge}>You</span>}
+          </div>
+          <div style={S.cardEmail}>{user.email}</div>
+        </div>
+        <div style={{ ...S.statusDot, background: isActive ? '#2ecc71' : '#e74c3c' }} title={user.status} />
+      </div>
+
+      {/* Meta row */}
+      <div style={S.cardMeta}>
+        <span style={S.metaChip}>{user.role_name || 'No Role'}</span>
+        <span style={{ ...S.statusText, color: isActive ? '#2ecc71' : '#e74c3c' }}>
+          {user.status}
+        </span>
+      </div>
+
+      {/* Actions */}
+      <div style={S.cardActions}>
+        <button
+          style={{ ...S.actionBtn, background: isActive ? 'rgba(231,76,60,0.15)' : 'rgba(46,204,113,0.15)', color: isActive ? '#e74c3c' : '#2ecc71' }}
+          className="vm-action-btn"
+          onClick={onSuspend}
+        >
+          {isActive ? 'Suspend' : 'Activate'}
+        </button>
+        <button style={{ ...S.iconBtn, color: '#FFD000' }} className="vm-icon-btn" onClick={onEdit} title="Edit">
+          <PencilIcon size={15} />
+        </button>
+        <button style={{ ...S.iconBtn, color: '#e74c3c' }} className="vm-icon-btn" onClick={onDelete} title="Delete">
+          <TrashIcon size={15} />
+        </button>
+      </div>
+    </div>
   );
 }
 
-function ActionIcon({ icon, color, bg, onClick, title }) {
-  return (
-    <button onClick={onClick} title={title} style={{
-      width: 30, height: 30, borderRadius: 7, border: "none",
-      background: bg, color, cursor: "pointer", display: "flex",
-      alignItems: "center", justifyContent: "center", transition: "all 0.15s",
-      flexShrink: 0,
-    }}
-      onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; e.currentTarget.style.transform = "scale(1.1)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1)"; }}
-    >
-      {icon}
-    </button>
-  );
-}
+// ─── STYLES ──────────────────────────────────────────────────────────────────
+const S = {
+  page: {
+    minHeight: '100%',
+    background: '#3C3A3A',
+    fontFamily: "'DM Mono', 'Courier New', monospace",
+    paddingBottom: 60,
+  },
+
+  // Header
+  header: {
+    background: 'linear-gradient(180deg, #111a1a 0%, #1a2a2a 100%)',
+    padding: '20px 16px 0',
+    borderBottom: '1px solid rgba(15,137,137,0.2)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+  },
+  headerInner: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIcon: {
+    width: 40, height: 40,
+    background: 'rgba(15,137,137,0.15)',
+    border: '1px solid rgba(15,137,137,0.3)',
+    borderRadius: 10,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#0F8989',
+  },
+  headerTitle: {
+    fontSize: 18, fontWeight: 700, color: '#e8f5f5',
+    letterSpacing: 0.5,
+  },
+  headerSub: {
+    fontSize: 11, color: '#4a7080', marginTop: 2,
+  },
+  addBtn: {
+    display: 'flex', alignItems: 'center',
+    background: 'linear-gradient(135deg, #095959, #0F8989)',
+    color: '#fff',
+    border: 'none', borderRadius: 24,
+    padding: '9px 18px',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    fontFamily: "'DM Mono', monospace",
+    boxShadow: '0 4px 16px rgba(15,137,137,0.3)',
+    letterSpacing: 0.3,
+  },
+  navPills: {
+    display: 'flex', gap: 8,
+    marginBottom: 14,
+    overflowX: 'auto',
+    paddingBottom: 2,
+  },
+  navPill: {
+    background: 'rgba(15,137,137,0.12)',
+    border: '1px solid rgba(15,137,137,0.25)',
+    color: '#0F8989',
+    borderRadius: 20,
+    padding: '6px 16px',
+    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    fontFamily: "'DM Mono', monospace",
+    letterSpacing: 0.3,
+  },
+  searchWrap: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  searchIcon: {
+    position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+    color: '#0F8989', pointerEvents: 'none',
+  },
+  searchInput: {
+    width: '100%', boxSizing: 'border-box',
+    padding: '11px 14px 11px 42px',
+    background: 'rgba(15,137,137,0.08)',
+    border: '1px solid rgba(15,137,137,0.2)',
+    borderRadius: 24,
+    color: '#e8f5f5',
+    fontSize: 13,
+    fontFamily: "'DM Mono', monospace",
+    outline: 'none',
+  },
+
+  // Body
+  body: { padding: '16px 12px' },
+  empty: {
+    textAlign: 'center',
+    padding: '60px 20px',
+    color: '#4a7080',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: 12,
+  },
+
+  // Card
+  card: {
+    background: 'linear-gradient(135deg, #1a2a2a 0%, #1e3030 100%)',
+    border: '1px solid rgba(15,137,137,0.18)',
+    borderRadius: 16,
+    padding: '16px',
+    boxShadow: '0 2px 16px rgba(0,0,0,0.3)',
+    transition: 'transform 0.18s, box-shadow 0.18s',
+  },
+  cardName: {
+    fontSize: 14, fontWeight: 700, color: '#e8f5f5',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  cardEmail: {
+    fontSize: 11, color: '#4a7080', marginTop: 2,
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  statusDot: {
+    width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+    boxShadow: '0 0 6px currentColor',
+  },
+  cardMeta: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  metaChip: {
+    background: 'rgba(15,137,137,0.12)',
+    border: '1px solid rgba(15,137,137,0.2)',
+    color: '#0F8989',
+    borderRadius: 20, padding: '3px 12px',
+    fontSize: 11, fontWeight: 700,
+    maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  statusText: {
+    fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+  },
+  selfBadge: {
+    background: 'rgba(255,208,0,0.12)',
+    color: '#FFD000',
+    border: '1px solid rgba(255,208,0,0.3)',
+    borderRadius: 10, padding: '2px 8px',
+    fontSize: 10, fontWeight: 700,
+  },
+  cardActions: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    borderTop: '1px solid rgba(15,137,137,0.1)',
+    paddingTop: 12,
+  },
+  actionBtn: {
+    flex: 1, padding: '7px 0',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8, cursor: 'pointer',
+    fontSize: 12, fontWeight: 700,
+    fontFamily: "'DM Mono', monospace",
+    transition: 'opacity 0.15s',
+  },
+  iconBtn: {
+    width: 34, height: 34,
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'background 0.15s',
+  },
+
+  // Modal
+  backdrop: {
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.7)',
+    zIndex: 1300,
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+  },
+  modal: {
+    width: '100%', maxWidth: 560,
+    background: '#111a1a',
+    borderRadius: '20px 20px 0 0',
+    padding: '0 18px 24px',
+    maxHeight: '88dvh',
+    overflowY: 'auto',
+    boxSizing: 'border-box',
+    border: '1px solid rgba(15,137,137,0.2)',
+    borderBottom: 'none',
+    boxShadow: '0 -8px 48px rgba(0,0,0,0.5)',
+  },
+  modalPill: {
+    width: 40, height: 4,
+    background: 'rgba(15,137,137,0.3)',
+    borderRadius: 4, margin: '12px auto 0',
+  },
+  modalHead: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '16px 0 14px',
+    borderBottom: '1px solid rgba(15,137,137,0.15)',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 16, fontWeight: 700, color: '#e8f5f5', letterSpacing: 0.3,
+  },
+  closeBtn: {
+    width: 32, height: 32, borderRadius: '50%',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: '#8abad0', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 0,
+  },
+
+  // Avatar edit row
+  avatarEditRow: {
+    display: 'flex', alignItems: 'center',
+    padding: '8px 0 18px',
+    marginBottom: 4,
+  },
+  camBtn: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 24, height: 24, borderRadius: '50%',
+    background: 'linear-gradient(135deg, #095959, #0F8989)',
+    border: '2px solid #111a1a',
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 0,
+  },
+
+  // Form
+  label: {
+    display: 'block',
+    fontSize: 10, fontWeight: 700,
+    color: '#0F8989',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  input: {
+    width: '100%', boxSizing: 'border-box',
+    padding: '11px 14px',
+    background: 'rgba(15,137,137,0.07)',
+    border: '1.5px solid rgba(15,137,137,0.2)',
+    borderRadius: 10, fontSize: 14,
+    fontFamily: "'DM Mono', monospace",
+    color: '#e8f5f5', outline: 'none',
+    transition: 'border-color 0.18s',
+  },
+  errText: {
+    fontSize: 11, color: '#e74c3c', marginTop: 5, fontWeight: 600,
+  },
+  btn: {
+    padding: '12px 20px',
+    border: 'none', borderRadius: 10,
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    fontFamily: "'DM Mono', monospace",
+    transition: 'opacity 0.15s',
+    letterSpacing: 0.3,
+  },
+
+  // Spinner
+  spinner: {
+    width: 40, height: 40,
+    border: '3px solid rgba(15,137,137,0.2)',
+    borderTop: '3px solid #0F8989',
+    borderRadius: '50%',
+    margin: '0 auto',
+    animation: 'vmSpin 0.7s linear infinite',
+  },
+};
+
+// ─── CSS ─────────────────────────────────────────────────────────────────────
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&display=swap');
+
+  @keyframes vmSpin  { to { transform: rotate(360deg); } }
+  @keyframes vmSlide { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes vmFade  { from { opacity: 0; } to { opacity: 1; } }
+
+  .vm-add-btn:hover   { opacity: 0.88; transform: scale(1.04); }
+  .vm-add-btn:active  { transform: scale(0.97); }
+  .vm-nav-pill:hover  { background: rgba(15,137,137,0.22) !important; }
+  .vm-search:focus    { border-color: #0F8989 !important; box-shadow: 0 0 0 3px rgba(15,137,137,0.12) !important; }
+  .vm-card:hover      { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,0,0,0.4) !important; }
+  .vm-action-btn:hover { opacity: 0.8; }
+  .vm-icon-btn:hover  { background: rgba(255,255,255,0.1) !important; }
+  .vm-close:hover     { background: rgba(15,137,137,0.15) !important; }
+
+  input:focus, select:focus { border-color: #0F8989 !important; box-shadow: 0 0 0 3px rgba(15,137,137,0.15) !important; }
+  select option { background: #111a1a; color: #e8f5f5; }
+  
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #1a2a2a; }
+  ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 10px; }
+
+  .vm-toast {
+    position: fixed;
+    bottom: -80px; left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 32px;
+    font-size: 13px; font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.4);
+    z-index: 9999;
+    white-space: nowrap;
+    display: flex; align-items: center;
+    transition: bottom 0.32s cubic-bezier(.34,1.56,.64,1), opacity 0.28s;
+    opacity: 0; pointer-events: none;
+    max-width: calc(100vw - 40px);
+    letter-spacing: 0.2px;
+  }
+  .vm-toast.show { bottom: 28px; opacity: 1; }
+
+  @media (min-width: 600px) {
+    .vm-toast.show { bottom: 36px; }
+    .vm-backdrop { align-items: center !important; }
+  }
+
+  @media (min-width: 768px) {
+    .vm-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .vm-toast.show { bottom: calc(28px + env(safe-area-inset-bottom)); }
+  }
+`;
