@@ -335,15 +335,57 @@ router.get('/delete/:id', requireAuth, async (req, res) => {
         const adminId = await getAdminId(req.session);
         const { id } = req.params;
 
-        const [rows] = await con.query('SELECT profile_pic FROM users WHERE id=? AND admin_id=?', [id, adminId]);
+        const [rows] = await con.query('SELECT profile_pic, name FROM users WHERE id=? AND admin_id=?', [id, adminId]);
         if (!rows.length) return res.status(404).json({ success: false, message: 'Member not found.' });
 
-        safeDeleteFile(rows[0].profile_pic);
-        await con.query('DELETE FROM users WHERE id=?', [id]);
+        // ── Re-read control_type fresh from DB ───────────────────────────
+        const sessionRole = req.session.role;
+        let freshControlType = req.session.control_type;
+        if (req.session.userId) {
+            const [ctRows] = await con.query(
+                'SELECT r.control_type FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id=?',
+                [req.session.userId]
+            );
+            if (ctRows.length) freshControlType = ctRows[0].control_type;
+        }
 
-        if (req.io) req.io.emit('update_members');
+        const canDirectDelete =
+            sessionRole === 'admin' ||
+            sessionRole === 'owner' ||
+            freshControlType === 'OWNER';
 
-        return res.json({ success: true, message: 'Member deleted successfully.' });
+        if (canDirectDelete) {
+            // ── DIRECT DELETE ─────────────────────────────────────────────
+            safeDeleteFile(rows[0].profile_pic);
+            await con.query('DELETE FROM users WHERE id=?', [id]);
+
+            if (req.io) req.io.emit('update_members');
+
+            return res.json({ success: true, message: 'Member deleted successfully.' });
+
+        } else {
+            // ── INSERT DELETE REQUEST INTO MEMBER_REQUESTS ────────────────
+            const requestedBy = req.session.userId;
+
+            // Check if a pending delete request already exists for this member
+            const [existing] = await con.query(
+                'SELECT id FROM member_requests WHERE target_user_id=? AND request_type="DELETE" AND status="PENDING"',
+                [id]
+            );
+            if (existing.length) {
+                return res.status(400).json({ success: false, message: 'A pending delete request already exists for this member.' });
+            }
+
+            await con.query(
+                'INSERT INTO member_requests (admin_id, role_id, requested_by, name, email, password, target_user_id, request_type, created_by, status) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                [adminId, 0, requestedBy, rows[0].name, '', '', id, 'DELETE', requestedBy, 'PENDING']
+            );
+
+            if (req.io) req.io.emit('update_member_requests');
+
+            return res.json({ success: true, message: 'Delete request submitted. Awaiting admin approval.', isRequest: true });
+        }
+
     } catch (err) {
         console.error('[view_member DELETE]', err);
         return res.status(500).json({ success: false, message: 'Failed to delete member.' });

@@ -400,8 +400,12 @@ export default function ViewMember() {
       const res = await fetch(`${BASE_URL}/api/view_member/delete/${deleteModal.userId}`, { credentials: 'include' });
       const json = await res.json();
       setDeleteModal(m => ({ ...m, open: false, loading: false }));
-      if (json.success) {
-        showAlert('Deleted!', json.message, true);
+  if (json.success) {
+        showAlert(
+          json.isRequest ? 'Request Submitted!' : 'Deleted!',
+          json.message,
+          true
+        );
         fetchData();
       } else {
         showToast(json.message, 'error');
