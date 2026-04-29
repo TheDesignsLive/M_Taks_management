@@ -23,26 +23,31 @@ router.get('/data', async (req, res) => {
 });
 
 // GENERATE & REQUEST OTP
+// GENERATE & REQUEST OTP
 router.post('/request-otp', async (req, res) => {
     const { email, reason } = req.body;
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     try {
-        // COMMENTED: CALLING SENT MAIL ROUTER
+        // --- ⚠️ MAIN FIX: Use 127.0.0.1 instead of Domain Name ---
+        // Hostinger domain loopback block karta hai, isliye 127.0.0.1 bypass kar dega
+        await fetch(`http://127.0.0.1:5000/api/sentmail/send-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contact: email, otp, sent_for: reason })
+        });
         
-      await fetch(`http://127.0.0.1:5000/api/sentmail/send-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contact: email, otp, sent_for: reason })
-});
         console.log(`\n-----------------------------------------`);
         console.log(`[MAIL SERVER] Sending OTP to: ${email}`);
         console.log(`[MAIL SERVER] Reason: ${reason}`);
         console.log(`[MAIL SERVER] OTP Code: ${otp}`);
         console.log(`-----------------------------------------\n`);
+        
         res.json({ success: true, otp: otp });
-    } catch (err) { res.status(500).json({ success: false }); }
+    } catch (err) { 
+        console.error("Fetch Error:", err.message);
+        res.status(500).json({ success: false }); 
+    }
 });
-
 // CHANGE PASSWORD
 router.post('/change-password', async (req, res) => {
     if (!req.session.role) return res.json({ success: false });
