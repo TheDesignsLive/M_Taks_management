@@ -2,11 +2,8 @@ import express from 'express';
 const router = express.Router();
 import nodemailer from 'nodemailer';
 
-router.post("/send-otp", async (req, res) => {
-    const { contact, otp, sent_for } = req.body;
-
-    // Purana configuration jo tumne bataya chal raha hai:
-    // फालतू details हटा दी, अब ये पुराने app जैसा है
+// ✅ Logic ko export kiya taaki settings.js bina fetch ke call kar sake
+export const sendMailLogic = async (contact, otp, sent_for) => {
     let transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -20,8 +17,6 @@ router.post("/send-otp", async (req, res) => {
         to: contact,
     };
 
-    // --- Dynamic Premium Templates Based on Reason ---
-    
     if (sent_for === "forget_password") {
         mailOptions.subject = "Your OTP for Password Reset";
         mailOptions.html = `
@@ -39,7 +34,6 @@ router.post("/send-otp", async (req, res) => {
                 <p style="font-size: 12px; color: #aaa; text-align: center;">© 2026 TMS Workspace. All rights reserved.</p>
             </div>`;
     } 
-    
     else if (sent_for === "signup" || sent_for === "verification") {
         mailOptions.subject = "Verify your account – Welcome to TMS!";
         mailOptions.html = `
@@ -54,7 +48,6 @@ router.post("/send-otp", async (req, res) => {
                 <p style="font-size: 12px; color: #aaa; text-align: center;">© 2026 TMS Workspace. All rights reserved.</p>
             </div>`;
     }
-
     else if (sent_for === "change_email") {
         mailOptions.subject = "Your OTP for Email Change";
         mailOptions.html = `
@@ -69,7 +62,6 @@ router.post("/send-otp", async (req, res) => {
                 <p style="font-size: 12px; color: #aaa; text-align: center;">© 2026 TMS Workspace. All rights reserved.</p>
             </div>`;
     }
-
     else if (sent_for === "change_password") {
         mailOptions.subject = "Security Alert: OTP to Change Password";
         mailOptions.html = `
@@ -84,7 +76,6 @@ router.post("/send-otp", async (req, res) => {
                 <p style="font-size: 12px; color: #aaa; text-align: center;">© 2026 TMS Workspace. All rights reserved.</p>
             </div>`;
     }
-
     else if (sent_for === "delete_profile") {
         mailOptions.subject = "CRITICAL: OTP to Delete Your Profile";
         mailOptions.html = `
@@ -99,16 +90,19 @@ router.post("/send-otp", async (req, res) => {
                 <p style="font-size: 12px; color: #aaa; text-align: center;">© 2026 TMS Workspace. All rights reserved.</p>
             </div>`;
     }
-
-    // Default Fallback Template
     else {
         mailOptions.subject = `Your OTP Code: ${otp}`;
         mailOptions.text = `Your One-Time Password is ${otp}`;
     }
 
+    return transporter.sendMail(mailOptions);
+};
+
+// Route normal kaam karega
+router.post("/send-otp", async (req, res) => {
+    const { contact, otp, sent_for } = req.body;
     try {
-        await transporter.sendMail(mailOptions);
-        // Responding with "status: sent" to keep Settings Route happy
+        await sendMailLogic(contact, otp, sent_for);
         res.json({ status: "sent" }); 
     } catch (err) {
         console.error("Mailer Error:", err);

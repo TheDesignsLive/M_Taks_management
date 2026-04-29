@@ -3,6 +3,7 @@ const router = express.Router();
 import con from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import fetch from 'node-fetch';
+import { sendMailLogic } from './sentMail.js';
 
 // MAIN DATA
 router.get('/data', async (req, res) => {
@@ -30,11 +31,8 @@ router.post('/request-otp', async (req, res) => {
     try {
         // --- ⚠️ MAIN FIX: Use 127.0.0.1 instead of Domain Name ---
         // Hostinger domain loopback block karta hai, isliye 127.0.0.1 bypass kar dega
-        await fetch(`http://127.0.0.1:5000/api/sentmail/send-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contact: email, otp, sent_for: reason })
-        });
+       // Koi fetch nahi, seedha logic call. Isse server restart nahi hoga.
+sendMailLogic(email, otp, reason).catch(err => console.log("Mail Error:", err.message));
         
         console.log(`\n-----------------------------------------`);
         console.log(`[MAIL SERVER] Sending OTP to: ${email}`);
