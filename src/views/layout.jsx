@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Home from './Home.jsx';
 import Notifications from './Notifications.jsx';
 import AssignedByMe from './AssignedByMe.jsx';
-// import ViewMembers from './ViewMembers.jsx';
+import ViewMembers from './ViewMembers.jsx';
 import Settings from './Settings.jsx';
 import Profile from './Profile.jsx';
 
