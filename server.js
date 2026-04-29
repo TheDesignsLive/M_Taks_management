@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import MySQLStoreFactory from 'express-mysql-session';
-import con from './config/db.js'; // Tera DB connection yahan se aayega
+import con from './config/db.js'; // Tera DB connection yahan 
 import authRoutes from './routes/auth.js';
-import taskRoutes from './routes/tasks.js'; // ✅ ADD THIS
+import taskRoutes from './routes/tasks.js'; 
 import notificationRoutes from './routes/notifications.js';
 import Profile from './routes/profile.js';
 import memberActions from './routes/memberActions.js';
@@ -12,7 +12,8 @@ import sentmail from './routes/sentMail.js';
 import Settings from './routes/settings.js';
 import assign_by_me from './routes/assign_by_me.js';
 import view_member from './routes/view_member.js';
-// import sent_mail from './routes/sent-mail.js';
+import teams from './routes/view_teams.js';
+
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/settings', Settings);
 app.use('/api/sentmail', sentmail);
 app.use('/api/assign_by_me', assign_by_me);
 app.use('/api/view_member', view_member);
+app.use('/api/teams', teams);
 // app.use('/api/sent-mail', sent_mail);
 app.use(express.static('dist'));
 app.use('/public', express.static('public'));
