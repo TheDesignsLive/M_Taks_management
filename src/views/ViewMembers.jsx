@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ViewTeams from './view_teams';
 
+// import ViewRoles from './view_roles';
+
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000'
@@ -221,6 +223,7 @@ export default function ViewMember() {
   const [search, setSearch] = useState('');
   const { toast, showToast } = useToast();
   const [showTeams, setShowTeams] = useState(false);
+  // const [showRoles, setShowRoles] = useState(false);
 
   // Add dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -451,6 +454,10 @@ export default function ViewMember() {
   return <ViewTeams onBack={() => setShowTeams(false)} />;
 }
 
+// if (showRoles) {
+//   return <ViewRoles onBack={() => setShowRoles(false)} />;
+// }
+
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
   const hasRoles = data.roles.length > 0;
 
@@ -485,9 +492,9 @@ export default function ViewMember() {
                 <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)}>
                   Departments
                 </button>
-                <button style={S.navPill} className="vm-nav-pill" onClick={() => window.location.href = '/view-roles'}>
-                  Roles
-                </button>
+                <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowRoles(true)}>
+            Roles
+          </button>
               </>
             )}
           </div>
