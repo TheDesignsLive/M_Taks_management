@@ -148,9 +148,11 @@ router.get("/session", (req, res) => {
 router.post("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
+            console.error("Logout Error:", err);
             return res.status(500).json({ status: 'error', message: "Could not log out" });
         }
-        res.clearCookie('connect.sid'); // Session cookie delete karein
+        // ✅ UPDATE: Clear the specific cookie name defined in index.js
+        res.clearCookie('tms_session_cookie'); 
         return res.json({ status: 'success', message: "Logged out successfully" });
     });
 });

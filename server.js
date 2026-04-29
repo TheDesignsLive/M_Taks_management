@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
+import MySQLStoreFactory from 'express-mysql-session';
+import con from './config/db.js'; // Tera DB connection yahan se aayega
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js'; // ✅ ADD THIS
 import notificationRoutes from './routes/notifications.js';
@@ -14,6 +16,9 @@ import assign_by_me from './routes/assign_by_me.js';
 
 const app = express();
 
+const MySQLStore = MySQLStoreFactory(session);
+const sessionStore = new MySQLStore({}, con);
+
 // ✅ CORS — allow frontend origin with credentials
 app.use(cors({
     origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -24,12 +29,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session Setup
+// Updated Session Setup (Ab sessions DB mein save honge)
 app.use(session({
+    key: 'tms_session_cookie',
     secret: 'tms_secret_key_2026',
+    store: sessionStore, // 🔥 Ye line RAM crash ko rokti hai
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // Set to true only if using HTTPS
+        secure: false, 
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000
     }
