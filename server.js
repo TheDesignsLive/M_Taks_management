@@ -9,6 +9,7 @@ import memberActions from './routes/memberActions.js';
 import sentmail from './routes/sentMail.js';
 import Settings from './routes/settings.js';
 import assign_by_me from './routes/assign_by_me.js';
+import view_member from './routes/view_member.js';
 // import sent_mail from './routes/sent-mail.js';
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/notifications', memberActions);
 app.use('/api/settings', Settings);
 app.use('/api/sentmail', sentmail);
 app.use('/api/assign_by_me', assign_by_me);
+app.use('/api/view_member', view_member);
 // app.use('/api/sent-mail', sent_mail);
 app.use(express.static('dist'));
 app.use('/public', express.static('public'));
