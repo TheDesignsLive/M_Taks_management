@@ -74,12 +74,12 @@ function AnimCheckbox({ checked, color, onChange }) {
           boxSizing: 'border-box',
         }}
       >
-    {checked && (
+        {checked && (
           <svg width="9" height="9" viewBox="0 0 10 10" style={{ display:'block' }}>
             <polyline
               points="1.5,5 4,7.5 8.5,2"
               fill="none"
-stroke={color === '#ef4444' ? '#7f1d1d' : color === '#eab308' ? '#713f12' : '#1e3a5f'}
+              stroke={color === '#ef4444' ? '#7f1d1d' : color === '#eab308' ? '#713f12' : '#1e3a5f'}
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -102,13 +102,12 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [dueDate, setDueDate] = useState(toInputDate(task.due_date));
   const [saving, setSaving] = useState(false);
 
-  // Assign state
   const [assignTo, setAssignTo] = useState('self');
   const [assignLabel, setAssignLabel] = useState('Myself');
   const [teams, setTeams] = useState([]);
   const [teamMembers, setTeamMembers] = useState({});
   const [openTeam, setOpenTeam] = useState(null);
-const [showAssignDrop, setShowAssignDrop] = useState(false);
+  const [showAssignDrop, setShowAssignDrop] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 240 });
   const assignTriggerRef = useRef(null);
 
@@ -137,7 +136,6 @@ const [showAssignDrop, setShowAssignDrop] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    // Convert assignTo to the assigned_to number expected by backend
     let finalAssignedTo;
     if (assignTo === 'self') {
       finalAssignedTo = role === 'admin' ? 0 : String(task.assigned_by ?? '');
@@ -148,19 +146,19 @@ const [showAssignDrop, setShowAssignDrop] = useState(false);
     setSaving(false);
   };
 
-const dropStyle = {
+  const dropStyle = {
     position: 'fixed', zIndex: 99999,
-    background: '#1a1a1a', border: '1px solid #334155', borderRadius: 10,
+    background: '#2E2D2D', border: '1px solid #0F8989', borderRadius: 10,
     overflowY: 'auto',
     boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
   };
   const dropItemStyle = {
     padding: '10px 14px', fontSize: 13, cursor: 'pointer',
     display: 'flex', alignItems: 'center', gap: 8,
-    color: '#e2e8f0', borderBottom: '1px solid #2a2a2a',
+    color: '#eee', borderBottom: '1px solid #3C3A3A',
   };
   const subItemStyle = {
-    ...dropItemStyle, paddingLeft: 28, background: '#121212', color: '#94a3b8',
+    ...dropItemStyle, paddingLeft: 28, background: '#3C3A3A', color: '#aaa',
   };
 
   return (
@@ -194,7 +192,7 @@ const dropStyle = {
           </div>
         </div>
 
-{/* Assign To — custom dropdown */}
+        {/* Assign To — custom dropdown */}
         <div style={{...styles.field, position:'relative'}} onClick={e => e.stopPropagation()}>
           <label style={styles.label}>Assign To</label>
           <div
@@ -215,63 +213,59 @@ const dropStyle = {
             }}
             style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
           >
-            <span style={{color:'#e2e8f0'}}>{assignLabel}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" width="12" height="12"><path d="M6 9l6 6 6-6"/></svg>
+            <span style={{color:'#eee'}}>{assignLabel}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" width="12" height="12"><path d="M6 9l6 6 6-6"/></svg>
           </div>
 
           {showAssignDrop && (
             <div style={{...dropStyle, top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: dropPos.maxHeight}}>
-              {/* Myself */}
               <div style={dropItemStyle} onClick={() => selectAssign('self', 'Myself')}>
                 <span>👤</span><span style={{flex:1}}>Myself</span>
-                {assignTo === 'self' && <span style={{color:'#14b8a6'}}>✓</span>}
+                {assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}
               </div>
 
-              {/* Admin (for non-admin users) */}
               {role !== 'admin' && (
                 <div style={dropItemStyle} onClick={() => selectAssign('0', `${adminName} (Admin)`)}>
                   <span>🔑</span><span style={{flex:1}}>{adminName} (Admin)</span>
-                  {assignTo === '0' && <span style={{color:'#14b8a6'}}>✓</span>}
+                  {assignTo === '0' && <span style={{color:'#0F8989'}}>✓</span>}
                 </div>
               )}
 
-       {/* Flat members — only show if no teams exist */}
               {teams.length === 0 && members.length > 0 && (
                 <>
-                  <div style={{...dropItemStyle, color:'#64748b', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #334155'}}>
+                  <div style={{...dropItemStyle, color:'#aaa', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #0F8989'}}>
                     MEMBERS
                   </div>
                   {members.map(m => (
                     <div key={m.id} style={dropItemStyle} onClick={() => selectAssign(String(m.id), m.name)}>
                       <span>👤</span><span style={{flex:1}}>{m.name}</span>
-                      {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
+                      {assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}
                     </div>
                   ))}
                 </>
               )}
 
-              {/* Teams */}
               {teams.length > 0 && (
                 <>
-                  <div style={{...dropItemStyle, color:'#64748b', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #334155'}}>
+                  <div style={{...dropItemStyle, color:'#aaa', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #0F8989'}}>
                     TEAMS
                   </div>
                   {teams.map(team => (
                     <div key={team.id}>
                       <div style={dropItemStyle} onClick={() => { setOpenTeam(v => v === team.id ? null : team.id); loadTeam(team.id); }}>
                         <span>🏷</span><span style={{flex:1}}>{team.name}</span>
-                        <span style={{color: openTeam===team.id ? '#14b8a6':'#64748b', fontSize:11, display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
+                        <span style={{color: openTeam===team.id ? '#0F8989':'#aaa', fontSize:11, display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
                       </div>
                       {openTeam === team.id && (
                         <>
                           <div style={subItemStyle} onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}>
-                            <span style={{color:'#14b8a6'}}>↳</span><span style={{flex:1}}>All {team.name}</span>
-                            {assignTo===`team_${team.id}` && <span style={{color:'#14b8a6'}}>✓</span>}
+                            <span style={{color:'#0F8989'}}>↳</span><span style={{flex:1}}>All {team.name}</span>
+                            {assignTo===`team_${team.id}` && <span style={{color:'#0F8989'}}>✓</span>}
                           </div>
                           {(teamMembers[team.id] || []).map(m => (
                             <div key={m.id} style={{...subItemStyle, paddingLeft:36}} onClick={() => selectAssign(String(m.id), m.name)}>
                               <span style={{flex:1}}>{m.name}</span>
-                              {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
+                              {assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}
                             </div>
                           ))}
                         </>
@@ -298,23 +292,20 @@ const dropStyle = {
 // ─── ChangeSectionModal ───────────────────────────────────────────────────────
 function ChangeSectionModal({ task, role, onMove, onClose }) {
   const currentSection = task.section || 'TASK';
-  // Use backend-set flag directly — no guessing
   const isSelfTask = task.is_self_task === true;
 
   const available = SECTIONS.filter(s => {
     if (s === 'COMPLETED') return false;
     if (s === currentSection) return false;
-    // Self tasks (assigned_to === assigned_by): show TASK, hide OTHERS
     if (isSelfTask && s === 'OTHERS') return false;
-    // Tasks assigned by someone else (assigned_to !== assigned_by): show OTHERS, hide TASK
     if (!isSelfTask && s === 'TASK') return false;
     return true;
   });
 
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-    <div style={{...styles.modal, padding:0, overflow:'hidden'}}>
-  <div style={{...styles.modalHeader, padding:'16px 18px 12px'}}>
+      <div style={{...styles.modal, padding:0, overflow:'hidden'}}>
+        <div style={{...styles.modalHeader, padding:'16px 18px 12px'}}>
           <span style={styles.modalTitle}>Move to Section</span>
           <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
@@ -366,8 +357,8 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{...styles.modal, maxWidth:280, textAlign:'center'}}>
         <div style={{fontSize:32, marginBottom:8}}>🗑️</div>
-        <div style={{color:'#e2e8f0', fontWeight:700, fontSize:15, marginBottom:6}}>Delete Task?</div>
-        <div style={{color:'#94a3b8', fontSize:13, marginBottom:18}}>{message}</div>
+        <div style={{color:'#CDF4F4', fontWeight:700, fontSize:15, marginBottom:6}}>Delete Task?</div>
+        <div style={{color:'#aaa', fontSize:13, marginBottom:18}}>{message}</div>
         <div style={styles.modalActions}>
           <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
           <button onClick={onConfirm} style={{...styles.saveBtn, background:'#ef4444'}}>Delete</button>
@@ -398,7 +389,7 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
   const date = formatDate(task.due_date);
   const past = isPastDate(task.due_date);
 
-const handleCheckbox = async () => {
+  const handleCheckbox = async () => {
     setCompleting(true);
     const newStatus = isCompleted ? 'OPEN' : 'COMPLETED';
     await fetch(`${BASE_URL}/api/home/update-task-status`, {
@@ -456,7 +447,7 @@ const handleCheckbox = async () => {
     <div style={{ overflow:'hidden', maxHeight:0, opacity:0, transition:'all 0.35s ease', marginBottom:0 }}/>
   );
 
-return (
+  return (
     <>
       <div style={{
         ...styles.taskCard,
@@ -469,7 +460,7 @@ return (
         {/* Row 1: Checkbox + Title */}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
-          <div style={{ flex:1, minWidth:0, color: isCompleted ? '#888' : '#e2e8f0', fontSize:13.5, fontWeight:500, lineHeight:1.3, textAlign:'left', wordBreak:'break-word' }}>
+          <div style={{ flex:1, minWidth:0, color: isCompleted ? '#888' : '#eee', fontSize:13.5, fontWeight:500, lineHeight:1.3, textAlign:'left', wordBreak:'break-word' }}>
             {task.title}
           </div>
         </div>
@@ -480,14 +471,14 @@ return (
           {/* Left side */}
           <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0 }}>
             {task.assigned_by_name && (
-              <span style={{ fontSize:11, color:'#94a3b8', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              <span style={{ fontSize:11, color:'#aaa', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                 {task.assigned_by_name}
               </span>
             )}
             {!isCompleted && (
               <span
                 onClick={() => setSectionOpen(true)}
-                style={{ fontSize:10, color:'#64748b', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#1e1e1e', border:'1px solid #334155', whiteSpace:'nowrap', flexShrink:0 }}
+                style={{ fontSize:10, color:'#aaa', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#3C3A3A', border:'1px solid #0F8989', whiteSpace:'nowrap', flexShrink:0 }}
               >
                 ↕ {SECTION_LABELS[task.section] || 'Task'}
               </span>
@@ -496,12 +487,12 @@ return (
 
           {/* Right side */}
           <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-            {/* Info icon — always reserves space */}
+            {/* Info icon */}
             <button
               onClick={() => hasDesc && setExpanded(v=>!v)}
               style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#14b8a6':'#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#0F8989':'#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
               </svg>
             </button>
@@ -510,7 +501,7 @@ return (
             {date ? (
               <span
                 onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
-                style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', minWidth:60, textAlign:'center' }}
+                style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:60, textAlign:'center' }}
               >
                 📅 {date}
               </span>
@@ -532,7 +523,7 @@ return (
                 }}
                 style={styles.iconBtn}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#64748b">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
                   <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                 </svg>
               </button>
@@ -542,7 +533,7 @@ return (
 
         {/* Description */}
         {expanded && hasDesc && (
-          <div style={{ marginTop:10, borderTop:'1px solid #333', paddingTop:10, paddingLeft:26, fontSize:12.5, color:'#94a3b8', lineHeight:1.6, textAlign:'left' }}>
+          <div style={{ marginTop:10, borderTop:'1px solid #3C3A3A', paddingTop:10, paddingLeft:26, fontSize:12.5, color:'#aaa', lineHeight:1.6, textAlign:'left' }}>
             {task.description}
           </div>
         )}
@@ -568,7 +559,7 @@ return (
           <button style={styles.menuItem} onClick={()=>{setSectionOpen(true);setShowMenu(false);}}>
             ↕ Move Section
           </button>
- <button style={styles.menuItem} onClick={()=>{ setShowMenu(false); setTimeout(()=>dateInputRef.current?.showPicker?.(), 50); }}>
+          <button style={styles.menuItem} onClick={()=>{ setShowMenu(false); setTimeout(()=>dateInputRef.current?.showPicker?.(), 50); }}>
             📅 Change Date
           </button>
           <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
@@ -584,7 +575,7 @@ return (
       {sectionOpen && (
         <ChangeSectionModal task={task} role={role} onMove={handleMove} onClose={()=>setSectionOpen(false)}/>
       )}
-<input
+      <input
         ref={dateInputRef}
         type="date"
         defaultValue={toInputDate(task.due_date)}
@@ -602,9 +593,9 @@ return (
 
 // ─── SectionColumn ────────────────────────────────────────────────────────────
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
-const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+  const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
-const filtered = tasks
+  const filtered = tasks
     .filter(t => {
       if (section === 'COMPLETED') return t.status === 'COMPLETED';
       return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
@@ -621,7 +612,7 @@ const filtered = tasks
   return (
     <div style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}>
       {filtered.length === 0 ? (
-        <div style={{ color:'#555', textAlign:'center', marginTop:60, fontSize:13 }}>
+        <div style={{ color:'#aaa', textAlign:'center', marginTop:60, fontSize:13 }}>
           <div style={{fontSize:32, marginBottom:8}}>📭</div>
           No tasks in {SECTION_LABELS[section]}
         </div>
@@ -667,7 +658,6 @@ const Home = () => {
 
   useEffect(() => { fetchTasks(); }, []);
 
-  // Socket.io live update
   useEffect(() => {
     if (window.io) {
       const socket = window.io();
@@ -676,14 +666,12 @@ const Home = () => {
     }
   }, [fetchTasks]);
 
-  // Snap slider
   useEffect(() => {
     if (sliderRef.current) {
       sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
     }
   }, [activeSection]);
 
-  // Swipe handlers
   const onTouchStart = e => { startXRef.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
     if (startXRef.current === null) return;
@@ -695,7 +683,8 @@ const Home = () => {
     }
     startXRef.current = null;
   };
-const taskCounts = {};
+
+  const taskCounts = {};
   SECTIONS.forEach(s => {
     taskCounts[s] = tasks.filter(t => {
       if (s === 'COMPLETED') return t.status === 'COMPLETED';
@@ -711,7 +700,7 @@ const taskCounts = {};
 
   return (
     <div style={styles.container}>
-<style>{`
+      <style>{`
         @keyframes ringPulse {
           0% { transform: scale(1); opacity: 0.8; }
           100% { transform: scale(2.5); opacity: 0; }
@@ -724,7 +713,7 @@ const taskCounts = {};
           to { transform: rotate(360deg); }
         }
         ::-webkit-scrollbar { width: 2px; height: 2px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 4px; }
       `}</style>
 
       {/* TAB BAR */}
@@ -734,12 +723,12 @@ const taskCounts = {};
           return (
             <button key={sec} onClick={()=>setActiveSection(sec)} style={{
               ...styles.tabButton,
-              color: active ? '#14b8a6' : '#64748b',
-              borderBottom: active ? '2.5px solid #14b8a6' : '2.5px solid transparent',
+              color: active ? '#0F8989' : '#aaa',
+              borderBottom: active ? '2.5px solid #0F8989' : '2.5px solid transparent',
             }}>
               {SECTION_LABELS[sec]}
               {taskCounts[sec] > 0 && (
-                <span style={{ ...styles.badge, background: active ? '#14b8a620' : '#2a2a2a', color: active ? '#14b8a6' : '#64748b' }}>
+                <span style={{ ...styles.badge, background: active ? '#095959' : '#3C3A3A', color: active ? '#CDF4F4' : '#aaa' }}>
                   {taskCounts[sec]}
                 </span>
               )}
@@ -748,14 +737,14 @@ const taskCounts = {};
         })}
       </div>
 
-{/* SECTION DOTS */}
-      <div style={{ background:'#1a1a1a', flexShrink:0 }}>
+      {/* SECTION DOTS */}
+      <div style={{ background:'#2E2D2D', flexShrink:0 }}>
         <div style={{ ...styles.dotRow }}>
           {SECTIONS.map((sec, i) => (
             <div key={sec} onClick={()=>setActiveSection(sec)} style={{
               height: 5, borderRadius: 10,
               width: i === sectionIndex ? 22 : 6,
-              background: i === sectionIndex ? '#14b8a6' : '#2a2a2a',
+              background: i === sectionIndex ? '#0F8989' : '#3C3A3A',
               transition: 'all 0.3s ease',
               cursor: 'pointer',
             }}/>
@@ -788,7 +777,7 @@ const taskCounts = {};
       {loading ? (
         <div style={styles.loading}>
           <div style={styles.spinner}/>
-          <div style={{marginTop:12, color:'#64748b', fontSize:13}}>Loading tasks…</div>
+          <div style={{marginTop:12, color:'#aaa', fontSize:13}}>Loading tasks…</div>
         </div>
       ) : (
         <div
@@ -822,12 +811,12 @@ const taskCounts = {};
 const styles = {
   container: {
     height: '100%', display:'flex', flexDirection:'column',
-    background:'#121212', overflow:'hidden', fontFamily:'Arial, sans-serif',
+    background:'#3C3A3A', overflow:'hidden', fontFamily:'Arial, sans-serif',
     userSelect:'none',
   },
   tabBar: {
-    display:'flex', overflowX:'auto',  background:'#1a1a1a',
-  borderBottom:'1px solid #2a2a2a', scrollbarWidth:'none',
+    display:'flex', overflowX:'auto', background:'#2E2D2D',
+    borderBottom:'1px solid #0F8989', scrollbarWidth:'none',
     WebkitOverflowScrolling:'touch', flexShrink:0,
   },
   tabButton: {
@@ -843,7 +832,7 @@ const styles = {
   },
   dotRow: {
     display:'flex', justifyContent:'center', alignItems:'center',
-    gap:5, padding:'7px 0', background:'#1a1a1a', flexShrink:0,
+    gap:5, padding:'7px 0', background:'#2E2D2D', flexShrink:0,
   },
   slider: {
     flex:1, display:'flex', overflowX:'hidden', overflowY:'hidden',
@@ -854,12 +843,12 @@ const styles = {
     alignItems:'center', justifyContent:'center',
   },
   spinner: {
-    width:28, height:28, border:'3px solid #2a2a2a',
-    borderTop:'3px solid #14b8a6', borderRadius:'50%',
+    width:28, height:28, border:'3px solid #3C3A3A',
+    borderTop:'3px solid #0F8989', borderRadius:'50%',
     animation:'spin 0.8s linear infinite',
   },
   taskCard: {
-    background:'#2a2a2a', borderRadius:10, marginBottom:10,
+    background:'#444', borderRadius:10, marginBottom:10,
     padding:'12px 12px 10px', position:'relative', overflow:'visible',
     transition:'opacity 0.4s, transform 0.4s',
   },
@@ -868,69 +857,71 @@ const styles = {
     padding:4, display:'flex', alignItems:'center', justifyContent:'center',
     borderRadius:4, transition:'background 0.15s',
   },
-contextMenu: {
-    background:'#2a2a2a',
-    border:'1px solid #334155', borderRadius:10, zIndex:99999,
+  contextMenu: {
+    background:'#2E2D2D',
+    border:'1px solid #0F8989', borderRadius:10, zIndex:99999,
     boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden',
     minWidth:150, animation:'menuPop 0.15s ease',
   },
   menuItem: {
     display:'block', width:'100%', padding:'10px 14px', background:'none',
-    border:'none', textAlign:'left', color:'#e2e8f0', fontSize:13,
+    border:'none', textAlign:'left', color:'#eee', fontSize:13,
     cursor:'pointer', fontFamily:'Arial, sans-serif',
+    borderBottom:'1px solid #3C3A3A',
   },
-menuBackdrop: {
+  menuBackdrop: {
     position:'fixed', inset:0, zIndex:9998,
   },
   overlay: {
-    position:'fixed', inset:0, background:'rgba(0,0,0,0.7)',
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
     zIndex:9000, display:'flex', alignItems:'flex-end',
     justifyContent:'center', padding:'0 0 0 0',
   },
   modal: {
-    background:'#2a2a2a', width:'100%', maxWidth:500,
+    background:'#2E2D2D', width:'100%', maxWidth:500,
     borderRadius:'18px 18px 0 0', padding:'20px 18px 32px',
     maxHeight:'85vh', overflowY:'auto', boxSizing:'border-box',
     animation:'slideUp 0.25s ease',
+    borderTop: '2px solid #0F8989',
   },
   modalHeader: {
     display:'flex', justifyContent:'space-between', alignItems:'center',
     marginBottom:16,
   },
   modalTitle: {
-    color:'#e2e8f0', fontWeight:700, fontSize:15,
+    color:'#CDF4F4', fontWeight:700, fontSize:15,
   },
   closeBtn: {
-    background:'#334155', border:'none', color:'#94a3b8',
+    background:'#3C3A3A', border:'1px solid #0F8989', color:'#aaa',
     width:28, height:28, borderRadius:8, cursor:'pointer', fontSize:12,
   },
   field: { display:'flex', flexDirection:'column', gap:5, marginBottom:12 },
-  label: { fontSize:11, color:'#64748b', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' },
+  label: { fontSize:11, color:'#0F8989', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' },
   input: {
-    background:'#0f172a', color:'#e2e8f0', border:'1px solid #334155',
+    background:'#3C3A3A', color:'#eee', border:'1px solid #0F8989',
     borderRadius:8, padding:'9px 12px', fontSize:13, outline:'none',
     fontFamily:'Arial, sans-serif', width:'100%', boxSizing:'border-box',
   },
   modalActions: { display:'flex', gap:10, justifyContent:'flex-end', marginTop:16 },
   cancelBtn: {
-    background:'#334155', color:'#94a3b8', border:'none',
+    background:'#3C3A3A', color:'#aaa', border:'1px solid #555',
     padding:'9px 18px', borderRadius:8, cursor:'pointer',
     fontSize:13, fontFamily:'Arial, sans-serif',
   },
   saveBtn: {
-    background:'#0f8989', color:'#fff', border:'none',
+    background:'#0F8989', color:'#fff', border:'none',
     padding:'9px 20px', borderRadius:8, cursor:'pointer',
     fontSize:13, fontFamily:'Arial, sans-serif', fontWeight:600,
   },
   sectionOption: {
     display:'flex', alignItems:'center', gap:10, width:'100%',
-    background:'none', border:'none', borderBottom:'1px solid #0f172a',
-    padding:'13px 18px', color:'#e2e8f0', fontSize:13, cursor:'pointer',
+    background:'none', border:'none', borderBottom:'1px solid #3C3A3A',
+    padding:'13px 18px', color:'#eee', fontSize:13, cursor:'pointer',
     fontFamily:'Arial, sans-serif', textAlign:'left',
   },
   sectionDot: (sec) => ({
     width:8, height:8, borderRadius:'50%', flexShrink:0,
-    background: sec === 'TASK' ? '#14b8a6' : sec === 'CHANGES' ? '#f59e0b' : sec === 'UPDATE' ? '#3b82f6' : '#a78bfa',
+    background: sec === 'TASK' ? '#0F8989' : sec === 'CHANGES' ? '#f59e0b' : sec === 'UPDATE' ? '#3b82f6' : '#a78bfa',
   }),
 };
 
