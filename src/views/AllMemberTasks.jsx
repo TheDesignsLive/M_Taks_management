@@ -129,7 +129,7 @@ function TaskCard({ task }) {
 function SectionColumn({ section, tasks }) {
   const filtered = tasks.filter(t => getSection(t) === section);
   return (
-    <div style={{ flex: '0 0 100%', width: '100%', overflowY: 'auto', padding: '0 12px 20px 12px', boxSizing: 'border-box' }}>
+<div style={{ flex: '0 0 100%', width: '100%', overflowY: 'auto', padding: '0 12px 80px 12px', boxSizing: 'border-box' }}>
       {filtered.length === 0 ? (
         <div style={{ color: '#555', textAlign: 'center', marginTop: 40, fontSize: 13 }}>No tasks</div>
       ) : (
