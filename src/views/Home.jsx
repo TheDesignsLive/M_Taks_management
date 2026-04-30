@@ -210,29 +210,32 @@ function ChangeSectionModal({ task, role, onMove, onClose }) {
 
 // ─── DatePickerModal ──────────────────────────────────────────────────────────
 function DatePickerModal({ current, onSave, onClose }) {
-  const [date, setDate] = useState(() => toInputDate(current));
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    setDate(toInputDate(current));
-  }, [current]);
+    const el = inputRef.current;
+    if (!el) return;
+    el.value = toInputDate(current);
+    setTimeout(() => el.showPicker?.(), 50);
+    const handleChange = e => {
+      if (e.target.value) { onSave(e.target.value); }
+      onClose();
+    };
+    const handleBlur = () => onClose();
+    el.addEventListener('change', handleChange);
+    el.addEventListener('blur', handleBlur);
+    return () => {
+      el.removeEventListener('change', handleChange);
+      el.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   return (
-    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{...styles.modal, maxWidth:280}}>
-            <div style={{...styles.modalHeader, justifyContent:'flex-end', marginBottom:4}}>
-        <button onClick={onClose} style={styles.closeBtn}>✕</button>
-        </div>
-
-  <input
-  type="date"
-  value={date}
-onChange={e => { setDate(e.target.value); onSave(e.target.value || null); }}
-ref={el => { if (el) setTimeout(() => el.showPicker?.(), 100); }}
-  style={{...styles.input, marginTop:8}}
-/>
-
-      </div>
-    </div>
+    <input
+      ref={inputRef}
+      type="date"
+      style={{ position:'fixed', opacity:0, pointerEvents:'none', top:0, left:0, width:0, height:0 }}
+    />
   );
 }
 
