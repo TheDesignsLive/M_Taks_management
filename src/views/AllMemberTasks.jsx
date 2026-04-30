@@ -74,10 +74,10 @@ function TaskCard({ task }) {
       opacity: isCompleted ? 0.55 : 1,
       transition: 'opacity 0.2s',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, textAlign: 'left' }}>
         {/* Checkbox */}
         <div style={{
-          width: 13, height: 13, borderRadius: 3,
+          width: 11, height: 11, borderRadius: 3,
           border: `2px solid ${color}`,
           background: isCompleted ? color : 'transparent',
           flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -86,7 +86,7 @@ function TaskCard({ task }) {
         </div>
 
         {/* Title */}
-        <div style={{ flex: 1, color: '#e2e8f0', fontSize: 13, fontWeight: 500, wordBreak: 'break-word' }}>
+        <div style={{ flex: 1, color: '#e2e8f0', fontSize: 13, fontWeight: 500, wordBreak: 'break-word',textAlign: 'left'  }}>
           {task.title}
         </div>
 
@@ -104,7 +104,7 @@ function TaskCard({ task }) {
       </div>
 
       {/* Meta row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 5, paddingLeft: 21 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
         <span style={{ fontSize: 11, color: '#94a3b8', opacity: 0.7, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {task.assigned_to_name || task.assigned_by_name || ''}
         </span>
