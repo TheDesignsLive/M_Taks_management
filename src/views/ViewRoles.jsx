@@ -380,11 +380,11 @@ export default function ViewRoles({ onBack, onChangeToDept }) {
       <div style={S.header}>
         <div style={S.headerInner}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {onBack && (
+            {/* {onBack && (
               <button style={S.backBtn} className="vr-back-btn" onClick={onBack}>
                 <BackIcon />
               </button>
-            )}
+            )} */}
             <div>
               <div style={S.headerTitle}>Roles</div>
               <div style={S.headerSub}>{data.roles.length} total roles</div>

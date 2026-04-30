@@ -288,11 +288,11 @@ if (showRoles) {
       <div style={S.header}>
         <div style={S.headerInner}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {onBack && (
+            {/* {onBack && (
               <button style={S.backBtn} className="vt-back-btn" onClick={onBack}>
                 <BackIcon />
               </button>
-            )}
+            )} */}
             <div>
               <div style={S.headerTitle}>Departments</div>
               <div style={S.headerSub}>{teams.length} total departments</div>
