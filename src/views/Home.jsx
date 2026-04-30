@@ -43,56 +43,40 @@ function toInputDate(dateStr) {
 function AnimCheckbox({ checked, color, onChange }) {
   const [anim, setAnim] = useState(false);
   const handleChange = () => {
-    if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 500); }
+    if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 600); }
     onChange();
   };
   return (
-    <>
-      <style>{`
-        @keyframes checkDraw {
-          0%   { stroke-dashoffset: 20; opacity: 0; }
-          40%  { opacity: 1; }
-          100% { stroke-dashoffset: 0; opacity: 1; }
-        }
-        @keyframes boxPop {
-          0%   { transform: scale(1); }
-          40%  { transform: scale(1.3); }
-          70%  { transform: scale(0.92); }
-          100% { transform: scale(1); }
-        }
-      `}</style>
-      <div
-        onClick={handleChange}
-        style={{
-          width: 16, height: 16, borderRadius: 4,
-          border: `2px solid ${color}`,
-          background: checked ? color : 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', flexShrink: 0, position: 'relative',
-          transition: 'background 0.2s, border-color 0.2s',
-          animation: anim ? 'boxPop 0.45s ease forwards' : 'none',
-          boxSizing: 'border-box',
-        }}
-      >
-        {checked && (
-          <svg width="9" height="9" viewBox="0 0 10 10" style={{ display:'block' }}>
-            <polyline
-              points="1.5,5 4,7.5 8.5,2"
-              fill="none"
-              stroke="#fff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray="20"
-              strokeDashoffset="0"
-              style={{ animation: anim ? 'checkDraw 0.35s ease forwards' : 'none' }}
-            />
-          </svg>
-        )}
-      </div>
-    </>
+    <div
+      onClick={handleChange}
+      style={{
+        width: 11, height: 11, borderRadius: 4,
+        border: `2px solid ${color}`,
+        background: checked ? color : 'transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', flexShrink: 0, position: 'relative',
+        transition: 'background 0.25s, transform 0.15s',
+        transform: anim ? 'scale(1.35)' : 'scale(1)',
+        boxShadow: anim ? `0 0 10px ${color}88` : 'none',
+      }}
+    >
+      {checked && (
+        <svg width="9" height="9" viewBox="0 0 10 10">
+          <polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {anim && (
+        <div style={{
+          position:'absolute', inset:-8, borderRadius:'50%',
+          border:`2px solid ${color}`,
+          animation:'ringPulse 0.5s ease-out forwards',
+          pointerEvents:'none',
+        }}/>
+      )}
+    </div>
   );
 }
+
 // ─── EditTaskModal ────────────────────────────────────────────────────────────
 function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [title, setTitle] = useState(task.title || '');
@@ -201,13 +185,13 @@ function DatePickerModal({ current, onSave, onClose }) {
         <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
 
-            <input
-            type="date"
-            value={date}
-            onChange={e => { setDate(e.target.value); onSave(e.target.value || null); }}
-            ref={el => { if (el) setTimeout(() => el.showPicker?.(), 100); }}
-            style={{...styles.input, marginTop:8}}
-            />
+  <input
+  type="date"
+  value={date}
+onChange={e => { setDate(e.target.value); onSave(e.target.value || null); }}
+ref={el => { if (el) setTimeout(() => el.showPicker?.(), 100); }}
+  style={{...styles.input, marginTop:8}}
+/>
 
       </div>
     </div>
@@ -239,10 +223,8 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
   const [sectionOpen, setSectionOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-const [completing, setCompleting] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 16 });
-  const dotsRef = useRef(null);
 
   const priority = (task.priority || 'LOW').toUpperCase();
   const color = PRIORITY_COLORS[priority] || '#3b82f6';
@@ -251,16 +233,8 @@ const [completing, setCompleting] = useState(false);
   const date = formatDate(task.due_date);
   const past = isPastDate(task.due_date);
 
-const handleCheckbox = async () => {
-    if (isCompleted) {
-      await fetch(`${BASE_URL}/api/home/update-task-status`, {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ id: task.id, status:'OPEN', section:'TASK' })
-      });
-      onRefresh();
-      return;
-    }
+  const handleCheckbox = async () => {
+    if (isCompleted) return;
     setCompleting(true);
     await fetch(`${BASE_URL}/api/home/update-task-status`, {
       method:'POST', credentials:'include',
@@ -376,16 +350,8 @@ const handleCheckbox = async () => {
                 </svg>
               </button>
             )}
-   {!isCompleted && (
-              <button
-                ref={dotsRef}
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-                  setShowMenu(v => !v);
-                }}
-                style={styles.iconBtn}
-              >
+            {!isCompleted && (
+              <button onClick={()=>setShowMenu(v=>!v)} style={styles.iconBtn}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#64748b">
                   <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                 </svg>
@@ -411,9 +377,8 @@ const handleCheckbox = async () => {
             )}
 
         {/* Context menu */}
-
         {showMenu && (
-          <div style={{...styles.contextMenu, top: menuPos.top, right: menuPos.right}}>
+          <div style={styles.contextMenu}>
             <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
               ✏️ Edit
             </button>
@@ -552,7 +517,11 @@ const Home = () => {
 
   return (
     <div style={styles.container}>
-<style>{`
+      <style>{`
+        @keyframes ringPulse {
+          0% { transform: scale(1); opacity: 0.8; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
         ::-webkit-scrollbar { width: 2px; height: 2px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
       `}</style>
@@ -676,9 +645,9 @@ const styles = {
     borderTop:'3px solid #14b8a6', borderRadius:'50%',
     animation:'spin 0.8s linear infinite',
   },
-taskCard: {
+  taskCard: {
     background:'#2a2a2a', borderRadius:10, marginBottom:10,
-    padding:'12px 12px 10px', position:'static', overflow:'visible',
+    padding:'12px 12px 10px', position:'relative', overflow:'visible',
     transition:'opacity 0.4s, transform 0.4s',
   },
   iconBtn: {
@@ -686,11 +655,11 @@ taskCard: {
     padding:4, display:'flex', alignItems:'center', justifyContent:'center',
     borderRadius:4, transition:'background 0.15s',
   },
-contextMenu: {
-    position:'fixed', right:16, background:'#2a2a2a',
-    border:'1px solid #334155', borderRadius:10, zIndex:99999,
-    boxShadow:'0 8px 24px rgba(0,0,0,0.6)', overflow:'hidden',
-    minWidth:160,
+  contextMenu: {
+    position:'absolute', right:8, top:40, background:'#2a2a2a',
+    border:'1px solid #334155', borderRadius:10, zIndex:1000,
+    boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden',
+    minWidth:150, animation:'menuPop 0.15s ease',
   },
   menuItem: {
     display:'block', width:'100%', padding:'10px 14px', background:'none',
