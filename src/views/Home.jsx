@@ -250,13 +250,13 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
   const date = formatDate(task.due_date);
   const past = isPastDate(task.due_date);
 
-  const handleCheckbox = async () => {
-    if (isCompleted) return;
+const handleCheckbox = async () => {
     setCompleting(true);
+    const newStatus = isCompleted ? 'OPEN' : 'COMPLETED';
     await fetch(`${BASE_URL}/api/home/update-task-status`, {
       method:'POST', credentials:'include',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ id: task.id, status:'COMPLETED', section:'COMPLETED' })
+      body: JSON.stringify({ id: task.id, status: newStatus })
     });
     setTimeout(async () => {
       setCardVisible(false);
@@ -437,10 +437,10 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
 const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
-  const filtered = tasks
+const filtered = tasks
     .filter(t => {
-      const sec = t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK');
-      return sec === section;
+      if (section === 'COMPLETED') return t.status === 'COMPLETED';
+      return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
     })
     .sort((a, b) => {
       const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
@@ -528,12 +528,11 @@ const Home = () => {
     }
     startXRef.current = null;
   };
-
-  const taskCounts = {};
+const taskCounts = {};
   SECTIONS.forEach(s => {
     taskCounts[s] = tasks.filter(t => {
-      const sec = t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK');
-      return sec === s;
+      if (s === 'COMPLETED') return t.status === 'COMPLETED';
+      return t.status !== 'COMPLETED' && (t.section || 'TASK') === s;
     }).length;
   });
 
@@ -575,8 +574,8 @@ const Home = () => {
         })}
       </div>
 
-      {/* SECTION DOTS */}
-      <div style={styles.dotRow}>
+{/* SECTION DOTS */}
+      <div style={{ ...styles.dotRow, position: 'relative' }}>
         {SECTIONS.map((sec, i) => (
           <div key={sec} onClick={()=>setActiveSection(sec)} style={{
             height: 5, borderRadius: 10,
@@ -589,15 +588,22 @@ const Home = () => {
         {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
           <button
             onClick={()=>setDeleteCompleteOpen(true)}
-            style={{ marginLeft:8, background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center' }}
+            style={{
+              position: 'absolute', right: 12,
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 4,
+              color: '#ef4444', fontSize: 11, fontWeight: 600, fontFamily: 'Arial, sans-serif',
+            }}
             title="Delete all completed"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#ef4444">
               <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
             </svg>
+            Clear All
           </button>
         )}
       </div>
+      
 
       {/* SLIDER */}
       {loading ? (

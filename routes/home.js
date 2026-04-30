@@ -119,13 +119,10 @@ router.get('/get-all-tasks', async (req, res) => {
    UPDATE TASK STATUS  (checkbox → complete)
 ─────────────────────────────────────────────── */
 router.post('/update-task-status', async (req, res) => {
-    const { id, status, section } = req.body;
+    const { id, status } = req.body;
     try {
-        if (section) {
-            await con.query("UPDATE tasks SET status=?, section=? WHERE id=?", [status, section, id]);
-        } else {
-            await con.query("UPDATE tasks SET status=? WHERE id=?", [status, id]);
-        }
+        // Only update status — section stays unchanged so unchecking restores naturally
+        await con.query("UPDATE tasks SET status=? WHERE id=?", [status, id]);
         req.io.emit('update_tasks');
         return res.json({ success: true });
     } catch (err) {
