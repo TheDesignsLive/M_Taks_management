@@ -463,7 +463,16 @@ export default function ViewMember() {
 }
 
 if (showRoles) {
-  return <ViewRoles onBack={() => setShowRoles(false)} />;
+  return (
+    <ViewRoles
+      onBack={() => setShowRoles(false)}
+      onChangeToDept={
+        (data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'OWNER')
+          ? () => { setShowRoles(false); setShowTeams(true); }
+          : null
+      }
+    />
+  );
 }
 
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
@@ -501,8 +510,8 @@ if (showRoles) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
   </button>
           
-{/* Department icon: admin OR owner only */}
-          {(data.sessionRole === 'admin' || data.sessionRole === 'owner') && (
+{/* Department icon: admin, owner session role, OR user with OWNER control type */}
+          {(data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'OWNER') && (
             <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)} title="Departments">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="16" width="6" height="4" rx="1"/><rect x="17" y="16" width="6" height="4" rx="1"/><path d="M12 5v4M12 9h-8v7M12 9h8v7"/></svg>
             </button>

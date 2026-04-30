@@ -273,8 +273,13 @@ export default function ViewTeams({ onBack }) {
   }
 
   // Add this logic block before the return statement
-  if (showRoles) {
-    return <ViewRoles onBack={() => setShowRoles(false)} />;
+if (showRoles) {
+    return (
+      <ViewRoles
+        onBack={() => setShowRoles(false)}
+        onChangeToDept={() => setShowRoles(false)}
+      />
+    );
   }
 
   return (

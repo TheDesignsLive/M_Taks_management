@@ -135,13 +135,14 @@ router.get('/', requireAuth, async (req, res) => {
             users = userRows;
         }
 
-        return res.json({
+    return res.json({
             success: true,
             users,
             roles,
             teams,
             sessionRole: req.session.role,
             sessionUserId: req.session.userId || null,
+            sessionControlType: req.session.control_type || 'NONE',
         });
 
     } catch (err) {
