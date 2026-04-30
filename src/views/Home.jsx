@@ -100,27 +100,70 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [desc, setDesc] = useState(task.description || '');
   const [priority, setPriority] = useState(task.priority || 'MEDIUM');
   const [dueDate, setDueDate] = useState(toInputDate(task.due_date));
-  const [assignedTo, setAssignedTo] = useState(String(task.assigned_to ?? ''));
   const [saving, setSaving] = useState(false);
+
+  // Assign state
+  const [assignTo, setAssignTo] = useState('self');
+  const [assignLabel, setAssignLabel] = useState('Myself');
+  const [teams, setTeams] = useState([]);
+  const [teamMembers, setTeamMembers] = useState({});
+  const [openTeam, setOpenTeam] = useState(null);
+  const [showAssignDrop, setShowAssignDrop] = useState(false);
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/tasks/get-teams`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.success) setTeams(d.teams || []); })
+      .catch(() => {});
+  }, []);
+
+  async function loadTeam(teamId) {
+    if (teamMembers[teamId]) return;
+    try {
+      const r = await fetch(`${BASE_URL}/api/tasks/get-team-members/${teamId}`, { credentials: 'include' });
+      const d = await r.json();
+      if (d.success) setTeamMembers(prev => ({ ...prev, [teamId]: d.members }));
+    } catch {}
+  }
+
+  function selectAssign(value, label) {
+    setAssignTo(value);
+    setAssignLabel(label);
+    setShowAssignDrop(false);
+    setOpenTeam(null);
+  }
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave({ title, description: desc, priority, due_date: dueDate || null, assigned_to: assignedTo });
+    // Convert assignTo to the assigned_to number expected by backend
+    let finalAssignedTo;
+    if (assignTo === 'self') {
+      finalAssignedTo = role === 'admin' ? 0 : String(task.assigned_by ?? '');
+    } else {
+      finalAssignedTo = assignTo;
+    }
+    await onSave({ title, description: desc, priority, due_date: dueDate || null, assigned_to: finalAssignedTo });
     setSaving(false);
   };
 
-  const habdlke =async() => {
-    try{
-      await onSave({ title, description: desc, priority, due_date: dueDate || null, assigned_to: assignedTo });
-    }
-    catch(err){
-      console.log("errorserver error arive")
-    }
-  }
+  const dropStyle = {
+    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 9999,
+    background: '#1a1a2e', border: '1px solid #334155', borderRadius: 10,
+    marginTop: 4, maxHeight: 220, overflowY: 'auto',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+  };
+  const dropItemStyle = {
+    padding: '10px 14px', fontSize: 13, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: 8,
+    color: '#e2e8f0', borderBottom: '1px solid #2a2a3a',
+  };
+  const subItemStyle = {
+    ...dropItemStyle, paddingLeft: 28, background: '#0f172a', color: '#94a3b8',
+  };
 
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={styles.modal}>
+      <div style={styles.modal} onClick={() => { setShowAssignDrop(false); setOpenTeam(null); }}>
         <div style={styles.modalHeader}>
           <span style={styles.modalTitle}>Edit Task</span>
           <button onClick={onClose} style={styles.closeBtn}>✕</button>
@@ -149,18 +192,80 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           </div>
         </div>
 
-        <div style={styles.field}>
+        {/* Assign To — custom dropdown */}
+        <div style={{...styles.field, position:'relative'}} onClick={e => e.stopPropagation()}>
           <label style={styles.label}>Assign To</label>
-          <select value={assignedTo} onChange={e=>setAssignedTo(e.target.value)} style={styles.input}>
-            {role === 'admin'
-              ? <option value="0">My Self</option>
-              : <>
-                  <option value={String(task.assigned_by ?? '')}>My Self</option>
-                  <option value="0">{adminName} (Admin)</option>
+          <div
+            onClick={() => setShowAssignDrop(v => !v)}
+            style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
+          >
+            <span style={{color:'#e2e8f0'}}>{assignLabel}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" width="12" height="12"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+
+          {showAssignDrop && (
+            <div style={dropStyle}>
+              {/* Myself */}
+              <div style={dropItemStyle} onClick={() => selectAssign('self', 'Myself')}>
+                <span>👤</span><span style={{flex:1}}>Myself</span>
+                {assignTo === 'self' && <span style={{color:'#14b8a6'}}>✓</span>}
+              </div>
+
+              {/* Admin (for non-admin users) */}
+              {role !== 'admin' && (
+                <div style={dropItemStyle} onClick={() => selectAssign('0', `${adminName} (Admin)`)}>
+                  <span>🔑</span><span style={{flex:1}}>{adminName} (Admin)</span>
+                  {assignTo === '0' && <span style={{color:'#14b8a6'}}>✓</span>}
+                </div>
+              )}
+
+              {/* Flat members */}
+              {members.length > 0 && (
+                <>
+                  <div style={{...dropItemStyle, color:'#64748b', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #334155'}}>
+                    MEMBERS
+                  </div>
+                  {members.map(m => (
+                    <div key={m.id} style={dropItemStyle} onClick={() => selectAssign(String(m.id), m.name)}>
+                      <span>👤</span><span style={{flex:1}}>{m.name}</span>
+                      {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
+                    </div>
+                  ))}
                 </>
-            }
-            {members.map(m=><option key={m.id} value={String(m.id)}>{m.name}</option>)}
-          </select>
+              )}
+
+              {/* Teams */}
+              {teams.length > 0 && (
+                <>
+                  <div style={{...dropItemStyle, color:'#64748b', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #334155'}}>
+                    TEAMS
+                  </div>
+                  {teams.map(team => (
+                    <div key={team.id}>
+                      <div style={dropItemStyle} onClick={() => { setOpenTeam(v => v === team.id ? null : team.id); loadTeam(team.id); }}>
+                        <span>🏷</span><span style={{flex:1}}>{team.name}</span>
+                        <span style={{color: openTeam===team.id ? '#14b8a6':'#64748b', fontSize:11, display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
+                      </div>
+                      {openTeam === team.id && (
+                        <>
+                          <div style={subItemStyle} onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}>
+                            <span style={{color:'#14b8a6'}}>↳</span><span style={{flex:1}}>All {team.name}</span>
+                            {assignTo===`team_${team.id}` && <span style={{color:'#14b8a6'}}>✓</span>}
+                          </div>
+                          {(teamMembers[team.id] || []).map(m => (
+                            <div key={m.id} style={{...subItemStyle, paddingLeft:36}} onClick={() => selectAssign(String(m.id), m.name)}>
+                              <span style={{flex:1}}>{m.name}</span>
+                              {assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={styles.modalActions}>
