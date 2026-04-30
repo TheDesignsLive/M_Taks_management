@@ -181,18 +181,17 @@ function DatePickerModal({ current, onSave, onClose }) {
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{...styles.modal, maxWidth:280}}>
-        <div style={styles.modalHeader}>
-          <span style={styles.modalTitle}>Change Due Date</span>
-          <button onClick={onClose} style={styles.closeBtn}>✕</button>
+            <div style={{...styles.modalHeader, justifyContent:'flex-end', marginBottom:4}}>
+        <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
 
-        <input
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          onFocus={(e) => e.target.showPicker && e.target.showPicker()}
-          style={{...styles.input, marginTop:8}}
-        />
+  <input
+  type="date"
+  value={date}
+  onChange={e => setDate(e.target.value)}
+  ref={el => { if (el) setTimeout(() => el.showPicker?.(), 100); }}
+  style={{...styles.input, marginTop:8}}
+/>
 
         <div style={styles.modalActions}>
           <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
