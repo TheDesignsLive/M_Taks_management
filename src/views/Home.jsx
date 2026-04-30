@@ -109,6 +109,15 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
     setSaving(false);
   };
 
+  const habdlke =async() => {
+    try{
+      await onSave({ title, description: desc, priority, due_date: dueDate || null, assigned_to: assignedTo });
+    }
+    catch(err){
+      console.log("errorserver error arive")
+    }
+  }
+
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={styles.modal}>
@@ -168,20 +177,15 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
 // ─── ChangeSectionModal ───────────────────────────────────────────────────────
 function ChangeSectionModal({ task, role, onMove, onClose }) {
   const currentSection = task.section || 'TASK';
-  // isSelfTask = assigned by myself to myself
-  // For user/owner: who_assigned is 'user'/'owner' AND assigned_by === assigned_to
-  // For admin: who_assigned is 'admin' AND assigned_to is 0 (self) and no external assigner
-  const isSelfTask =
-    (task.who_assigned === 'user' || task.who_assigned === 'owner')
-      ? String(task.assigned_by) === String(task.assigned_to)
-      : task.who_assigned === 'admin' && (task.assigned_to === 0 || task.assigned_to === '0');
+  // Use backend-set flag directly — no guessing
+  const isSelfTask = task.is_self_task === true;
 
   const available = SECTIONS.filter(s => {
     if (s === 'COMPLETED') return false;
     if (s === currentSection) return false;
-    // Self tasks: show TASK, hide OTHERS
+    // Self tasks (assigned_to === assigned_by): show TASK, hide OTHERS
     if (isSelfTask && s === 'OTHERS') return false;
-    // Tasks assigned by someone else: show OTHERS, hide TASK
+    // Tasks assigned by someone else (assigned_to !== assigned_by): show OTHERS, hide TASK
     if (!isSelfTask && s === 'TASK') return false;
     return true;
   });

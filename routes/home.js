@@ -40,7 +40,7 @@ router.get('/get-all-tasks', async (req, res) => {
             members = rows;
         }
 
-        // ── Tasks ────────────────────────────────────
+// ── Tasks ────────────────────────────────────
         if (sessionRole === 'admin') {
             const [taskRows] = await con.query(
                 `SELECT id, title, description, priority, due_date, status, section,
@@ -50,6 +50,8 @@ router.get('/get-all-tasks', async (req, res) => {
                  ORDER BY due_date ASC`,
                 [adminId]
             );
+            // Admin self tasks: is_self_task = true
+            taskRows.forEach(t => { t.is_self_task = true; });
 
             const [otherTaskRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
@@ -62,11 +64,13 @@ router.get('/get-all-tasks', async (req, res) => {
                  ORDER BY t.due_date ASC`,
                 [adminId]
             );
+            // Tasks assigned TO admin by users: is_self_task = false
+            otherTaskRows.forEach(t => { t.is_self_task = false; });
 
             tasks = [...taskRows, ...otherTaskRows];
 
         } else {
-            // Tasks assigned to this user by admin
+            // Tasks assigned to this user by admin: is_self_task = false
             const [adminTasksRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
                         t.assigned_by, t.assigned_to, t.who_assigned,
@@ -77,8 +81,9 @@ router.get('/get-all-tasks', async (req, res) => {
                  ORDER BY t.due_date ASC`,
                 [adminId, sessionUserId]
             );
+            adminTasksRows.forEach(t => { t.is_self_task = false; });
 
-            // Tasks created by this user for themselves
+            // Tasks created by this user for themselves: is_self_task = true
             const [userOwnTasksRows] = await con.query(
                 `SELECT id, title, description, priority, due_date, status, section,
                         assigned_by, assigned_to, who_assigned
@@ -89,8 +94,9 @@ router.get('/get-all-tasks', async (req, res) => {
                  ORDER BY due_date ASC`,
                 [adminId, sessionUserId, sessionUserId]
             );
+            userOwnTasksRows.forEach(t => { t.is_self_task = true; });
 
-            // Tasks assigned to this user by other users
+            // Tasks assigned to this user by other users: is_self_task = false
             const [userToOthersTasksRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
                         t.assigned_by, t.assigned_to, t.who_assigned,
@@ -103,6 +109,7 @@ router.get('/get-all-tasks', async (req, res) => {
                  ORDER BY t.due_date ASC`,
                 [adminId, sessionUserId, sessionUserId]
             );
+            userToOthersTasksRows.forEach(t => { t.is_self_task = false; });
 
             tasks = [...userOwnTasksRows, ...adminTasksRows, ...userToOthersTasksRows];
         }
