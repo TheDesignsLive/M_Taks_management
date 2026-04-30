@@ -188,17 +188,11 @@ function DatePickerModal({ current, onSave, onClose }) {
   <input
   type="date"
   value={date}
-  onChange={e => setDate(e.target.value)}
-  ref={el => { if (el) setTimeout(() => el.showPicker?.(), 100); }}
+onChange={e => { setDate(e.target.value); onSave(e.target.value || null); }}
+ref={el => { if (el) setTimeout(() => el.showPicker?.(), 100); }}
   style={{...styles.input, marginTop:8}}
 />
 
-        <div style={styles.modalActions}>
-          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button onClick={() => onSave(date || null)} style={styles.saveBtn}>
-            Set Date
-          </button>
-        </div>
       </div>
     </div>
   );
