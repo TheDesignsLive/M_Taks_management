@@ -457,10 +457,6 @@ export default function ViewMember() {
       </div>
     );
   }
-if (showTeams) {
-  return <ViewTeams onBack={() => setShowTeams(false)} />;
-}
-
 if (showRoles) {
   return (
     <ViewRoles
