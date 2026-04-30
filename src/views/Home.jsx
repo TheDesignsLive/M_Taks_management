@@ -79,7 +79,7 @@ function AnimCheckbox({ checked, color, onChange }) {
             <polyline
               points="1.5,5 4,7.5 8.5,2"
               fill="none"
-              stroke={color === '#ef4444' ? '#ff9999' : color === '#eab308' ? '#fde68a' : '#93c5fd'}
+stroke={color === '#ef4444' ? '#7f1d1d' : color === '#eab308' ? '#713f12' : '#1e3a5f'}
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
