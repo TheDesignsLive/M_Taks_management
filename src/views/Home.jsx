@@ -236,12 +236,14 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
 function TaskCard({ task, members, adminName, role, onRefresh }) {
   const [expanded, setExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [editOpen, setEditOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
+  const menuBtnRef = useRef(null);
 
   const priority = (task.priority || 'LOW').toUpperCase();
   const color = PRIORITY_COLORS[priority] || '#3b82f6';
@@ -367,8 +369,21 @@ const handleCheckbox = async () => {
                 </svg>
               </button>
             )}
-            {!isCompleted && (
-              <button onClick={()=>setShowMenu(v=>!v)} style={styles.iconBtn}>
+          {!isCompleted && (
+              <button
+                ref={menuBtnRef}
+                onClick={() => {
+                  if (!showMenu && menuBtnRef.current) {
+                    const rect = menuBtnRef.current.getBoundingClientRect();
+                    setMenuPos({
+                      top: rect.bottom + 6,
+                      right: window.innerWidth - rect.right,
+                    });
+                  }
+                  setShowMenu(v => !v);
+                }}
+                style={styles.iconBtn}
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#64748b">
                   <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                 </svg>
@@ -393,9 +408,9 @@ const handleCheckbox = async () => {
             </div>
             )}
 
-        {/* Context menu */}
+{/* Context menu — rendered via portal-style fixed positioning so it is never clipped */}
         {showMenu && (
-          <div style={styles.contextMenu}>
+          <div style={{ ...styles.contextMenu, position: 'fixed', top: menuPos.top, right: menuPos.right, left: 'auto' }}>
             <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
               ✏️ Edit
             </button>
@@ -694,9 +709,9 @@ const styles = {
     padding:4, display:'flex', alignItems:'center', justifyContent:'center',
     borderRadius:4, transition:'background 0.15s',
   },
-  contextMenu: {
-    position:'absolute', right:8, top:40, background:'#2a2a2a',
-    border:'1px solid #334155', borderRadius:10, zIndex:1000,
+contextMenu: {
+    background:'#2a2a2a',
+    border:'1px solid #334155', borderRadius:10, zIndex:99999,
     boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden',
     minWidth:150, animation:'menuPop 0.15s ease',
   },
