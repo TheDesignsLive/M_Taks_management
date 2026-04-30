@@ -372,12 +372,16 @@ const handleCheckbox = async () => {
           {!isCompleted && (
               <button
                 ref={menuBtnRef}
-                onClick={() => {
+    onClick={() => {
                   if (!showMenu && menuBtnRef.current) {
                     const rect = menuBtnRef.current.getBoundingClientRect();
+                    const menuHeight = 172; // approx height of 4 menu items
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const openUpward = spaceBelow < menuHeight + 20;
                     setMenuPos({
-                      top: rect.bottom + 6,
+                      top: openUpward ? rect.top - menuHeight - 6 : rect.bottom + 6,
                       right: window.innerWidth - rect.right,
+                      openUpward,
                     });
                   }
                   setShowMenu(v => !v);
@@ -408,9 +412,18 @@ const handleCheckbox = async () => {
             </div>
             )}
 
-{/* Context menu — rendered via portal-style fixed positioning so it is never clipped */}
+{/* Context menu — fixed position, flips upward when near bottom of screen */}
         {showMenu && (
-          <div style={{ ...styles.contextMenu, position: 'fixed', top: menuPos.top, right: menuPos.right, left: 'auto' }}>
+          <div style={{
+            ...styles.contextMenu,
+            position: 'fixed',
+            top: menuPos.top,
+            right: menuPos.right,
+            left: 'auto',
+            borderRadius: menuPos.openUpward ? '10px 10px 4px 10px' : '4px 10px 10px 10px',
+            transformOrigin: menuPos.openUpward ? 'bottom right' : 'top right',
+            animation: 'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
+          }}>
             <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
               ✏️ Edit
             </button>
@@ -420,7 +433,7 @@ const handleCheckbox = async () => {
             <button style={styles.menuItem} onClick={()=>{setDateOpen(true);setShowMenu(false);}}>
               📅 Change Date
             </button>
-            <button style={{...styles.menuItem, color:'#ef4444'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
+            <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
               🗑️ Delete
             </button>
           </div>
@@ -559,10 +572,17 @@ const taskCounts = {};
 
   return (
     <div style={styles.container}>
-      <style>{`
+<style>{`
         @keyframes ringPulse {
           0% { transform: scale(1); opacity: 0.8; }
           100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes menuPop {
+          0%   { transform: scale(0.85); opacity: 0; }
+          100% { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
         ::-webkit-scrollbar { width: 2px; height: 2px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -720,8 +740,8 @@ contextMenu: {
     border:'none', textAlign:'left', color:'#e2e8f0', fontSize:13,
     cursor:'pointer', fontFamily:'Arial, sans-serif',
   },
-  menuBackdrop: {
-    position:'fixed', inset:0, zIndex:999,
+menuBackdrop: {
+    position:'fixed', inset:0, zIndex:9998,
   },
   overlay: {
     position:'fixed', inset:0, background:'rgba(0,0,0,0.7)',
