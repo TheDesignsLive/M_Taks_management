@@ -17,7 +17,6 @@ import roles from './routes/view_roles.js';
 import Home from './routes/home.js';
 import AllMemberTask from './routes/all_member_task.js';
 
-
 const app = express();
 
 const MySQLStore = MySQLStoreFactory(session);

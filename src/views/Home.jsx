@@ -1,151 +1,700 @@
-//Home.jsx
-import React, { useState, useEffect } from 'react';
+// Home.jsx — Mobile Task Board
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://m-tms.thedesigns.live';
+const BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000'
+  : 'https://m-tms.thedesigns.live';
 
-const Home = () => {
-    const [tasks, setTasks] = useState([]);
-    const [members, setMembers] = useState([]);
-    const [activeSection, setActivePage] = useState('TASK'); // For Toggle
-    const [loading, setLoading] = useState(true);
+const SECTIONS = ['TASK', 'CHANGES', 'UPDATE', 'OTHERS', 'COMPLETED'];
+const SECTION_LABELS = {
+  TASK: 'Task',
+  CHANGES: 'Change',
+  UPDATE: 'Update',
+  OTHERS: 'Others',
+  COMPLETED: 'Completed',
+};
+const PRIORITY_COLORS = { HIGH: '#ef4444', MEDIUM: '#eab308', LOW: '#3b82f6' };
+const PRIORITY_OPTIONS = ['HIGH', 'MEDIUM', 'LOW'];
 
-    const sections = ['TASK', 'CHANGES', 'UPDATE', 'OTHERS', 'COMPLETED'];
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  d.setHours(0,0,0,0);
+  if (d.getTime() === today.getTime()) return 'Today';
+  if (d.getTime() === tomorrow.getTime()) return 'Tom';
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+}
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+function isPastDate(dateStr) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d < today;
+}
 
-    const fetchData = async () => {
-        try {
-            const res = await fetch(`${BASE_URL}/api/home/api/data`, { credentials: 'include' });
-            const data = await res.json();
-            if (data.success) {
-                setTasks(data.tasks);
-                setMembers(data.members);
-            }
-        } catch (err) {
-            console.error("Fetch error", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+function toInputDate(dateStr) {
+  if (!dateStr) return '';
+  return dateStr.split('T')[0];
+}
 
-    // --- DRAG & DROP LOGIC ---
-    const onDragStart = (e, taskId) => {
-        e.dataTransfer.setData("taskId", taskId);
-    };
+// ─── CheckboxAnim ────────────────────────────────────────────────────────────
+function AnimCheckbox({ checked, color, onChange }) {
+  const [anim, setAnim] = useState(false);
+  const handleChange = () => {
+    if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 600); }
+    onChange();
+  };
+  return (
+    <div
+      onClick={handleChange}
+      style={{
+        width: 16, height: 16, borderRadius: 4,
+        border: `2px solid ${color}`,
+        background: checked ? color : 'transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer', flexShrink: 0, position: 'relative',
+        transition: 'background 0.25s, transform 0.15s',
+        transform: anim ? 'scale(1.35)' : 'scale(1)',
+        boxShadow: anim ? `0 0 10px ${color}88` : 'none',
+      }}
+    >
+      {checked && (
+        <svg width="9" height="9" viewBox="0 0 10 10">
+          <polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {anim && (
+        <div style={{
+          position:'absolute', inset:-8, borderRadius:'50%',
+          border:`2px solid ${color}`,
+          animation:'ringPulse 0.5s ease-out forwards',
+          pointerEvents:'none',
+        }}/>
+      )}
+    </div>
+  );
+}
 
-    const onDrop = async (e, targetSection) => {
-        const taskId = e.dataTransfer.getData("taskId");
-        
-        // Optimistic UI Update
-        const updatedTasks = tasks.map(t => 
-            t.id.toString() === taskId ? { ...t, section: targetSection } : t
-        );
-        setTasks(updatedTasks);
+// ─── EditTaskModal ────────────────────────────────────────────────────────────
+function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
+  const [title, setTitle] = useState(task.title || '');
+  const [desc, setDesc] = useState(task.description || '');
+  const [priority, setPriority] = useState(task.priority || 'MEDIUM');
+  const [dueDate, setDueDate] = useState(toInputDate(task.due_date));
+  const [assignedTo, setAssignedTo] = useState(String(task.assigned_to ?? ''));
+  const [saving, setSaving] = useState(false);
 
-        // Backend Update
-        await fetch(`${BASE_URL}/api/tasks/update-task-section`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: taskId, section: targetSection }),
-            credentials: 'include'
-        });
-    };
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave({ title, description: desc, priority, due_date: dueDate || null, assigned_to: assignedTo });
+    setSaving(false);
+  };
 
-    if (loading) return <div style={{color: 'white', textAlign: 'center', marginTop: '20px'}}>Loading Tasks...</div>;
-
-    return (
-        <div style={styles.container}>
-            {/* 1. TOP TOGGLE NAVIGATION */}
-            <div style={styles.tabBar}>
-                {sections.map(sec => (
-                    <button 
-                        key={sec} 
-                        onClick={() => setActivePage(sec)}
-                        style={{
-                            ...styles.tabButton,
-                            borderBottom: activeSection === sec ? '3px solid #14b8a6' : 'none',
-                            color: activeSection === sec ? '#14b8a6' : '#94a3b8'
-                        }}
-                    >
-                        {sec}
-                    </button>
-                ))}
-            </div>
-
-            {/* 2. BOARD AREA (Desktop: Side by Side, Mobile: Current Active) */}
-            <div style={styles.board}>
-                {sections.map(sec => (
-                    <div 
-                        key={sec}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => onDrop(e, sec)}
-                        style={{
-                            ...styles.column,
-                            display: window.innerWidth > 800 || activeSection === sec ? 'flex' : 'none'
-                        }}
-                    >
-                        <div style={styles.columnHeader}>{sec}</div>
-                        <div style={styles.taskList}>
-                            {tasks
-                                .filter(t => (t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK')) === sec)
-                                .map(task => (
-                                    <div 
-                                        key={task.id} 
-                                        draggable 
-                                        onDragStart={(e) => onDragStart(e, task.id)}
-                                        style={styles.taskItem}
-                                    >
-                                        <div style={styles.taskRow}>
-                                            <span style={{
-                                                ...styles.priorityDot, 
-                                                background: task.priority === 'HIGH' ? '#ef4444' : '#f59e0b'
-                                            }} />
-                                            <div style={styles.taskTitle}>{task.title}</div>
-                                        </div>
-                                        <div style={styles.taskMeta}>
-                                            <span>{task.assigned_by_name || 'Admin'}</span>
-                                            <span>{new Date(task.due_date).toLocaleDateString('en-IN', {day:'2-digit', month:'short'})}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                        </div>
-                    </div>
-                ))}
-            </div>
+  return (
+    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={styles.modal}>
+        <div style={styles.modalHeader}>
+          <span style={styles.modalTitle}>Edit Task</span>
+          <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
-    );
+
+        <div style={styles.field}>
+          <label style={styles.label}>Title</label>
+          <input value={title} onChange={e=>setTitle(e.target.value)} style={styles.input} placeholder="Task title"/>
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>Description</label>
+          <textarea value={desc} onChange={e=>setDesc(e.target.value)} style={{...styles.input, minHeight:70, resize:'vertical'}} placeholder="Description"/>
+        </div>
+
+        <div style={{display:'flex', gap:8}}>
+          <div style={{...styles.field, flex:1}}>
+            <label style={styles.label}>Priority</label>
+            <select value={priority} onChange={e=>setPriority(e.target.value)} style={styles.input}>
+              {PRIORITY_OPTIONS.map(p=><option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+          <div style={{...styles.field, flex:1}}>
+            <label style={styles.label}>Due Date</label>
+            <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={styles.input}/>
+          </div>
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>Assign To</label>
+          <select value={assignedTo} onChange={e=>setAssignedTo(e.target.value)} style={styles.input}>
+            {role === 'admin'
+              ? <option value="0">My Self</option>
+              : <>
+                  <option value={String(task.assigned_by ?? '')}>My Self</option>
+                  <option value="0">{adminName} (Admin)</option>
+                </>
+            }
+            {members.map(m=><option key={m.id} value={String(m.id)}>{m.name}</option>)}
+          </select>
+        </div>
+
+        <div style={styles.modalActions}>
+          <button onClick={onClose} style={styles.cancelBtn} disabled={saving}>Cancel</button>
+          <button onClick={handleSave} style={styles.saveBtn} disabled={saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ChangeSectionModal ───────────────────────────────────────────────────────
+function ChangeSectionModal({ task, role, onMove, onClose }) {
+  const available = SECTIONS.filter(s => s !== 'COMPLETED' && s !== (task.status === 'COMPLETED' ? 'COMPLETED' : task.section));
+
+  return (
+    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{...styles.modal, padding:0, overflow:'hidden'}}>
+        <div style={styles.modalHeader}>
+          <span style={styles.modalTitle}>Move to Section</span>
+          <button onClick={onClose} style={styles.closeBtn}>✕</button>
+        </div>
+        {available.map(sec => (
+          <button key={sec} onClick={() => onMove(sec)} style={styles.sectionOption}>
+            <span style={styles.sectionDot(sec)}/>
+            {SECTION_LABELS[sec]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── DatePickerModal ──────────────────────────────────────────────────────────
+function DatePickerModal({ current, onSave, onClose }) {
+  const [date, setDate] = useState(toInputDate(current));
+  return (
+    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{...styles.modal, maxWidth:280}}>
+        <div style={styles.modalHeader}>
+          <span style={styles.modalTitle}>Change Due Date</span>
+          <button onClick={onClose} style={styles.closeBtn}>✕</button>
+        </div>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...styles.input, marginTop:8}}/>
+        <div style={styles.modalActions}>
+          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
+          <button onClick={() => onSave(date || null)} style={styles.saveBtn}>Set Date</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DeleteConfirmModal ───────────────────────────────────────────────────────
+function DeleteConfirmModal({ message, onConfirm, onClose }) {
+  return (
+    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{...styles.modal, maxWidth:280, textAlign:'center'}}>
+        <div style={{fontSize:32, marginBottom:8}}>🗑️</div>
+        <div style={{color:'#e2e8f0', fontWeight:700, fontSize:15, marginBottom:6}}>Delete Task?</div>
+        <div style={{color:'#94a3b8', fontSize:13, marginBottom:18}}>{message}</div>
+        <div style={styles.modalActions}>
+          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
+          <button onClick={onConfirm} style={{...styles.saveBtn, background:'#ef4444'}}>Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TaskCard ─────────────────────────────────────────────────────────────────
+function TaskCard({ task, members, adminName, role, onRefresh }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [cardVisible, setCardVisible] = useState(true);
+
+  const priority = (task.priority || 'LOW').toUpperCase();
+  const color = PRIORITY_COLORS[priority] || '#3b82f6';
+  const isCompleted = task.status === 'COMPLETED';
+  const hasDesc = !!(task.description && task.description.trim());
+  const date = formatDate(task.due_date);
+  const past = isPastDate(task.due_date);
+
+  const handleCheckbox = async () => {
+    if (isCompleted) return;
+    setCompleting(true);
+    await fetch(`${BASE_URL}/api/home/update-task-status`, {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: task.id, status:'COMPLETED', section:'COMPLETED' })
+    });
+    setTimeout(async () => {
+      setCardVisible(false);
+      await new Promise(r=>setTimeout(r,350));
+      onRefresh();
+      setCompleting(false);
+    }, 500);
+  };
+
+  const handleMove = async (section) => {
+    setSectionOpen(false);
+    await fetch(`${BASE_URL}/api/home/update-task-section`, {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: task.id, section })
+    });
+    onRefresh();
+  };
+
+  const handleSaveEdit = async (fields) => {
+    await fetch(`${BASE_URL}/api/home/edit-task-details`, {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: task.id, ...fields })
+    });
+    setEditOpen(false);
+    onRefresh();
+  };
+
+  const handleDateSave = async (date) => {
+    await fetch(`${BASE_URL}/api/home/update-task-date`, {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: task.id, due_date: date })
+    });
+    setDateOpen(false);
+    onRefresh();
+  };
+
+  const handleDelete = async () => {
+    await fetch(`${BASE_URL}/api/home/delete-task/${task.id}`, {
+      method:'POST', credentials:'include'
+    });
+    setDeleteOpen(false);
+    onRefresh();
+  };
+
+  if (!cardVisible) return (
+    <div style={{ overflow:'hidden', maxHeight:0, opacity:0, transition:'all 0.35s ease', marginBottom:0 }}/>
+  );
+
+  return (
+    <>
+      <div style={{
+        ...styles.taskCard,
+        borderLeft: `4px solid ${color}`,
+        opacity: isCompleted ? 0.55 : completing ? 0.4 : 1,
+        transform: completing ? 'scale(0.97)' : 'scale(1)',
+        transition: 'opacity 0.4s, transform 0.4s',
+      }}>
+        {/* Main row */}
+        <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+          <div style={{ paddingTop: 2 }}>
+            <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
+          </div>
+
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize:13.5, fontWeight:500, lineHeight:1.4, wordBreak:'break-word', textDecoration: isCompleted ? 'line-through' : 'none' }}>
+              {task.title}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:5, flexWrap:'wrap' }}>
+              {task.assigned_by_name && (
+                <span style={{ fontSize:11, color:'#94a3b8', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {task.assigned_by_name}
+                </span>
+              )}
+              {date && (
+                <span
+                  onClick={() => !isCompleted && setDateOpen(true)}
+                  style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#14b8a610' }}
+                >
+                  📅 {date}
+                </span>
+              )}
+              {!isCompleted && (
+                <span
+                  onClick={() => setSectionOpen(true)}
+                  style={{ fontSize:10, color:'#64748b', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#1e293b', border:'1px solid #334155' }}
+                >
+                  ↕ {SECTION_LABELS[task.section] || 'Task'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+            {hasDesc && (
+              <button onClick={()=>setExpanded(v=>!v)} style={styles.iconBtn} title="Info">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#14b8a6':'#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+                </svg>
+              </button>
+            )}
+            {!isCompleted && (
+              <button onClick={()=>setShowMenu(v=>!v)} style={styles.iconBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#64748b">
+                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Description */}
+        {expanded && hasDesc && (
+          <div style={{ marginTop:10, borderTop:'1px solid #1e293b', paddingTop:10, fontSize:12.5, color:'#94a3b8', lineHeight:1.6 }}>
+            {task.description}
+          </div>
+        )}
+
+        {/* Context menu */}
+        {showMenu && (
+          <div style={styles.contextMenu}>
+            <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
+              ✏️ Edit
+            </button>
+            <button style={styles.menuItem} onClick={()=>{setSectionOpen(true);setShowMenu(false);}}>
+              ↕ Move Section
+            </button>
+            <button style={styles.menuItem} onClick={()=>{setDateOpen(true);setShowMenu(false);}}>
+              📅 Change Date
+            </button>
+            <button style={{...styles.menuItem, color:'#ef4444'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
+              🗑️ Delete
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showMenu && <div style={styles.menuBackdrop} onClick={()=>setShowMenu(false)}/>}
+
+      {editOpen && (
+        <EditTaskModal task={task} members={members} adminName={adminName} role={role}
+          onSave={handleSaveEdit} onClose={()=>setEditOpen(false)}/>
+      )}
+      {sectionOpen && (
+        <ChangeSectionModal task={task} role={role} onMove={handleMove} onClose={()=>setSectionOpen(false)}/>
+      )}
+      {dateOpen && (
+        <DatePickerModal current={task.due_date} onSave={handleDateSave} onClose={()=>setDateOpen(false)}/>
+      )}
+      {deleteOpen && (
+        <DeleteConfirmModal
+          message="This task will be permanently removed."
+          onConfirm={handleDelete} onClose={()=>setDeleteOpen(false)}/>
+      )}
+    </>
+  );
+}
+
+// ─── SectionColumn ────────────────────────────────────────────────────────────
+function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
+  const filtered = tasks.filter(t => {
+    const sec = t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK');
+    return sec === section;
+  });
+
+  return (
+    <div style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}>
+      {filtered.length === 0 ? (
+        <div style={{ color:'#334155', textAlign:'center', marginTop:60, fontSize:13 }}>
+          <div style={{fontSize:32, marginBottom:8}}>📭</div>
+          No tasks in {SECTION_LABELS[section]}
+        </div>
+      ) : (
+        filtered.map(task => (
+          <TaskCard key={task.id} task={task} members={members} adminName={adminName} role={role} onRefresh={onRefresh}/>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ─── Home (Main) ──────────────────────────────────────────────────────────────
+const Home = () => {
+  const [tasks, setTasks] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [adminName, setAdminName] = useState('Admin');
+  const [role, setRole] = useState('user');
+  const [activeSection, setActiveSection] = useState('TASK');
+  const [loading, setLoading] = useState(true);
+  const [deleteCompleteOpen, setDeleteCompleteOpen] = useState(false);
+
+  const sliderRef = useRef(null);
+  const startXRef = useRef(null);
+  const sectionIndex = SECTIONS.indexOf(activeSection);
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/home/get-all-tasks`, {
+        credentials:'include',
+        headers:{'X-Requested-With':'XMLHttpRequest'}
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTasks(data.tasks || []);
+        setMembers(data.members || []);
+        setAdminName(data.adminName || 'Admin');
+        setRole(data.role || 'user');
+      }
+    } catch(e){ console.error(e); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchTasks(); }, []);
+
+  // Socket.io live update
+  useEffect(() => {
+    if (window.io) {
+      const socket = window.io();
+      socket.on('update_tasks', fetchTasks);
+      return () => socket.disconnect();
+    }
+  }, [fetchTasks]);
+
+  // Snap slider
+  useEffect(() => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
+    }
+  }, [activeSection]);
+
+  // Swipe handlers
+  const onTouchStart = e => { startXRef.current = e.touches[0].clientX; };
+  const onTouchEnd = e => {
+    if (startXRef.current === null) return;
+    const dx = startXRef.current - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) {
+      const dir = dx > 0 ? 1 : -1;
+      const next = Math.max(0, Math.min(SECTIONS.length-1, sectionIndex + dir));
+      setActiveSection(SECTIONS[next]);
+    }
+    startXRef.current = null;
+  };
+
+  const taskCounts = {};
+  SECTIONS.forEach(s => {
+    taskCounts[s] = tasks.filter(t => {
+      const sec = t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK');
+      return sec === s;
+    }).length;
+  });
+
+  const handleDeleteCompleted = async () => {
+    await fetch(`${BASE_URL}/api/home/delete-completed-tasks`, { method:'POST', credentials:'include' });
+    setDeleteCompleteOpen(false);
+    fetchTasks();
+  };
+
+  return (
+    <div style={styles.container}>
+      <style>{`
+        @keyframes ringPulse {
+          0% { transform: scale(1); opacity: 0.8; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        ::-webkit-scrollbar { width: 2px; height: 2px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+      `}</style>
+
+      {/* TAB BAR */}
+      <div style={styles.tabBar}>
+        {SECTIONS.map(sec => {
+          const active = activeSection === sec;
+          return (
+            <button key={sec} onClick={()=>setActiveSection(sec)} style={{
+              ...styles.tabButton,
+              color: active ? '#14b8a6' : '#475569',
+              borderBottom: active ? '2.5px solid #14b8a6' : '2.5px solid transparent',
+            }}>
+              {SECTION_LABELS[sec]}
+              {taskCounts[sec] > 0 && (
+                <span style={{ ...styles.badge, background: active ? '#14b8a620' : '#1e293b', color: active ? '#14b8a6' : '#64748b' }}>
+                  {taskCounts[sec]}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* SECTION DOTS */}
+      <div style={styles.dotRow}>
+        {SECTIONS.map((sec, i) => (
+          <div key={sec} onClick={()=>setActiveSection(sec)} style={{
+            height: 5, borderRadius: 10,
+            width: i === sectionIndex ? 22 : 6,
+            background: i === sectionIndex ? '#14b8a6' : '#1e293b',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+          }}/>
+        ))}
+        {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
+          <button
+            onClick={()=>setDeleteCompleteOpen(true)}
+            style={{ marginLeft:8, background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center' }}
+            title="Delete all completed"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* SLIDER */}
+      {loading ? (
+        <div style={styles.loading}>
+          <div style={styles.spinner}/>
+          <div style={{marginTop:12, color:'#475569', fontSize:13}}>Loading tasks…</div>
+        </div>
+      ) : (
+        <div
+          ref={sliderRef}
+          style={styles.slider}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          {SECTIONS.map(sec => (
+            <SectionColumn
+              key={sec} section={sec} tasks={tasks}
+              members={members} adminName={adminName}
+              role={role} onRefresh={fetchTasks}
+            />
+          ))}
+        </div>
+      )}
+
+      {deleteCompleteOpen && (
+        <DeleteConfirmModal
+          message="All completed tasks will be permanently removed."
+          onConfirm={handleDeleteCompleted}
+          onClose={()=>setDeleteCompleteOpen(false)}
+        />
+      )}
+    </div>
+  );
 };
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = {
-    container: { height: '100%', display: 'flex', flexDirection: 'column', background: '#121212' },
-    tabBar: { 
-        display: 'flex', overflowX: 'auto', background: '#1e1e1e', 
-        padding: '10px 5px', gap: '10px', borderBottom: '1px solid #333' 
-    },
-    tabButton: { 
-        background: 'none', border: 'none', padding: '8px 15px', 
-        cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', transition: '0.3s' 
-    },
-    board: { flex: 1, display: 'flex', overflowX: 'auto', padding: '10px', gap: '15px' },
-    column: { 
-        minWidth: '280px', flex: 1, background: '#1e1e1e', 
-        borderRadius: '12px', flexDirection: 'column', height: '100%' 
-    },
-    columnHeader: { 
-        padding: '12px', textAlign: 'center', background: '#0F8989', 
-        color: 'white', borderRadius: '12px 12px 0 0', fontWeight: 'bold', fontSize: '13px' 
-    },
-    taskList: { padding: '10px', overflowY: 'auto', flex: 1 },
-    taskItem: { 
-        background: '#2a2a2a', padding: '12px', borderRadius: '8px', 
-        marginBottom: '10px', cursor: 'grab', border: '1px solid #333' 
-    },
-    taskRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' },
-    priorityDot: { width: '8px', height: '8px', borderRadius: '50%' },
-    taskTitle: { color: '#e2e8f0', fontSize: '14px', fontWeight: '500' },
-    taskMeta: { display: 'flex', justifyContent: 'space-between', color: '#94a3b8', fontSize: '11px' }
+  container: {
+    height: '100%', display:'flex', flexDirection:'column',
+    background:'#0f172a', overflow:'hidden', fontFamily:'Arial, sans-serif',
+    userSelect:'none',
+  },
+  tabBar: {
+    display:'flex', overflowX:'auto', background:'#0f172a',
+    borderBottom:'1px solid #1e293b', scrollbarWidth:'none',
+    WebkitOverflowScrolling:'touch', flexShrink:0,
+  },
+  tabButton: {
+    background:'none', border:'none', padding:'11px 14px',
+    cursor:'pointer', fontWeight:700, fontSize:12,
+    whiteSpace:'nowrap', display:'flex', alignItems:'center',
+    gap:5, transition:'color 0.2s, border-color 0.2s', flexShrink:0,
+    fontFamily:'Arial, sans-serif',
+  },
+  badge: {
+    borderRadius:10, padding:'1px 6px', fontSize:10,
+    fontWeight:700, transition:'all 0.2s',
+  },
+  dotRow: {
+    display:'flex', justifyContent:'center', alignItems:'center',
+    gap:5, padding:'7px 0', background:'#0f172a', flexShrink:0,
+  },
+  slider: {
+    flex:1, display:'flex', overflowX:'hidden', overflowY:'hidden',
+    scrollSnapType:'x mandatory', WebkitOverflowScrolling:'touch',
+  },
+  loading: {
+    flex:1, display:'flex', flexDirection:'column',
+    alignItems:'center', justifyContent:'center',
+  },
+  spinner: {
+    width:28, height:28, border:'3px solid #1e293b',
+    borderTop:'3px solid #14b8a6', borderRadius:'50%',
+    animation:'spin 0.8s linear infinite',
+  },
+  taskCard: {
+    background:'#1e293b', borderRadius:10, marginBottom:10,
+    padding:'12px 12px 10px', position:'relative', overflow:'visible',
+    transition:'opacity 0.4s, transform 0.4s',
+  },
+  iconBtn: {
+    background:'none', border:'none', cursor:'pointer',
+    padding:4, display:'flex', alignItems:'center', justifyContent:'center',
+    borderRadius:4, transition:'background 0.15s',
+  },
+  contextMenu: {
+    position:'absolute', right:8, top:40, background:'#1e293b',
+    border:'1px solid #334155', borderRadius:10, zIndex:1000,
+    boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden',
+    minWidth:150, animation:'menuPop 0.15s ease',
+  },
+  menuItem: {
+    display:'block', width:'100%', padding:'10px 14px', background:'none',
+    border:'none', textAlign:'left', color:'#e2e8f0', fontSize:13,
+    cursor:'pointer', fontFamily:'Arial, sans-serif',
+  },
+  menuBackdrop: {
+    position:'fixed', inset:0, zIndex:999,
+  },
+  overlay: {
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.7)',
+    zIndex:9000, display:'flex', alignItems:'flex-end',
+    justifyContent:'center', padding:'0 0 0 0',
+  },
+  modal: {
+    background:'#1e293b', width:'100%', maxWidth:500,
+    borderRadius:'18px 18px 0 0', padding:'20px 18px 32px',
+    maxHeight:'85vh', overflowY:'auto', boxSizing:'border-box',
+    animation:'slideUp 0.25s ease',
+  },
+  modalHeader: {
+    display:'flex', justifyContent:'space-between', alignItems:'center',
+    marginBottom:16,
+  },
+  modalTitle: {
+    color:'#e2e8f0', fontWeight:700, fontSize:15,
+  },
+  closeBtn: {
+    background:'#334155', border:'none', color:'#94a3b8',
+    width:28, height:28, borderRadius:8, cursor:'pointer', fontSize:12,
+  },
+  field: { display:'flex', flexDirection:'column', gap:5, marginBottom:12 },
+  label: { fontSize:11, color:'#64748b', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' },
+  input: {
+    background:'#0f172a', color:'#e2e8f0', border:'1px solid #334155',
+    borderRadius:8, padding:'9px 12px', fontSize:13, outline:'none',
+    fontFamily:'Arial, sans-serif', width:'100%', boxSizing:'border-box',
+  },
+  modalActions: { display:'flex', gap:10, justifyContent:'flex-end', marginTop:16 },
+  cancelBtn: {
+    background:'#334155', color:'#94a3b8', border:'none',
+    padding:'9px 18px', borderRadius:8, cursor:'pointer',
+    fontSize:13, fontFamily:'Arial, sans-serif',
+  },
+  saveBtn: {
+    background:'#0f8989', color:'#fff', border:'none',
+    padding:'9px 20px', borderRadius:8, cursor:'pointer',
+    fontSize:13, fontFamily:'Arial, sans-serif', fontWeight:600,
+  },
+  sectionOption: {
+    display:'flex', alignItems:'center', gap:10, width:'100%',
+    background:'none', border:'none', borderBottom:'1px solid #0f172a',
+    padding:'13px 18px', color:'#e2e8f0', fontSize:13, cursor:'pointer',
+    fontFamily:'Arial, sans-serif', textAlign:'left',
+  },
+  sectionDot: (sec) => ({
+    width:8, height:8, borderRadius:'50%', flexShrink:0,
+    background: sec === 'TASK' ? '#14b8a6' : sec === 'CHANGES' ? '#f59e0b' : sec === 'UPDATE' ? '#3b82f6' : '#a78bfa',
+  }),
 };
 
 export default Home;
