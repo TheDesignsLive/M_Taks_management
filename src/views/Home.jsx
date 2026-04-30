@@ -575,35 +575,41 @@ const taskCounts = {};
       </div>
 
 {/* SECTION DOTS */}
-      <div style={{ ...styles.dotRow, position: 'relative' }}>
-        {SECTIONS.map((sec, i) => (
-          <div key={sec} onClick={()=>setActiveSection(sec)} style={{
-            height: 5, borderRadius: 10,
-            width: i === sectionIndex ? 22 : 6,
-            background: i === sectionIndex ? '#14b8a6' : '#2a2a2a',
-            transition: 'all 0.3s ease',
-            cursor: 'pointer',
-          }}/>
-        ))}
-        {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
-          <button
-            onClick={()=>setDeleteCompleteOpen(true)}
-            style={{
-              position: 'absolute', right: 12,
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 4,
-              color: '#ef4444', fontSize: 11, fontWeight: 600, fontFamily: 'Arial, sans-serif',
-            }}
-            title="Delete all completed"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#ef4444">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-            Clear All
-          </button>
-        )}
+      <div style={{ background:'#1a1a1a', flexShrink:0 }}>
+        <div style={{ ...styles.dotRow }}>
+          {SECTIONS.map((sec, i) => (
+            <div key={sec} onClick={()=>setActiveSection(sec)} style={{
+              height: 5, borderRadius: 10,
+              width: i === sectionIndex ? 22 : 6,
+              background: i === sectionIndex ? '#14b8a6' : '#2a2a2a',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+            }}/>
+          ))}
+        </div>
+
       </div>
-      
+
+{activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
+          <div style={{ display:'flex', justifyContent:'flex-end', paddingBottom:8, paddingTop:2, paddingRight:14 }}>
+            <button
+              onClick={()=>setDeleteCompleteOpen(true)}
+              style={{
+                background:'#2a1515', border:'1px solid #7f1d1d', borderRadius:8,
+                cursor:'pointer', padding:'7px 16px',
+                display:'flex', alignItems:'center', gap:6,
+                color:'#ef4444', fontSize:13, fontWeight:700, fontFamily:'Arial, sans-serif',
+                minHeight: 36,
+              }}
+              title="Delete all completed"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+              Clear All
+            </button>
+          </div>
+        )}
 
       {/* SLIDER */}
       {loading ? (
