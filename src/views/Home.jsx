@@ -43,37 +43,54 @@ function toInputDate(dateStr) {
 function AnimCheckbox({ checked, color, onChange }) {
   const [anim, setAnim] = useState(false);
   const handleChange = () => {
-    if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 600); }
+    if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 500); }
     onChange();
   };
   return (
-    <div
-      onClick={handleChange}
-      style={{
-        width: 11, height: 11, borderRadius: 4,
-        border: `2px solid ${color}`,
-        background: checked ? color : 'transparent',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', flexShrink: 0, position: 'relative',
-        transition: 'background 0.25s, transform 0.15s',
-        transform: anim ? 'scale(1.35)' : 'scale(1)',
-        boxShadow: anim ? `0 0 10px ${color}88` : 'none',
-      }}
-    >
-      {checked && (
-        <svg width="9" height="9" viewBox="0 0 10 10">
-          <polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )}
-      {anim && (
-        <div style={{
-          position:'absolute', inset:-8, borderRadius:'50%',
-          border:`2px solid ${color}`,
-          animation:'ringPulse 0.5s ease-out forwards',
-          pointerEvents:'none',
-        }}/>
-      )}
-    </div>
+    <>
+      <style>{`
+        @keyframes checkDraw {
+          0%   { stroke-dashoffset: 20; opacity: 0; }
+          40%  { opacity: 1; }
+          100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        @keyframes boxPop {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.3); }
+          70%  { transform: scale(0.92); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+      <div
+        onClick={handleChange}
+        style={{
+          width: 16, height: 16, borderRadius: 4,
+          border: `2px solid ${color}`,
+          background: checked ? color : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', flexShrink: 0, position: 'relative',
+          transition: 'background 0.2s, border-color 0.2s',
+          animation: anim ? 'boxPop 0.45s ease forwards' : 'none',
+          boxSizing: 'border-box',
+        }}
+      >
+    {checked && (
+          <svg width="9" height="9" viewBox="0 0 10 10" style={{ display:'block' }}>
+            <polyline
+              points="1.5,5 4,7.5 8.5,2"
+              fill="none"
+              stroke={color === '#ef4444' ? '#ff9999' : color === '#eab308' ? '#fde68a' : '#93c5fd'}
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="20"
+              strokeDashoffset="0"
+              style={{ animation: anim ? 'checkDraw 0.35s ease forwards' : 'none' }}
+            />
+          </svg>
+        )}
+      </div>
+    </>
   );
 }
 
