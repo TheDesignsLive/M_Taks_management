@@ -65,21 +65,20 @@ function TaskCard({ task }) {
   const isCompleted = task.status === 'COMPLETED';
   const assignedName = task.assigned_to_name || task.assigned_by_name || '';
 
-  return (
+return (
     <div style={{
       background: '#2a2a2a', borderRadius: 10, marginBottom: 10,
       borderLeft: `4px solid ${color}`, padding: '12px 12px 10px',
       opacity: isCompleted ? 0.55 : 1, transition: 'opacity 0.2s',
     }}>
-      {/* Main row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        {/* Checkbox */}
+      {/* Row 1: Checkbox + Title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{
           width: 16, height: 16, borderRadius: 4, flexShrink: 0,
           border: `2px solid ${color}`,
           background: isCompleted ? color : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxSizing: 'border-box', marginTop: 2,
+          boxSizing: 'border-box',
         }}>
           {isCompleted && (
             <svg width="9" height="9" viewBox="0 0 10 10">
@@ -89,39 +88,34 @@ function TaskCard({ task }) {
             </svg>
           )}
         </div>
-
-        {/* Title + meta */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingLeft: 4 }}>
-          <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', width: '100%', wordBreak: 'break-word' }}>
-            {task.title}
-          </div>
-<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5, width: '100%' }}>
-            {assignedName ? (
-              <span style={{ fontSize: 11, color: '#94a3b8', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {assignedName}
-              </span>
-            ) : <span />}
-            {date && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610' }}>
-                📅 {date}
-              </span>
-            )}
-          </div>
+        <div style={{ flex: 1, minWidth: 0, color: isCompleted ? '#888' : '#e2e8f0', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', wordBreak: 'break-word' }}>
+          {task.title}
         </div>
+      </div>
 
-        {/* Info icon */}
-{hasDesc && (
-          <button onClick={() => setExpanded(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, paddingRight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, flexShrink: 0 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#14b8a6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
-            </svg>
-          </button>
+      {/* Row 2: Name + Date + Info icon */}
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: 6, paddingLeft: 26 }}>
+<span style={{ fontSize: 11, color: '#94a3b8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
+          {assignedName}
+        </span>
+        {date && (
+          <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', flexShrink: 0 }}>
+            📅 {date}
+          </span>
         )}
+        <button
+          onClick={() => hasDesc && setExpanded(v => !v)}
+          style={{ background: 'none', border: 'none', cursor: hasDesc ? 'pointer' : 'default', padding: '0 0 0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: hasDesc ? 1 : 0 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#14b8a6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+          </svg>
+        </button>
       </div>
 
       {/* Expandable description */}
       {expanded && hasDesc && (
-        <div style={{ marginTop: 10, borderTop: '1px solid #2a2a2a', paddingTop: 10, paddingLeft: 25, fontSize: 12.5, color: '#94a3b8', lineHeight: 1.6, textAlign: 'left' }}>
+        <div style={{ marginTop: 10, borderTop: '1px solid #333', paddingTop: 10, paddingLeft: 26, fontSize: 12.5, color: '#94a3b8', lineHeight: 1.6, textAlign: 'left' }}>
           {task.description}
         </div>
       )}
