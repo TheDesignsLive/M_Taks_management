@@ -402,7 +402,7 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
   return (
     <div style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}>
       {filtered.length === 0 ? (
-        <div style={{ color:'#334155', textAlign:'center', marginTop:60, fontSize:13 }}>
+        <div style={{ color:'#555', textAlign:'center', marginTop:60, fontSize:13 }}>
           <div style={{fontSize:32, marginBottom:8}}>📭</div>
           No tasks in {SECTION_LABELS[section]}
         </div>
@@ -585,12 +585,12 @@ const Home = () => {
 const styles = {
   container: {
     height: '100%', display:'flex', flexDirection:'column',
-    background:'#0f172a', overflow:'hidden', fontFamily:'Arial, sans-serif',
+    background:'#121212', overflow:'hidden', fontFamily:'Arial, sans-serif',
     userSelect:'none',
   },
   tabBar: {
-    display:'flex', overflowX:'auto', background:'#0f172a',
-    borderBottom:'1px solid #1e293b', scrollbarWidth:'none',
+    display:'flex', overflowX:'auto',  background:'#1a1a1a',
+  borderBottom:'1px solid #2a2a2a', scrollbarWidth:'none',
     WebkitOverflowScrolling:'touch', flexShrink:0,
   },
   tabButton: {
@@ -606,7 +606,7 @@ const styles = {
   },
   dotRow: {
     display:'flex', justifyContent:'center', alignItems:'center',
-    gap:5, padding:'7px 0', background:'#0f172a', flexShrink:0,
+    gap:5, padding:'7px 0', background:'#1a1a1a', flexShrink:0,
   },
   slider: {
     flex:1, display:'flex', overflowX:'hidden', overflowY:'hidden',
@@ -622,7 +622,7 @@ const styles = {
     animation:'spin 0.8s linear infinite',
   },
   taskCard: {
-    background:'#1e293b', borderRadius:10, marginBottom:10,
+    background:'#2a2a2a', borderRadius:10, marginBottom:10,
     padding:'12px 12px 10px', position:'relative', overflow:'visible',
     transition:'opacity 0.4s, transform 0.4s',
   },
