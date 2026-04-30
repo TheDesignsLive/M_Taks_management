@@ -167,7 +167,18 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
 
 // ─── ChangeSectionModal ───────────────────────────────────────────────────────
 function ChangeSectionModal({ task, role, onMove, onClose }) {
-  const available = SECTIONS.filter(s => s !== 'COMPLETED' && s !== (task.status === 'COMPLETED' ? 'COMPLETED' : task.section));
+  const currentSection = task.section || 'TASK';
+  // isSelfTask = true means assigned_to and assigned_by are the same person (my own task)
+  const isSelfTask = String(task.assigned_to) === String(task.assigned_by);
+  const available = SECTIONS.filter(s => {
+    if (s === 'COMPLETED') return false;
+    if (s === currentSection) return false;
+    // Self tasks can go to TASK but not OTHERS
+    if (isSelfTask && s === 'OTHERS') return false;
+    // Tasks assigned by someone else can go to OTHERS but not TASK
+    if (!isSelfTask && s === 'TASK') return false;
+    return true;
+  });
 
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
