@@ -268,6 +268,7 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
   const [completing, setCompleting] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
   const menuBtnRef = useRef(null);
+  const dateInputRef = useRef(null);
 
   const priority = (task.priority || 'LOW').toUpperCase();
   const color = PRIORITY_COLORS[priority] || '#3b82f6';
@@ -366,9 +367,9 @@ const handleCheckbox = async () => {
                   {task.assigned_by_name}
                 </span>
               )}
-              {date && (
+    {date && (
                 <span
-                  onClick={() => !isCompleted && setDateOpen(true)}
+                  onClick={() => { if (!isCompleted && dateInputRef.current) { dateInputRef.current.showPicker?.(); } }}
                   style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#14b8a610' }}
                 >
                   📅 {date}
@@ -461,7 +462,7 @@ onClick={() => {
           <button style={styles.menuItem} onClick={()=>{setSectionOpen(true);setShowMenu(false);}}>
             ↕ Move Section
           </button>
-          <button style={styles.menuItem} onClick={()=>{setDateOpen(true);setShowMenu(false);}}>
+ <button style={styles.menuItem} onClick={()=>{ setShowMenu(false); setTimeout(()=>dateInputRef.current?.showPicker?.(), 50); }}>
             📅 Change Date
           </button>
           <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
@@ -477,9 +478,13 @@ onClick={() => {
       {sectionOpen && (
         <ChangeSectionModal task={task} role={role} onMove={handleMove} onClose={()=>setSectionOpen(false)}/>
       )}
-      {dateOpen && (
-        <DatePickerModal current={task.due_date} onSave={handleDateSave} onClose={()=>setDateOpen(false)}/>
-      )}
+<input
+        ref={dateInputRef}
+        type="date"
+        defaultValue={toInputDate(task.due_date)}
+        onChange={e => { if (e.target.value) handleDateSave(e.target.value); }}
+        style={{ position:'fixed', opacity:0, pointerEvents:'none', top:0, left:0, width:0, height:0 }}
+      />
       {deleteOpen && (
         <DeleteConfirmModal
           message="This task will be permanently removed."
