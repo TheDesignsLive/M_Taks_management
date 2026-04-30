@@ -319,7 +319,7 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
               {!isCompleted && (
                 <span
                   onClick={() => setSectionOpen(true)}
-                  style={{ fontSize:10, color:'#64748b', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#1e293b', border:'1px solid #334155' }}
+                  style={{ fontSize:10, color:'#64748b', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#2a2a2a', border:'1px solid #334155' }}
                 >
                   ↕ {SECTION_LABELS[task.section] || 'Task'}
                 </span>
@@ -347,7 +347,7 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
 
         {/* Description */}
         {expanded && hasDesc && (
-          <div style={{ marginTop:10, borderTop:'1px solid #1e293b', paddingTop:10, fontSize:12.5, color:'#94a3b8', lineHeight:1.6 }}>
+          <div style={{ marginTop:10, borderTop:'1px solid #2a2a2a', paddingTop:10, fontSize:12.5, color:'#94a3b8', lineHeight:1.6 }}>
             {task.description}
           </div>
         )}
@@ -509,12 +509,12 @@ const Home = () => {
           return (
             <button key={sec} onClick={()=>setActiveSection(sec)} style={{
               ...styles.tabButton,
-              color: active ? '#14b8a6' : '#475569',
+              color: active ? '#14b8a6' : '#64748b',
               borderBottom: active ? '2.5px solid #14b8a6' : '2.5px solid transparent',
             }}>
               {SECTION_LABELS[sec]}
               {taskCounts[sec] > 0 && (
-                <span style={{ ...styles.badge, background: active ? '#14b8a620' : '#1e293b', color: active ? '#14b8a6' : '#64748b' }}>
+                <span style={{ ...styles.badge, background: active ? '#14b8a620' : '#2a2a2a', color: active ? '#14b8a6' : '#64748b' }}>
                   {taskCounts[sec]}
                 </span>
               )}
@@ -529,7 +529,7 @@ const Home = () => {
           <div key={sec} onClick={()=>setActiveSection(sec)} style={{
             height: 5, borderRadius: 10,
             width: i === sectionIndex ? 22 : 6,
-            background: i === sectionIndex ? '#14b8a6' : '#1e293b',
+            background: i === sectionIndex ? '#14b8a6' : '#2a2a2a',
             transition: 'all 0.3s ease',
             cursor: 'pointer',
           }}/>
@@ -551,7 +551,7 @@ const Home = () => {
       {loading ? (
         <div style={styles.loading}>
           <div style={styles.spinner}/>
-          <div style={{marginTop:12, color:'#475569', fontSize:13}}>Loading tasks…</div>
+          <div style={{marginTop:12, color:'#64748b', fontSize:13}}>Loading tasks…</div>
         </div>
       ) : (
         <div
@@ -617,7 +617,7 @@ const styles = {
     alignItems:'center', justifyContent:'center',
   },
   spinner: {
-    width:28, height:28, border:'3px solid #1e293b',
+    width:28, height:28, border:'3px solid #2a2a2a',
     borderTop:'3px solid #14b8a6', borderRadius:'50%',
     animation:'spin 0.8s linear infinite',
   },
@@ -632,7 +632,7 @@ const styles = {
     borderRadius:4, transition:'background 0.15s',
   },
   contextMenu: {
-    position:'absolute', right:8, top:40, background:'#1e293b',
+    position:'absolute', right:8, top:40, background:'#2a2a2a',
     border:'1px solid #334155', borderRadius:10, zIndex:1000,
     boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden',
     minWidth:150, animation:'menuPop 0.15s ease',
@@ -651,7 +651,7 @@ const styles = {
     justifyContent:'center', padding:'0 0 0 0',
   },
   modal: {
-    background:'#1e293b', width:'100%', maxWidth:500,
+    background:'#2a2a2a', width:'100%', maxWidth:500,
     borderRadius:'18px 18px 0 0', padding:'20px 18px 32px',
     maxHeight:'85vh', overflowY:'auto', boxSizing:'border-box',
     animation:'slideUp 0.25s ease',
