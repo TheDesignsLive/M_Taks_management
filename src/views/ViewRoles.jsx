@@ -427,7 +427,7 @@ export default function ViewRoles({ onBack, onChangeToDept }) {
 
         {/* Search + Filter row */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
+          {/* <div style={{ position: 'relative', flexShrink: 0 }}> */}
             {/* <select
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
@@ -438,10 +438,10 @@ export default function ViewRoles({ onBack, onChangeToDept }) {
               <option value="team">By Dept</option>
               <option value="control">By Control</option>
             </select> */}
-            <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#fff' }}>
+            {/* <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#fff' }}>
               <ChevronIcon />
             </span>
-          </div>
+          </div> */}
           <div style={{ ...S.searchWrap, flex: 1, marginBottom: 0 }}>
             <span style={S.searchIcon}><SearchIcon /></span>
             <input
