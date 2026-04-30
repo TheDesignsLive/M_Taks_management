@@ -335,7 +335,7 @@ const handleCheckbox = async () => {
     <div style={{ overflow:'hidden', maxHeight:0, opacity:0, transition:'all 0.35s ease', marginBottom:0 }}/>
   );
 
-  return (
+return (
     <>
       <div style={{
         ...styles.taskCard,
@@ -344,73 +344,68 @@ const handleCheckbox = async () => {
         transform: completing ? 'scale(0.97)' : 'scale(1)',
         transition: 'opacity 0.4s, transform 0.4s',
       }}>
-        {/* Main row */}
-        <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
-          <div style={{ paddingTop: 2 }}>
-            <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
-          </div>
 
-      <div style={{
-  flex:1,
-  minWidth:0,
-  display:'flex',
-  flexDirection:'column',
-  alignItems:'flex-start',
-  paddingLeft: 4   // 👈 ADD THIS
-}}>
-            <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize:13.5, fontWeight:500, lineHeight:1.3,textAlign: 'left', width: '100%',  wordBreak:'break-word', textDecoration: isCompleted ? 'none' : 'none' }}>
-              {task.title}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:5, flexWrap:'wrap' }}>
-              {task.assigned_by_name && (
-                <span style={{ fontSize:11, color:'#94a3b8', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                  {task.assigned_by_name}
-                </span>
-              )}
-    {date && (
-                <span
-                  onClick={() => { if (!isCompleted && dateInputRef.current) { dateInputRef.current.showPicker?.(); } }}
-                  style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#14b8a610' }}
-                >
-                  📅 {date}
-                </span>
-              )}
-              {!isCompleted && (
-                <span
-                  onClick={() => setSectionOpen(true)}
-                  style={{ fontSize:10, color:'#64748b', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#2a2a2a', border:'1px solid #334155' }}
-                >
-                  ↕ {SECTION_LABELS[task.section] || 'Task'}
-                </span>
-              )}
-            </div>
+        {/* Row 1: Checkbox + Title */}
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
+          <div style={{ flex:1, minWidth:0, color: isCompleted ? '#888' : '#e2e8f0', fontSize:13.5, fontWeight:500, lineHeight:1.3, textAlign:'left', wordBreak:'break-word' }}>
+            {task.title}
           </div>
+        </div>
 
-          <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-            {hasDesc && (
-              <button onClick={()=>setExpanded(v=>!v)} style={styles.iconBtn} title="Info">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#14b8a6':'#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
-                </svg>
-              </button>
+        {/* Row 2: Name+Move (left) | Info+Date+3dot (right) */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, paddingLeft:26 }}>
+
+          {/* Left side */}
+          <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0 }}>
+            {task.assigned_by_name && (
+              <span style={{ fontSize:11, color:'#94a3b8', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {task.assigned_by_name}
+              </span>
             )}
-          {!isCompleted && (
+            {!isCompleted && (
+              <span
+                onClick={() => setSectionOpen(true)}
+                style={{ fontSize:10, color:'#64748b', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#1e1e1e', border:'1px solid #334155', whiteSpace:'nowrap', flexShrink:0 }}
+              >
+                ↕ {SECTION_LABELS[task.section] || 'Task'}
+              </span>
+            )}
+          </div>
+
+          {/* Right side */}
+          <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+            {/* Info icon — always reserves space */}
+            <button
+              onClick={() => hasDesc && setExpanded(v=>!v)}
+              style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#14b8a6':'#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+              </svg>
+            </button>
+
+            {/* Date */}
+            {date ? (
+              <span
+                onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
+                style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', minWidth:60, textAlign:'center' }}
+              >
+                📅 {date}
+              </span>
+            ) : <span style={{ minWidth:60 }}/>}
+
+            {/* 3-dot menu */}
+            {!isCompleted && (
               <button
                 ref={menuBtnRef}
-onClick={() => {
+                onClick={() => {
                   if (!showMenu && menuBtnRef.current) {
                     const rect = menuBtnRef.current.getBoundingClientRect();
-                    const menuHeight = 164;
-                    const menuWidth = 160;
+                    const menuHeight = 164, menuWidth = 160;
                     const spaceBelow = window.innerHeight - rect.bottom;
                     const openUpward = spaceBelow < menuHeight + 8;
-                    setMenuPos({
-                      top: openUpward
-                        ? rect.top - menuHeight
-                        : rect.bottom,
-                      left: rect.right - menuWidth,
-                      openUpward,
-                    });
+                    setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom, left: rect.right - menuWidth, openUpward });
                   }
                   setShowMenu(v => !v);
                 }}
@@ -425,22 +420,12 @@ onClick={() => {
         </div>
 
         {/* Description */}
-            {expanded && hasDesc && (
-            <div style={{
-                marginTop:10,
-                borderTop:'1px solid #2a2a2a',
-                paddingTop:10,
-                paddingLeft: 25,   // ✅ IMPORTANT (align with title)
-                fontSize:12.5,
-                color:'#94a3b8',
-                lineHeight:1.6,
-                textAlign: 'left'
-            }}>
-                {task.description}
-            </div>
-            )}
-
-</div>
+        {expanded && hasDesc && (
+          <div style={{ marginTop:10, borderTop:'1px solid #333', paddingTop:10, paddingLeft:26, fontSize:12.5, color:'#94a3b8', lineHeight:1.6, textAlign:'left' }}>
+            {task.description}
+          </div>
+        )}
+      </div>
 
       {showMenu && <div style={styles.menuBackdrop} onClick={()=>setShowMenu(false)}/>}
 
