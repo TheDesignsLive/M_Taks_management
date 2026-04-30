@@ -588,10 +588,8 @@ const taskCounts = {};
           ))}
         </div>
 
-      </div>
-
-{activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
-          <div style={{ display:'flex', justifyContent:'flex-end', paddingBottom:8, paddingTop:2, paddingRight:14 }}>
+        {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
+          <div style={{ display:'flex', justifyContent:'flex-end', padding:'6px 14px 6px' }}>
             <button
               onClick={()=>setDeleteCompleteOpen(true)}
               style={{
@@ -610,6 +608,7 @@ const taskCounts = {};
             </button>
           </div>
         )}
+      </div>
 
       {/* SLIDER */}
       {loading ? (
