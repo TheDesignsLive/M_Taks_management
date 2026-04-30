@@ -108,7 +108,9 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [teams, setTeams] = useState([]);
   const [teamMembers, setTeamMembers] = useState({});
   const [openTeam, setOpenTeam] = useState(null);
-  const [showAssignDrop, setShowAssignDrop] = useState(false);
+const [showAssignDrop, setShowAssignDrop] = useState(false);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 240 });
+  const assignTriggerRef = useRef(null);
 
   useEffect(() => {
     fetch(`${BASE_URL}/api/tasks/get-teams`, { credentials: 'include' })
@@ -147,9 +149,9 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   };
 
 const dropStyle = {
-    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 9999,
+    position: 'fixed', zIndex: 99999,
     background: '#1a1a1a', border: '1px solid #334155', borderRadius: 10,
-    marginTop: 4, maxHeight: 240, overflowY: 'auto',
+    overflowY: 'auto',
     boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
   };
   const dropItemStyle = {
@@ -192,11 +194,25 @@ const dropStyle = {
           </div>
         </div>
 
-        {/* Assign To — custom dropdown */}
+{/* Assign To — custom dropdown */}
         <div style={{...styles.field, position:'relative'}} onClick={e => e.stopPropagation()}>
           <label style={styles.label}>Assign To</label>
           <div
-            onClick={() => setShowAssignDrop(v => !v)}
+            ref={assignTriggerRef}
+            onClick={() => {
+              if (!showAssignDrop && assignTriggerRef.current) {
+                const rect = assignTriggerRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const maxH = Math.min(240, spaceBelow > 160 ? spaceBelow - 12 : rect.top - 12);
+                setDropPos({
+                  top: spaceBelow > 160 ? rect.bottom + 4 : rect.top - maxH - 4,
+                  left: rect.left,
+                  width: rect.width,
+                  maxHeight: maxH,
+                });
+              }
+              setShowAssignDrop(v => !v);
+            }}
             style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
           >
             <span style={{color:'#e2e8f0'}}>{assignLabel}</span>
@@ -204,7 +220,7 @@ const dropStyle = {
           </div>
 
           {showAssignDrop && (
-            <div style={dropStyle}>
+            <div style={{...dropStyle, top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: dropPos.maxHeight}}>
               {/* Myself */}
               <div style={dropItemStyle} onClick={() => selectAssign('self', 'Myself')}>
                 <span>👤</span><span style={{flex:1}}>Myself</span>
