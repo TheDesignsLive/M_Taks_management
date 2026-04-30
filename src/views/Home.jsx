@@ -146,19 +146,19 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
     setSaving(false);
   };
 
-  const dropStyle = {
+const dropStyle = {
     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 9999,
-    background: '#1a1a2e', border: '1px solid #334155', borderRadius: 10,
-    marginTop: 4, maxHeight: 220, overflowY: 'auto',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+    background: '#1a1a1a', border: '1px solid #334155', borderRadius: 10,
+    marginTop: 4, maxHeight: 240, overflowY: 'auto',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
   };
   const dropItemStyle = {
     padding: '10px 14px', fontSize: 13, cursor: 'pointer',
     display: 'flex', alignItems: 'center', gap: 8,
-    color: '#e2e8f0', borderBottom: '1px solid #2a2a3a',
+    color: '#e2e8f0', borderBottom: '1px solid #2a2a2a',
   };
   const subItemStyle = {
-    ...dropItemStyle, paddingLeft: 28, background: '#0f172a', color: '#94a3b8',
+    ...dropItemStyle, paddingLeft: 28, background: '#121212', color: '#94a3b8',
   };
 
   return (
@@ -219,8 +219,8 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
                 </div>
               )}
 
-              {/* Flat members */}
-              {members.length > 0 && (
+       {/* Flat members — only show if no teams exist */}
+              {teams.length === 0 && members.length > 0 && (
                 <>
                   <div style={{...dropItemStyle, color:'#64748b', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #334155'}}>
                     MEMBERS
