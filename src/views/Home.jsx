@@ -168,14 +168,20 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
 // ─── ChangeSectionModal ───────────────────────────────────────────────────────
 function ChangeSectionModal({ task, role, onMove, onClose }) {
   const currentSection = task.section || 'TASK';
-  // isSelfTask = true means assigned_to and assigned_by are the same person (my own task)
-  const isSelfTask = String(task.assigned_to) === String(task.assigned_by);
+  // isSelfTask = assigned by myself to myself
+  // For user/owner: who_assigned is 'user'/'owner' AND assigned_by === assigned_to
+  // For admin: who_assigned is 'admin' AND assigned_to is 0 (self) and no external assigner
+  const isSelfTask =
+    (task.who_assigned === 'user' || task.who_assigned === 'owner')
+      ? String(task.assigned_by) === String(task.assigned_to)
+      : task.who_assigned === 'admin' && (task.assigned_to === 0 || task.assigned_to === '0');
+
   const available = SECTIONS.filter(s => {
     if (s === 'COMPLETED') return false;
     if (s === currentSection) return false;
-    // Self tasks can go to TASK but not OTHERS
+    // Self tasks: show TASK, hide OTHERS
     if (isSelfTask && s === 'OTHERS') return false;
-    // Tasks assigned by someone else can go to OTHERS but not TASK
+    // Tasks assigned by someone else: show OTHERS, hide TASK
     if (!isSelfTask && s === 'TASK') return false;
     return true;
   });
