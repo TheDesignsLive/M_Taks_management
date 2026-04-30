@@ -1,3 +1,4 @@
+// home.js
 import express from 'express';
 import con from '../config/db.js';
 

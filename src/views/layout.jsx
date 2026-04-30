@@ -5,6 +5,7 @@ import AssignedByMe from './AssignedByMe.jsx';
 import ViewMembers from './ViewMembers.jsx';
 import Settings from './Settings.jsx';
 import Profile from './Profile.jsx';
+import AllMemberTasks from './AllMemberTasks.jsx';
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =
@@ -277,6 +278,7 @@ const Layout = () => {
       case 'home':          return <Home />;
       case 'notifications': return <Notifications />;
       case 'assigned':      return <AssignedByMe />;
+      case 'allTasks': return <AllMemberTasks />;
       case 'members':       return <ViewMembers />;
       case 'settings':      return <Settings />;
       case 'profile':       return <Profile />;
@@ -330,6 +332,7 @@ const Layout = () => {
             { key: 'home',          icon: 'fa-house',            label: 'Home' },
             { key: 'notifications', icon: 'fa-bell',             label: 'Notifications', badge: notifCount },
             { key: 'assigned',      icon: 'fa-file-signature',   label: 'Assigned By Me' },
+             { key: 'allTasks', icon: 'fa-regular fa-clipboard', activeIcon: 'fa-solid fa-clipboard-check', label: 'All Member Tasks' },
             { key: 'members',       icon: 'fa-users',            label: 'View Members' },
             { key: 'settings',      icon: 'fa-gear',             label: 'Settings' },
             { key: 'profile',       icon: 'fa-circle-user',      label: 'Profile' },
