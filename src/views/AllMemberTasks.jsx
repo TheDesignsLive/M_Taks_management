@@ -63,61 +63,65 @@ function TaskCard({ task }) {
   const past = isPastDate(task.due_date);
   const hasDesc = task.description && task.description.trim() !== '';
   const isCompleted = task.status === 'COMPLETED';
+  const assignedName = task.assigned_to_name || task.assigned_by_name || '';
 
   return (
     <div style={{
-      background: '#2a2a2a',
-      borderRadius: 8,
-      marginBottom: 8,
-      borderLeft: `4px solid ${color}`,
-      padding: '10px 10px 8px 10px',
-      opacity: isCompleted ? 0.55 : 1,
-      transition: 'opacity 0.2s',
+      background: '#2a2a2a', borderRadius: 10, marginBottom: 10,
+      borderLeft: `4px solid ${color}`, padding: '12px 12px 10px',
+      opacity: isCompleted ? 0.55 : 1, transition: 'opacity 0.2s',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Main row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         {/* Checkbox */}
         <div style={{
-          width: 11, height: 11, borderRadius: 3,
+          width: 16, height: 16, borderRadius: 4, flexShrink: 0,
           border: `2px solid ${color}`,
           background: isCompleted ? color : 'transparent',
-          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',  marginTop: 2,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxSizing: 'border-box', marginTop: 2,
         }}>
-          {isCompleted && <span style={{ color: '#fff', fontSize: 8, lineHeight: 1 }}>✔</span>}
+          {isCompleted && (
+            <svg width="9" height="9" viewBox="0 0 10 10">
+              <polyline points="1.5,5 4,7.5 8.5,2" fill="none"
+                stroke={color === '#ef4444' ? '#7f1d1d' : color === '#eab308' ? '#713f12' : '#1e3a5f'}
+                strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
         </div>
 
-        {/* Title */}
-        <div style={{ flex: 1, color: '#e2e8f0', fontSize: 13, fontWeight: 500, wordBreak: 'break-word',textAlign: 'left'  }}>
-          {task.title}
+        {/* Title + meta */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingLeft: 4 }}>
+          <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', width: '100%', wordBreak: 'break-word' }}>
+            {task.title}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
+            {assignedName && (
+              <span style={{ fontSize: 11, color: '#94a3b8', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {assignedName}
+              </span>
+            )}
+            {date && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610' }}>
+                📅 {date}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Info icon */}
-        {hasDesc ? (
-          <svg
-            onClick={() => setExpanded(v => !v)}
-            style={{ width: 15, height: 15, flexShrink: 0, cursor: 'pointer', stroke: expanded ? '#fff' : '#777', transition: 'stroke 0.2s' }}
-            xmlns="http://www.w3.org/2000/svg" fill="none" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
-          >
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="8.5" /><line x1="12" y1="11" x2="12" y2="16" />
-          </svg>
-        ) : <div style={{ width: 15 }} />}
-      </div>
-
-      {/* Meta row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
-        <span style={{ fontSize: 11, color: '#94a3b8', opacity: 0.7, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {task.assigned_to_name || task.assigned_by_name || ''}
-        </span>
-        {date && (
-          <span style={{ fontSize: 11, color: past ? '#ff4d4d' : '#94a3b8', fontWeight: past ? 600 : 400 }}>
-            {date}
-          </span>
+        {hasDesc && (
+          <button onClick={() => setExpanded(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#14b8a6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+            </svg>
+          </button>
         )}
       </div>
 
       {/* Expandable description */}
       {expanded && hasDesc && (
-        <div style={{ marginTop: 8, borderTop: '1px solid #444', paddingTop: 8, fontSize: 12, color: '#aaa', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 10, borderTop: '1px solid #2a2a2a', paddingTop: 10, paddingLeft: 25, fontSize: 12.5, color: '#94a3b8', lineHeight: 1.6, textAlign: 'left' }}>
           {task.description}
         </div>
       )}
