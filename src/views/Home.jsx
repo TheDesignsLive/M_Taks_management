@@ -192,8 +192,8 @@ function ChangeSectionModal({ task, role, onMove, onClose }) {
 
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{...styles.modal, padding:0, overflow:'hidden'}}>
-        <div style={styles.modalHeader}>
+    <div style={{...styles.modal, padding:0, overflow:'hidden'}}>
+  <div style={{...styles.modalHeader, padding:'16px 18px 12px'}}>
           <span style={styles.modalTitle}>Move to Section</span>
           <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
