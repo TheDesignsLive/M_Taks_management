@@ -98,12 +98,8 @@ return (
 <span style={{ fontSize: 11, color: '#94a3b8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
           {assignedName}
         </span>
-        {date && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', flexShrink: 0 }}>
-            📅 {date}
-          </span>
-        )}
-        <button
+
+   <button
           onClick={() => hasDesc && setExpanded(v => !v)}
           style={{ background: 'none', border: 'none', cursor: hasDesc ? 'pointer' : 'default', padding: '0 0 0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: hasDesc ? 1 : 0 }}
         >
@@ -111,6 +107,13 @@ return (
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
           </svg>
         </button>
+
+{date ? (
+          <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', flexShrink: 0, minWidth: 72, textAlign: 'center' }}>
+            📅 {date}
+          </span>
+        ) : <span style={{ minWidth: 72, flexShrink: 0 }} />}
+     
       </div>
 
       {/* Expandable description */}
