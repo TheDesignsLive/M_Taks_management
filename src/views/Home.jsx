@@ -372,15 +372,18 @@ const handleCheckbox = async () => {
           {!isCompleted && (
               <button
                 ref={menuBtnRef}
-    onClick={() => {
+onClick={() => {
                   if (!showMenu && menuBtnRef.current) {
                     const rect = menuBtnRef.current.getBoundingClientRect();
-                    const menuHeight = 172; // approx height of 4 menu items
+                    const menuHeight = 164;
+                    const menuWidth = 160;
                     const spaceBelow = window.innerHeight - rect.bottom;
-                    const openUpward = spaceBelow < menuHeight + 20;
+                    const openUpward = spaceBelow < menuHeight + 8;
                     setMenuPos({
-                      top: openUpward ? rect.top - menuHeight - 6 : rect.bottom + 6,
-                      right: window.innerWidth - rect.right,
+                      top: openUpward
+                        ? rect.top - menuHeight
+                        : rect.bottom,
+                      left: rect.right - menuWidth,
                       openUpward,
                     });
                   }
@@ -412,35 +415,36 @@ const handleCheckbox = async () => {
             </div>
             )}
 
-{/* Context menu — fixed position, flips upward when near bottom of screen */}
-        {showMenu && (
-          <div style={{
-            ...styles.contextMenu,
-            position: 'fixed',
-            top: menuPos.top,
-            right: menuPos.right,
-            left: 'auto',
-            borderRadius: menuPos.openUpward ? '10px 10px 4px 10px' : '4px 10px 10px 10px',
-            transformOrigin: menuPos.openUpward ? 'bottom right' : 'top right',
-            animation: 'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
-          }}>
-            <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
-              ✏️ Edit
-            </button>
-            <button style={styles.menuItem} onClick={()=>{setSectionOpen(true);setShowMenu(false);}}>
-              ↕ Move Section
-            </button>
-            <button style={styles.menuItem} onClick={()=>{setDateOpen(true);setShowMenu(false);}}>
-              📅 Change Date
-            </button>
-            <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
-              🗑️ Delete
-            </button>
-          </div>
-        )}
-      </div>
+</div>
 
       {showMenu && <div style={styles.menuBackdrop} onClick={()=>setShowMenu(false)}/>}
+
+      {showMenu && (
+        <div style={{
+          ...styles.contextMenu,
+          position: 'fixed',
+          top: menuPos.top,
+          left: menuPos.left,
+          right: 'auto',
+          borderRadius: menuPos.openUpward ? '10px 10px 10px 4px' : '4px 10px 10px 10px',
+          transformOrigin: menuPos.openUpward ? 'bottom right' : 'top right',
+          animation: 'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
+          zIndex: 99999,
+        }}>
+          <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
+            ✏️ Edit
+          </button>
+          <button style={styles.menuItem} onClick={()=>{setSectionOpen(true);setShowMenu(false);}}>
+            ↕ Move Section
+          </button>
+          <button style={styles.menuItem} onClick={()=>{setDateOpen(true);setShowMenu(false);}}>
+            📅 Change Date
+          </button>
+          <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
+            🗑️ Delete
+          </button>
+        </div>
+      )}
 
       {editOpen && (
         <EditTaskModal task={task} members={members} adminName={adminName} role={role}
