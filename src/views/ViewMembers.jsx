@@ -457,8 +457,7 @@ export default function ViewMember() {
       </div>
     );
   }
-
-  if (showTeams) {
+if (showTeams) {
   return <ViewTeams onBack={() => setShowTeams(false)} />;
 }
 
@@ -473,6 +472,10 @@ if (showRoles) {
       }
     />
   );
+}
+
+if (showTeams) {
+  return <ViewTeams onBack={() => setShowTeams(false)} />;
 }
 
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
