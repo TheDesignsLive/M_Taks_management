@@ -95,14 +95,14 @@ function TaskCard({ task }) {
           <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', width: '100%', wordBreak: 'break-word' }}>
             {task.title}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
-            {assignedName && (
+<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5, width: '100%' }}>
+            {assignedName ? (
               <span style={{ fontSize: 11, color: '#94a3b8', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {assignedName}
               </span>
-            )}
-     {date && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', marginLeft: 'auto' }}>
+            ) : <span />}
+            {date && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610' }}>
                 📅 {date}
               </span>
             )}
