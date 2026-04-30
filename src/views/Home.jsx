@@ -435,10 +435,21 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
 
 // ─── SectionColumn ────────────────────────────────────────────────────────────
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
-  const filtered = tasks.filter(t => {
-    const sec = t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK');
-    return sec === section;
-  });
+const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+
+  const filtered = tasks
+    .filter(t => {
+      const sec = t.status === 'COMPLETED' ? 'COMPLETED' : (t.section || 'TASK');
+      return sec === section;
+    })
+    .sort((a, b) => {
+      const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
+      const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
+      if (dateA - dateB !== 0) return dateA - dateB;
+      const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
+      const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
+      return pa - pb;
+    });
 
   return (
     <div style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}>
