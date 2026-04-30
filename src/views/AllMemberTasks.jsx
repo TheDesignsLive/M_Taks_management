@@ -101,7 +101,7 @@ return (
 
    <button
           onClick={() => hasDesc && setExpanded(v => !v)}
-          style={{ background: 'none', border: 'none', cursor: hasDesc ? 'pointer' : 'default', padding: '0 0 0 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: hasDesc ? 1 : 0 }}
+          style={{ background: 'none', border: 'none', cursor: hasDesc ? 'pointer' : 'default', padding: '0 0 0 6px', marginRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: hasDesc ? 1 : 0 }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#14b8a6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
