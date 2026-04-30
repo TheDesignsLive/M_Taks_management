@@ -276,7 +276,7 @@ export default function ViewTeams({ onBack }) {
 if (showRoles) {
     return (
       <ViewRoles
-        onBack={() => setShowRoles(false)}
+        onBack={() => { setShowRoles(false); onBack && onBack(); }}
         onChangeToDept={() => setShowRoles(false)}
       />
     );
