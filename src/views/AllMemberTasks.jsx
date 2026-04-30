@@ -74,13 +74,13 @@ function TaskCard({ task }) {
       opacity: isCompleted ? 0.55 : 1,
       transition: 'opacity 0.2s',
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, textAlign: 'left' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Checkbox */}
         <div style={{
           width: 11, height: 11, borderRadius: 3,
           border: `2px solid ${color}`,
           background: isCompleted ? color : 'transparent',
-          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',  marginTop: 2,
         }}>
           {isCompleted && <span style={{ color: '#fff', fontSize: 8, lineHeight: 1 }}>✔</span>}
         </div>
