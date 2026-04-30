@@ -50,7 +50,7 @@ function AnimCheckbox({ checked, color, onChange }) {
     <div
       onClick={handleChange}
       style={{
-        width: 16, height: 16, borderRadius: 4,
+        width: 11, height: 11, borderRadius: 4,
         border: `2px solid ${color}`,
         background: checked ? color : 'transparent',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -172,7 +172,12 @@ function ChangeSectionModal({ task, role, onMove, onClose }) {
 
 // ─── DatePickerModal ──────────────────────────────────────────────────────────
 function DatePickerModal({ current, onSave, onClose }) {
-  const [date, setDate] = useState(toInputDate(current));
+  const [date, setDate] = useState(() => toInputDate(current));
+
+  useEffect(() => {
+    setDate(toInputDate(current));
+  }, [current]);
+
   return (
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{...styles.modal, maxWidth:280}}>
@@ -180,10 +185,20 @@ function DatePickerModal({ current, onSave, onClose }) {
           <span style={styles.modalTitle}>Change Due Date</span>
           <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...styles.input, marginTop:8}}/>
+
+        <input
+          type="date"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          onFocus={(e) => e.target.showPicker && e.target.showPicker()}
+          style={{...styles.input, marginTop:8}}
+        />
+
         <div style={styles.modalActions}>
           <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button onClick={() => onSave(date || null)} style={styles.saveBtn}>Set Date</button>
+          <button onClick={() => onSave(date || null)} style={styles.saveBtn}>
+            Set Date
+          </button>
         </div>
       </div>
     </div>
@@ -298,8 +313,15 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
             <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
           </div>
 
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize:13.5, fontWeight:500, lineHeight:1.4, wordBreak:'break-word', textDecoration: isCompleted ? 'line-through' : 'none' }}>
+      <div style={{
+  flex:1,
+  minWidth:0,
+  display:'flex',
+  flexDirection:'column',
+  alignItems:'flex-start',
+  paddingLeft: 4   // 👈 ADD THIS
+}}>
+            <div style={{ color: isCompleted ? '#888' : '#e2e8f0', fontSize:13.5, fontWeight:500, lineHeight:1.3,textAlign: 'left', width: '100%',  wordBreak:'break-word', textDecoration: isCompleted ? 'none' : 'none' }}>
               {task.title}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:5, flexWrap:'wrap' }}>
@@ -346,11 +368,20 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
         </div>
 
         {/* Description */}
-        {expanded && hasDesc && (
-          <div style={{ marginTop:10, borderTop:'1px solid #2a2a2a', paddingTop:10, fontSize:12.5, color:'#94a3b8', lineHeight:1.6 }}>
-            {task.description}
-          </div>
-        )}
+            {expanded && hasDesc && (
+            <div style={{
+                marginTop:10,
+                borderTop:'1px solid #2a2a2a',
+                paddingTop:10,
+                paddingLeft: 25,   // ✅ IMPORTANT (align with title)
+                fontSize:12.5,
+                color:'#94a3b8',
+                lineHeight:1.6,
+                textAlign: 'left'
+            }}>
+                {task.description}
+            </div>
+            )}
 
         {/* Context menu */}
         {showMenu && (
