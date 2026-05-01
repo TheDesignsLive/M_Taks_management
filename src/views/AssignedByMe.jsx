@@ -122,12 +122,26 @@ function AssigneePicker({ taskId, members, teams, session, adminName, onClose, o
 }
 
 // ─── EDIT TASK MODAL ──────────────────────────────────────────────────────────
-function EditModal({ task, onClose, onSave, showToast }) {
+function EditModal({ task, members, teams, session, adminName, onClose, onSave, showToast }) {
   const [title, setTitle] = useState(task.title || '');
   const [desc, setDesc] = useState(task.description || '');
   const [priority, setPriority] = useState(task.priority || 'MEDIUM');
   const [dueDate, setDueDate] = useState(formatInputDate(task.due_date) || '');
   const [saving, setSaving] = useState(false);
+  const [assignLabel, setAssignLabel] = useState(task.assigned_to || 'Myself');
+  const [assignTo, setAssignTo] = useState('self');
+  const [subOpen, setSubOpen] = useState(null);
+  const [showAssignDrop, setShowAssignDrop] = useState(false);
+  const dateRef = useRef(null);
+
+  const myId = (session.role === 'admin' || session.role === 'owner') ? 0 : session.userId;
+
+  function selectAssign(value, label) {
+    setAssignTo(value);
+    setAssignLabel(label);
+    setShowAssignDrop(false);
+    setSubOpen(null);
+  }
 
   async function handleSave() {
     if (!title.trim()) { showToast('Title is required', 'error'); return; }
@@ -137,7 +151,14 @@ function EditModal({ task, onClose, onSave, showToast }) {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: task.id, title: title.trim(), description: desc, priority, due_date: dueDate || null }),
+        body: JSON.stringify({
+          id: task.id,
+          title: title.trim(),
+          description: desc,
+          priority,
+          due_date: dueDate || null,
+          assigned_to: assignTo === 'self' ? String(myId) : assignTo,
+        }),
       });
       const data = await res.json();
       if (data.success) { showToast('Task updated'); onSave(); onClose(); }
@@ -146,9 +167,22 @@ function EditModal({ task, onClose, onSave, showToast }) {
     setSaving(false);
   }
 
+  const dropItemStyle = {
+    padding: '10px 14px', fontSize: 13, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: 8,
+    color: '#eee', borderBottom: '1px solid #3C3A3A',
+    background: 'none', border: 'none', width: '100%', textAlign: 'left',
+    fontFamily: 'Arial, sans-serif',
+  };
+  const subItemStyle = {
+    ...dropItemStyle,
+    paddingLeft: 28, background: 'rgba(15,137,137,0.06)', color: '#aaa',
+    borderBottom: '1px solid #3C3A3A',
+  };
+
   return (
     <div style={S.pickerBackdrop} onClick={onClose}>
-      <div style={{ ...S.pickerSheet, maxHeight: '85dvh' }} onClick={e => e.stopPropagation()}>
+      <div style={{ ...S.pickerSheet, maxHeight: '90dvh' }} onClick={e => e.stopPropagation()}>
         <div style={S.pickerPill} />
         <div style={S.pickerTitle}>Edit Task</div>
 
@@ -169,12 +203,136 @@ function EditModal({ task, onClose, onSave, showToast }) {
                 <option value="LOW">Low</option>
               </select>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={S.formLabel}>Due Date</label>
-              <input type="date" style={S.formInput} value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]} />
+      <div style={{ flex: 1 }}>
+                <label style={S.formLabel}>Due Date</label>
+                {/* Hidden native date input — no min so user can't clear, onBlur ignored */}
+                <input
+                  ref={dateRef}
+                  type="date"
+                  value={dueDate}
+                  onChange={e => { if (e.target.value) setDueDate(e.target.value); }}
+                  style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', top: 0, left: 0, width: 0, height: 0 }}
+                />
+                {/* Visible clickable date pill */}
+                <div
+                  onClick={() => dateRef.current?.showPicker?.()}
+                  style={{
+                    ...S.formInput,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    cursor: 'pointer', userSelect: 'none',
+                    color: dueDate ? '#CDF4F4' : '#aaa',
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2" width="15" height="15">
+                    <rect x="3" y="4" width="18" height="18" rx="3"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span style={{ fontSize: 13 }}>
+                    {dueDate
+                      ? new Date(dueDate + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                      : 'Pick a date'}
+                  </span>
+                </div>
+              </div>
+          </div>
+
+          {/* Assign To dropdown */}
+          <label style={S.formLabel}>Assign To</label>
+          <div style={{ position: 'relative' }}>
+            <div
+              onClick={() => setShowAssignDrop(v => !v)}
+              style={{
+                ...S.formInput,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: 'pointer', userSelect: 'none',
+              }}
+            >
+              <span style={{ color: '#eee', fontSize: 13 }}>👤 {assignLabel}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" width="12" height="12">
+                <path d={showAssignDrop ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}/>
+              </svg>
             </div>
+
+        {showAssignDrop && (
+              <div style={{
+                position: 'absolute', left: 0, right: 0, zIndex: 99999,
+                background: '#2E2D2D', border: '1px solid rgba(15,137,137,0.35)',
+                borderRadius: 10, overflow: 'hidden',
+                bottom: '100%', marginBottom: 4,
+                boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+                maxHeight: '50dvh', overflowY: 'auto',
+              }}>
+                {/* Self */}
+                <button style={dropItemStyle} onClick={() => selectAssign(String(myId), 'Myself')}>
+                  <span>👤</span><span style={{ flex: 1 }}>Myself</span>
+                  {assignTo === String(myId) && <span style={{ color: '#0F8989' }}>✓</span>}
+                </button>
+
+                {/* All Members */}
+                <button style={dropItemStyle} onClick={() => selectAssign('all', 'All Members')}>
+                  <span>👥</span><span style={{ flex: 1 }}>All Members</span>
+                  {assignTo === 'all' && <span style={{ color: '#0F8989' }}>✓</span>}
+                </button>
+
+                {/* Admin (non-admin only) */}
+                {(session.role === 'user' || session.role === 'owner') && adminName && (
+                  <button style={dropItemStyle} onClick={() => selectAssign('0', `${adminName} (Admin)`)}>
+                    <span>⭐</span><span style={{ flex: 1 }}>{adminName} (Admin)</span>
+                    {assignTo === '0' && <span style={{ color: '#0F8989' }}>✓</span>}
+                  </button>
+                )}
+
+                {/* Teams */}
+                {teams && teams.map(t => (
+                  <div key={t.id}>
+                    <button style={{ ...dropItemStyle, color: '#aaa', fontWeight: 700 }}
+                      onClick={() => setSubOpen(subOpen === t.id ? null : t.id)}>
+                      <span>🏷️</span>
+                      <span style={{ flex: 1 }}>{t.name}</span>
+                      <span style={{ fontSize: 11, color: '#0F8989', display: 'inline-block', transform: subOpen === t.id ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>›</span>
+                    </button>
+                    {subOpen === t.id && (
+                      <>
+                        <button style={{ ...subItemStyle, color: '#0F8989', fontWeight: 700 }}
+                          onClick={() => selectAssign(`team_${t.id}`, `All ${t.name}`)}>
+                          <span style={{ color: '#0F8989' }}>↳</span>
+                          <span style={{ flex: 1 }}>All {t.name}</span>
+                          {assignTo === `team_${t.id}` && <span style={{ color: '#0F8989' }}>✓</span>}
+                        </button>
+                        {members.filter(m => m.team_id == t.id).map(m => (
+                          <button key={m.id} style={{ ...subItemStyle, paddingLeft: 36 }}
+                            onClick={() => selectAssign(String(m.id), m.name)}>
+                            <span style={{ flex: 1 }}>{m.name}</span>
+                            {assignTo === String(m.id) && <span style={{ color: '#0F8989' }}>✓</span>}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {/* Other members (no team) */}
+                {members.some(m => !m.team_id) && (
+                  <div>
+                    <button style={{ ...dropItemStyle, color: '#aaa', fontWeight: 700 }}
+                      onClick={() => setSubOpen(subOpen === 'other' ? null : 'other')}>
+                      <span>🔹</span>
+                      <span style={{ flex: 1 }}>Other Members</span>
+                      <span style={{ fontSize: 11, color: '#0F8989', display: 'inline-block', transform: subOpen === 'other' ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>›</span>
+                    </button>
+                    {subOpen === 'other' && members.filter(m => !m.team_id).map(m => (
+                      <button key={m.id} style={{ ...subItemStyle, paddingLeft: 36 }}
+                        onClick={() => selectAssign(String(m.id), m.name)}>
+                        <span style={{ flex: 1 }}>{m.name}</span>
+                        {assignTo === String(m.id) && <span style={{ color: '#0F8989' }}>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
@@ -210,6 +368,68 @@ function ConfirmModal({ title, message, onConfirm, onClose, danger }) {
     </div>
   );
 }
+
+
+// Animation when click checkbox
+
+
+function AnimCheckbox({ checked, color, onChange, disabled }) {
+  const [anim, setAnim] = useState(false);
+  const handleChange = () => {
+    if (disabled) return;
+    if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 500); }
+    onChange();
+  };
+  return (
+    <>
+      <style>{`
+        @keyframes abmCheckDraw {
+          0%   { stroke-dashoffset: 20; opacity: 0; }
+          40%  { opacity: 1; }
+          100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        @keyframes abmBoxPop {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.3); }
+          70%  { transform: scale(0.92); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+      <div
+        onClick={handleChange}
+        style={{
+          width: 20, height: 20, borderRadius: 6,
+          border: `2px solid ${color}`,
+          background: checked ? color : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: disabled ? 'default' : 'pointer',
+          flexShrink: 0, marginTop: 2,
+          transition: 'background 0.2s, border-color 0.2s',
+          animation: anim ? 'abmBoxPop 0.45s ease forwards' : 'none',
+          boxSizing: 'border-box',
+        }}
+      >
+        {checked && (
+          <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
+            <polyline
+              points="1.5,5 4,7.5 8.5,2"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="20"
+              strokeDashoffset="0"
+              style={{ animation: anim ? 'abmCheckDraw 0.35s ease forwards' : 'none' }}
+            />
+          </svg>
+        )}
+      </div>
+    </>
+  );
+}
+
+//
 
 // ─── TASK CARD ────────────────────────────────────────────────────────────────
 function TaskCard({ task, members, teams, session, adminName, onRefresh, showToast, isCompleted }) {
@@ -280,14 +500,12 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
         {/* Top row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           {/* Checkbox */}
-          <button
-            style={{ ...S.checkbox, borderColor: pc.border, background: isCompleted ? pc.border : 'transparent', flexShrink: 0, marginTop: 2 }}
-            onClick={handleToggle}
+         <AnimCheckbox
+            checked={isCompleted}
+            color={pc.border}
+            onChange={handleToggle}
             disabled={toggling}
-            aria-label={isCompleted ? 'Mark pending' : 'Mark complete'}
-          >
-            {isCompleted && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
-          </button>
+          />
 
           {/* Title + desc */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -343,12 +561,43 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
             </button>
           )}
 
-          {/* Date */}
-          {task.due_date && (
+         {/* Date — clickable directly on card */}
+          {task.due_date && !isCompleted && (
+            <>
+              <input
+                type="date"
+                defaultValue={formatInputDate(task.due_date)}
+                onChange={async e => {
+                  if (!e.target.value) return; // never allow null
+                  try {
+                    const res = await fetch(`${BASE_URL}/api/assign_by_me/edit-task`, {
+                      method: 'POST',
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id: task.id, due_date: e.target.value }),
+                    });
+                    const data = await res.json();
+                    if (data.success) { showToast('Date updated'); onRefresh(); }
+                    else showToast('Failed to update date', 'error');
+                  } catch { showToast('Network error', 'error'); }
+                }}
+                id={`date-input-${task.id}`}
+                style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', top: 0, left: 0, width: 0, height: 0 }}
+              />
+              <span
+                onClick={() => document.getElementById(`date-input-${task.id}`)?.showPicker?.()}
+                style={{ ...S.badge, color: '#0F8989', background: 'rgba(15,137,137,0.15)', border: '1px solid rgba(15,137,137,0.3)', cursor: 'pointer' }}
+              >
+                📅 {formatDate(task.due_date)}
+              </span>
+            </>
+          )}
+          {task.due_date && isCompleted && (
             <span style={{ ...S.badge, color: '#aaa', background: 'rgba(255,255,255,0.06)' }}>
               📅 {formatDate(task.due_date)}
             </span>
           )}
+
         </div>
       </div>
 
@@ -362,14 +611,18 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
         />
       )}
 
-      {editOpen && (
-        <EditModal
-          task={task}
-          onClose={() => setEditOpen(false)}
-          onSave={onRefresh}
-          showToast={showToast}
-        />
-      )}
+        {editOpen && (
+          <EditModal
+            task={task}
+            members={members}
+            teams={teams}
+            session={session}
+            adminName={adminName}
+            onClose={() => setEditOpen(false)}
+            onSave={onRefresh}
+            showToast={showToast}
+          />
+        )}
 
       {deleteOpen && (
         <ConfirmModal
