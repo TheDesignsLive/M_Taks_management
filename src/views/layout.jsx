@@ -1,3 +1,4 @@
+// layout.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import Home from './Home.jsx';
 import Notifications from './Notifications.jsx';
@@ -141,7 +142,21 @@ const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activePage, setActivePage] = useState('home');
   const [notifCount, setNotifCount] = useState(0);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
+ const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [sessionRole, setSessionRole] = useState('');
+  const [sessionControlType, setSessionControlType] = useState('');
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.loggedIn) {
+          setSessionRole(d.role || '');
+          setSessionControlType(d.control_type || '');
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [taskOpen, setTaskOpen]       = useState(false);
   const [title, setTitle]             = useState('');
@@ -328,16 +343,31 @@ const Layout = () => {
           <h3>Menu</h3>
         </div>
         <nav style={s.navLinks}>
-          {[
-            { key: 'home',          icon: 'fa-house',            label: 'Home' },
-            { key: 'notifications', icon: 'fa-bell',             label: 'Notifications', badge: notifCount },
-            { key: 'assigned',      icon: 'fa-file-signature',   label: 'Assigned By Me' },
-             { key: 'allTasks', icon: 'fa-regular fa-clipboard', activeIcon: 'fa-solid fa-clipboard-check', label: 'All Member Tasks' },
-            { key: 'members',       icon: 'fa-users',            label: 'View Members' },
-            { key: 'settings',      icon: 'fa-gear',             label: 'Settings' },
-            { key: 'profile',       icon: 'fa-circle-user',      label: 'Profile' },
-          ].map(({ key, icon, label, badge }) => (
-            <div
+{(() => {
+            const isAdmin = sessionRole === 'admin';
+            const ct = sessionControlType;
+
+            // All Member Tasks: admin OR user with control_type != NONE
+            const canSeeAllTasks = isAdmin
+              || (sessionRole === 'user' && ct !== 'NONE')
+              || (sessionRole === 'owner');
+
+            // View Members: admin OR user with control_type OWNER or ADMIN only
+            const canSeeMembers = isAdmin
+              || (sessionRole === 'owner')
+              || (sessionRole === 'user' && (ct === 'OWNER' || ct === 'ADMIN'));
+
+            return [
+              { key: 'home',          icon: 'fa-house',          label: 'Home',             show: true },
+              { key: 'notifications', icon: 'fa-bell',           label: 'Notifications',    show: true, badge: notifCount },
+              { key: 'assigned',      icon: 'fa-file-signature', label: 'Assigned By Me',   show: true },
+              { key: 'allTasks',      icon: 'fa-clipboard',      label: 'All Member Tasks', show: canSeeAllTasks },
+              { key: 'members',       icon: 'fa-users',          label: 'View Members',     show: canSeeMembers },
+              { key: 'settings',      icon: 'fa-gear',           label: 'Settings',         show: true },
+              { key: 'profile',       icon: 'fa-circle-user',    label: 'Profile',          show: true },
+            ].filter(item => item.show);
+          })().map(({ key, icon, label, badge }) => (
+     <div
               key={key}
               style={activePage === key ? s.activeLink : s.navItem}
               onClick={() => { setActivePage(key); toggleDrawer(); }}
