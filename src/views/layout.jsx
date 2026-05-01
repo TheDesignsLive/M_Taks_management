@@ -415,7 +415,7 @@ const Layout = () => {
             <div className="atb-pills-row">
               <PillAnchor onOpen={rect => setCalRect(rect)} isOpen={showCal}>
                 <div className="atb-pill" onClick={() => { const r = pillCalRef.current?.getBoundingClientRect(); setCalRect(r); setShowCal(v=>!v); setShowPri(false); setShowAssign(false); }} ref={pillCalRef}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2" width="15" height="15">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2" width="15" height="15">
                     <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
                   <span className="atb-pill-text">{formatDisplayDate(date)}</span>
@@ -426,15 +426,15 @@ const Layout = () => {
                 <div className="atb-pill" onClick={() => { const r = pillPriRef.current?.getBoundingClientRect(); setPriRect(r); setShowPri(v=>!v); setShowCal(false); setShowAssign(false); }} ref={pillPriRef}>
                   <span className="atb-dot" style={{background: priColor}} />
                   <span className="atb-pill-text" style={{color: priColor}}>{priority}</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" width="11" height="11"><path d="M6 9l6 6 6-6"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" width="11" height="11"><path d="M6 9l6 6 6-6"/></svg>
                 </div>
               </PillAnchor>
 
               <div style={{position:'relative', flex:1}}>
                 <div className="atb-pill atb-pill-assign" ref={pillAssignRef} onClick={() => { const r = pillAssignRef.current?.getBoundingClientRect(); setAssignRect(r); setShowAssign(v=>!v); setShowCal(false); setShowPri(false); }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2" width="15" height="15"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2" width="15" height="15"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                   <span className="atb-pill-text" style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{assignLabel}</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" width="11" height="11"><path d="M6 9l6 6 6-6"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" width="11" height="11"><path d="M6 9l6 6 6-6"/></svg>
                 </div>
               </div>
 
@@ -455,7 +455,7 @@ const Layout = () => {
                     <div key={p.value} className="atb-drop-item" onClick={() => { setPriority(p.value); setShowPri(false); }} style={{fontWeight: priority === p.value ? 700 : 400}}>
                       <span className="atb-dot" style={{background: p.color}} />
                       <span style={{flex:1, color: p.color}}>{p.value}</span>
-                      {priority === p.value && <span style={{color:'#14b8a6'}}>✓</span>}
+                      {priority === p.value && <span style={{color:'#0F8989'}}>✓</span>}
                     </div>
                   ))}
                 </div>
@@ -464,20 +464,20 @@ const Layout = () => {
             {showAssign && assignRect && (
               <FixedPortal rect={assignRect} width={220}>
                 <div className="atb-drop-portal">
-                  <div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}><span>👤</span><span style={{flex:1}}>Myself</span>{assignTo === 'self' && <span style={{color:'#14b8a6'}}>✓</span>}</div>
-                  <div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}><span>👥</span><span style={{flex:1}}>All Members</span>{assignTo === 'all' && <span style={{color:'#14b8a6'}}>✓</span>}</div>
+                  <div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}><span>👤</span><span style={{flex:1}}>Myself</span>{assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+                  <div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}><span>👥</span><span style={{flex:1}}>All Members</span>{assignTo === 'all' && <span style={{color:'#0F8989'}}>✓</span>}</div>
                   {teams.length > 0 && <div className="atb-drop-sep"/>}
                   {teams.map(team => (
                     <div key={team.id}>
                       <div className="atb-drop-item" onClick={() => { setOpenTeam(v => v === team.id ? null : team.id); loadTeam(team.id); setShowOthers(false); }}>
                         <span>🏷</span><span style={{flex:1}}>{team.name}</span>
-                        <span style={{color: openTeam===team.id ? '#14b8a6':'#bbb', fontSize:12, transition:'transform 0.2s', display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)'}}>›</span>
+                        <span style={{color: openTeam===team.id ? '#0F8989':'#666', fontSize:12, transition:'transform 0.2s', display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)'}}>›</span>
                       </div>
                       {openTeam === team.id && (
                         <div className="atb-sub-inline">
-                          <div className="atb-drop-item atb-sub-hdr-inline" onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}><span style={{color:'#14b8a6', marginRight:6}}>↳</span> All {team.name}{assignTo===`team_${team.id}` && <span style={{color:'#14b8a6', marginLeft:'auto'}}>✓</span>}</div>
+                          <div className="atb-drop-item atb-sub-hdr-inline" onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}><span style={{color:'#0F8989', marginRight:6}}>↳</span> All {team.name}{assignTo===`team_${team.id}` && <span style={{color:'#0F8989', marginLeft:'auto'}}>✓</span>}</div>
                           {(teamMembers[team.id] || []).map(m => (
-                            <div key={m.id} className="atb-drop-item atb-sub-indent" onClick={() => selectAssign(String(m.id), m.name)}><span style={{flex:1}}>{m.name}</span>{assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}</div>
+                            <div key={m.id} className="atb-drop-item atb-sub-indent" onClick={() => selectAssign(String(m.id), m.name)}><span style={{flex:1}}>{m.name}</span>{assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}</div>
                           ))}
                         </div>
                       )}
@@ -486,12 +486,12 @@ const Layout = () => {
                   <div className="atb-drop-sep"/>
                   <div className="atb-drop-item" onClick={() => { setShowOthers(v=>!v); setOpenTeam(null); loadOthers(); }}>
                     <span>🔖</span><span style={{flex:1}}>Other Employees</span>
-                    <span style={{color: showOthers ? '#14b8a6':'#bbb', fontSize:12, display:'inline-block', transform: showOthers ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
+                    <span style={{color: showOthers ? '#0F8989':'#666', fontSize:12, display:'inline-block', transform: showOthers ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
                   </div>
                   {showOthers && (
                     <div className="atb-sub-inline">
                       {others.length === 0 ? <div className="atb-drop-item" style={{color:'#aaa'}}>None found</div> : others.map(m => (
-                        <div key={m.id} className="atb-drop-item atb-sub-indent" onClick={() => selectAssign(String(m.id), m.name)}><span style={{flex:1}}>{m.name}</span>{assignTo === String(m.id) && <span style={{color:'#14b8a6'}}>✓</span>}</div>
+                        <div key={m.id} className="atb-drop-item atb-sub-indent" onClick={() => selectAssign(String(m.id), m.name)}><span style={{flex:1}}>{m.name}</span>{assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}</div>
                       ))}
                     </div>
                   )}
@@ -538,43 +538,106 @@ const s = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', zIndex: 900 },
   fab: { position: 'fixed', bottom: '25px', right: '25px', width: '58px', height: '58px', background: 'linear-gradient(135deg, #095959 0%, #14b8a6 100%)', color: 'white', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 5px 20px rgba(9,89,89,0.45)', cursor: 'pointer', zIndex: 800, transition: 'transform 0.2s, box-shadow 0.2s' },
   modalButtons: { display: 'flex', gap: '10px', marginTop: '25px' },
-  btnCancel: { flex: 1, padding: '12px', border: 'none', borderRadius: '8px', background: '#f1f5f9', color: '#475569', fontWeight: '600', cursor: 'pointer' },
-  btnLogout: { flex: 1, padding: '12px', border: 'none', borderRadius: '8px', background: '#ef4444', color: 'white', fontWeight: '600', cursor: 'pointer' },
+  // ── CHANGED: dark theme buttons matching Notifications ──
+  btnCancel: { flex: 1, padding: '12px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', background: 'rgba(255,255,255,0.07)', color: '#aaa', fontWeight: '600', cursor: 'pointer', fontFamily: 'Arial, sans-serif' },
+  btnLogout: { flex: 1, padding: '12px', border: 'none', borderRadius: '8px', background: '#ef4444', color: 'white', fontWeight: '600', cursor: 'pointer', fontFamily: 'Arial, sans-serif' },
 };
 
+// ── CHANGED: full dark theme customCSS matching Notifications.jsx ──
 const customCSS = `
   .drawer { position: fixed; top: 0; left: -240px; width: 240px; height: 100%; background: white; z-index: 1000; transition: 0.3s ease-in-out; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
   .drawer.open { left: 0; }
   .bar { width: 18px; height: 2px; background-color: white; margin: 3.5px 0; border-radius: 2px; }
   .nav-icon { width: 20px; text-align: center; font-size: 16px; }
   .atb-fab-btn:hover { transform: scale(1.08) !important; box-shadow: 0 8px 28px rgba(9,89,89,0.55) !important; }
-  .atb-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.42); z-index: 1300; display: flex; align-items: flex-end; justify-content: center; }
+
+  /* BACKDROP */
+  .atb-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1300; display: flex; align-items: flex-end; justify-content: center; animation: atbFade 0.15s ease; }
   @media (min-width: 600px) { .atb-backdrop { align-items: center; } }
-  .atb-modal { width: 100%; max-width: 540px; background: #fff; border-radius: 22px 22px 0 0; padding: 0 16px 28px; box-shadow: 0 -8px 40px rgba(0,0,0,0.14); max-height: 92dvh; overflow-y: auto; overflow-x: visible; }
-  @media (min-width: 600px) { .atb-modal { border-radius: 20px; padding: 0 24px 28px; max-height: 88dvh; overflow: visible; } }
-  .atb-handle { width: 40px; height: 4px; border-radius: 3px; background: #dde8e7; margin: 13px auto 0; }
+  @keyframes atbFade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* MODAL SHEET */
+  .atb-modal { width: 100%; max-width: 540px; background: #2E2D2D; border-radius: 22px 22px 0 0; padding: 0 18px 28px; box-shadow: 0 -8px 48px rgba(0,0,0,0.5); max-height: 92dvh; overflow-y: auto; overflow-x: visible; box-sizing: border-box; border: 1px solid rgba(15,137,137,0.2); border-bottom: none; animation: atbSlide 0.24s cubic-bezier(.22,.68,0,1.18); }
+  @media (min-width: 600px) { .atb-modal { border-radius: 20px; padding: 0 24px 28px; max-height: 88dvh; overflow: visible; border: 1px solid rgba(15,137,137,0.25); } }
+  @keyframes atbSlide { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* HANDLE */
+  .atb-handle { width: 40px; height: 4px; border-radius: 4px; background: rgba(15,137,137,0.4); margin: 13px auto 0; }
   @media (min-width: 600px) { .atb-handle { display: none; } }
-  .atb-mhdr { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; margin-bottom: 16px; }
-  .atb-mtitle { font-size: 16px; font-weight: 700; color: #0b3d3a; display: flex; align-items: center; gap: 8px; }
-  .atb-mtitle-icon { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #095959, #14b8a6); display: flex; align-items: center; justify-content: center; }
-  .atb-xbtn { width: 30px; height: 30px; border-radius: 50%; background: #f0f7f6; border: none; cursor: pointer; color: #666; display: flex; align-items: center; justify-content: center; }
+
+  /* MODAL HEADER */
+  .atb-mhdr { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px; }
+  .atb-mtitle { font-size: 16px; font-weight: 800; color: #CDF4F4; display: flex; align-items: center; gap: 8px; letter-spacing: -0.2px; }
+  .atb-mtitle-icon { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #095959, #0F8989); display: flex; align-items: center; justify-content: center; }
+  .atb-xbtn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); cursor: pointer; color: #aaa; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .atb-xbtn:hover { background: rgba(15,137,137,0.15) !important; }
+
+  /* FIELDS */
   .atb-field { margin-bottom: 12px; }
-  .atb-label { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #14b8a6; margin-bottom: 5px; }
-  .atb-input { width: 100%; border: 1.6px solid #e2eded; border-radius: 12px; padding: 10px 13px; font-size: 14px; color: #1a1a1a; background: #fafefe; outline: none; }
-  .atb-input:focus { border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,0.12); }
+  .atb-label { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #0F8989; margin-bottom: 5px; }
+  .atb-input { width: 100%; box-sizing: border-box; border: 1.5px solid rgba(15,137,137,0.3); border-radius: 10px; padding: 10px 13px; font-size: 14px; color: #eee; background: #3C3A3A; outline: none; font-family: Arial, sans-serif; transition: border-color 0.18s, box-shadow 0.18s; }
+  .atb-input:focus { border-color: #0F8989; box-shadow: 0 0 0 3px rgba(15,137,137,0.12); }
+  .atb-input.error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); animation: atbShake 0.35s; }
+  .atb-input::placeholder { color: #666; }
+  .atb-textarea { resize: vertical; min-height: 60px; }
+  @keyframes atbShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  /* PILLS ROW */
   .atb-pills-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap; overflow: visible; }
-  .atb-pill { display: flex; align-items: center; gap: 4px; background: #f1faf9; border: 1.5px solid #cce9e6; border-radius: 30px; padding: 7px 10px; cursor: pointer; font-size: 12px; color: #0b3d3a; white-space: nowrap; flex-shrink: 0; }
+  .atb-pill { display: flex; align-items: center; gap: 5px; background: #3C3A3A; border: 1.5px solid rgba(15,137,137,0.35); border-radius: 30px; padding: 7px 11px; cursor: pointer; font-size: 12px; color: #CDF4F4; white-space: nowrap; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
+  .atb-pill:hover { border-color: #0F8989; background: rgba(15,137,137,0.1); }
+  .atb-pill-assign { flex: 1; }
   .atb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .atb-send-btn { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #095959, #14b8a6); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(9,89,89,0.4); }
-  .atb-cal-popup { background: #fff; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.22); padding: 14px 12px 12px; width: 268px; }
+  .atb-pill-text { font-size: 12px; }
+
+  /* SEND BUTTON */
+  .atb-send-btn { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #095959, #0F8989); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(9,89,89,0.4); flex-shrink: 0; }
+  .atb-send-btn:hover { opacity: 0.88; }
+
+  /* CALENDAR POPUP */
+  .atb-cal-popup { background: #2E2D2D; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); padding: 14px 12px 12px; width: 268px; border: 1px solid rgba(15,137,137,0.25); }
+  .atb-cal-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .atb-cal-month-wrap { display: flex; gap: 6px; align-items: baseline; }
+  .atb-cal-month { font-size: 15px; font-weight: 800; color: #CDF4F4; }
+  .atb-cal-year { font-size: 13px; color: #0F8989; font-weight: 600; }
+  .atb-cal-nav { background: rgba(15,137,137,0.12); border: 1px solid rgba(15,137,137,0.25); color: #0F8989; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .atb-cal-nav:hover { background: rgba(15,137,137,0.25); }
   .atb-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
-  .atb-drop-portal { background: #fff; border-radius: 14px; box-shadow: 0 10px 36px rgba(0,0,0,0.18); overflow-y: auto; max-height: 320px; }
-  .atb-drop-item { padding: 10px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-  .atb-sub-inline { background: #f7fdfb; border-top: 1px solid #e8f5f3; border-bottom: 1px solid #e8f5f3; }
-  .atb-toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #095959; color: #fff; padding: 11px 22px; border-radius: 30px; font-size: 13px; z-index: 9999; transition: 0.32s; opacity: 0; }
+  .atb-cal-wday { text-align: center; font-size: 10px; color: #0F8989; font-weight: 700; padding: 3px 0; }
+  .atb-cal-day { text-align: center; font-size: 12px; padding: 6px 2px; border-radius: 6px; cursor: pointer; color: #eee; transition: background 0.15s; }
+  .atb-cal-day:hover:not(.atb-cal-past):not(.atb-cal-empty) { background: rgba(15,137,137,0.2); }
+  .atb-cal-past { color: #555; cursor: default; }
+  .atb-cal-empty { pointer-events: none; }
+  .atb-cal-sel { background: #0F8989 !important; color: #fff !important; font-weight: 700; }
+  .atb-cal-today { border: 1.5px solid #0F8989; color: #CDF4F4; font-weight: 700; }
+
+  /* DROPDOWN PORTAL */
+  .atb-drop-portal { background: #2E2D2D; border-radius: 14px; box-shadow: 0 10px 36px rgba(0,0,0,0.5); overflow-y: auto; max-height: 320px; border: 1px solid rgba(15,137,137,0.2); }
+  .atb-drop-item { padding: 10px 14px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #eee; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.12s; }
+  .atb-drop-item:hover { background: rgba(15,137,137,0.1); }
+  .atb-drop-sep { height: 1px; background: rgba(15,137,137,0.2); margin: 2px 0; }
+  .atb-sub-inline { background: rgba(15,137,137,0.06); border-top: 1px solid rgba(15,137,137,0.15); border-bottom: 1px solid rgba(15,137,137,0.15); }
+  .atb-sub-hdr-inline { color: #0F8989 !important; font-weight: 700; font-size: 12px !important; }
+  .atb-sub-indent { padding-left: 28px !important; color: #bbb !important; }
+
+  /* SPIN */
+  .atb-spin { animation: atbSpin 0.8s linear infinite; }
+  @keyframes atbSpin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .atb-toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #095959; color: #CDF4F4; padding: 11px 22px; border-radius: 30px; font-size: 13px; z-index: 9999; transition: 0.32s; opacity: 0; border: 1px solid rgba(15,137,137,0.3); }
   .atb-toast.show { bottom: 28px; opacity: 1; }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-  .modal-card { background: white; padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; }
+
+  /* LOGOUT MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 2000; animation: atbFade 0.15s ease; }
+  .modal-card { background: #2E2D2D; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; border: 1px solid rgba(15,137,137,0.2); box-shadow: 0 8px 48px rgba(0,0,0,0.5); }
+  .modal-card h3 { color: #CDF4F4; margin: 0 0 8px 0; font-size: 16px; font-weight: 800; }
+  .modal-card p { color: #aaa; font-size: 13px; line-height: 1.6; margin: 0; }
+
+  select option { background: #2E2D2D; color: #eee; }
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: #2E2D2D; }
+  ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 10px; }
 `;
 
 export default Layout;
