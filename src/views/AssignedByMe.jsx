@@ -514,7 +514,7 @@ const hasDesc = !!(task.description && task.description.trim() && task.descripti
           {/* Left: section + assignee */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flexWrap: 'wrap' }}>
             {task.section && !isCompleted && (
-              <span style={{ fontSize: 10, color: '#aaa', padding: '2px 8px', borderRadius: 20, background: '#3C3A3A', border: '1px solid #0F8989', whiteSpace: 'nowrap' }}>
+<span style={{ fontSize: 9, color: '#0F8989', padding: '1px 5px', borderRadius: 3, background: 'rgba(15,137,137,0.1)', border: '1px solid rgba(15,137,137,0.4)', whiteSpace: 'nowrap', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
                 {task.section}
               </span>
             )}
@@ -958,13 +958,14 @@ const S = {
   },
 
   // Task Card — matches Notification annCard
-  taskCard: {
-    background: '#444',              // ← Notification annCard bg
+taskCard: {
+    background: '#444',
     border: '1px solid rgba(255,255,255,0.06)',
-    borderRadius: 8,
-    padding: '12px 14px',
+    borderRadius: 10,
+    padding: '12px 12px 10px',
     position: 'relative',
-    transition: 'transform 0.15s, box-shadow 0.15s',
+    transition: 'opacity 0.4s, transform 0.4s',
+    overflow: 'visible',
   },
   checkbox: {
     width: 20, height: 20,
@@ -978,14 +979,19 @@ const S = {
     padding: '2.5px 8px', borderRadius: 20,
     letterSpacing: 0.3, whiteSpace: 'nowrap',
   },
-  assignBtn: {
-    padding: '3px 10px',
-    background: 'rgba(15,137,137,0.18)',
-    border: '1px solid rgba(15,137,137,0.35)',
-    borderRadius: 20, color: '#14b8a6',
-    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+assignBtn: {
+    padding: '1px 5px',
+    background: 'rgba(15,137,137,0.12)',
+    border: '1px solid rgba(15,137,137,0.3)',
+    borderRadius: 3, color: '#14b8a6',
+    fontSize: 9, fontWeight: 700, cursor: 'pointer',
     fontFamily: "Arial, sans-serif",
     whiteSpace: 'nowrap',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    lineHeight: 1,
+    display: 'inline-flex',
+    alignItems: 'center',
   },
   dotsBtn: {
     width: 28, height: 28,
