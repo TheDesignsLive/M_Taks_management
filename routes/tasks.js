@@ -1,6 +1,7 @@
 //task.js
 import express from 'express';
 import db from '../config/db.js';
+import { notifyDesktop } from '../utils/notifyDesktop.js';
 
 const router = express.Router();
 
@@ -341,6 +342,18 @@ router.post('/delete-completed-tasks', async (req, res) => {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+});
+
+
+
+
+router.post('/add-task', async (req, res) => {
+    // ... your existing add task code ...
+
+    // At the end, before res.json:
+    req.io.emit('update_tasks');
+    notifyDesktop(); // ✅ ADD
+    res.json({ success: true });
 });
 
 export default router;

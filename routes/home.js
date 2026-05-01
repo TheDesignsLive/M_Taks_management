@@ -1,6 +1,7 @@
 // home.js — Mobile API (mounted at /api/home in server.js)
 import express from 'express';
 import con from '../config/db.js';
+import { notifyDesktop } from '../utils/notifyDesktop.js';
 
 const router = express.Router();
 
@@ -237,6 +238,77 @@ router.post('/delete-completed-tasks', async (req, res) => {
         return res.json({ success: true });
     } catch (err) {
         console.error('delete-completed-tasks error:', err);
+        return res.status(500).json({ success: false });
+    }
+});
+
+
+
+
+// In EVERY route that changes data, add notifyDesktop() after req.io.emit:
+
+router.post('/update-task-status', async (req, res) => {
+    const { id, status } = req.body;
+    try {
+        await con.query("UPDATE tasks SET status=? WHERE id=?", [status, id]);
+        req.io.emit('update_tasks');
+        notifyDesktop(); // ✅ ADD — fire and forget, no await needed
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ success: false });
+    }
+});
+
+router.post('/update-task-section', async (req, res) => {
+    const { id, section } = req.body;
+    try {
+        await con.query("UPDATE tasks SET section=? WHERE id=?", [section, id]);
+        req.io.emit('update_tasks');
+        notifyDesktop(); // ✅ ADD
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ success: false });
+    }
+});
+
+router.post('/update-task-date', async (req, res) => {
+    const { id, due_date } = req.body;
+    try {
+        await con.query("UPDATE tasks SET due_date=? WHERE id=?", [due_date, id]);
+        req.io.emit('update_tasks');
+        notifyDesktop(); // ✅ ADD
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ success: false });
+    }
+});
+
+router.post('/edit-task-details', async (req, res) => {
+    // ... your existing code ...
+    req.io.emit('update_tasks');
+    notifyDesktop(); // ✅ ADD
+    return res.json({ success: true });
+});
+
+router.post('/delete-task/:id', async (req, res) => {
+    try {
+        await con.query("DELETE FROM tasks WHERE id=?", [req.params.id]);
+        req.io.emit('update_tasks');
+        notifyDesktop(); // ✅ ADD
+        return res.json({ success: true });
+    } catch (err) {
+        return res.status(500).json({ success: false });
+    }
+});
+
+router.post('/delete-completed-tasks', async (req, res) => {
+    try {
+        const adminId = req.session.adminId;
+        await con.query("DELETE FROM tasks WHERE admin_id=? AND status='COMPLETED'", [adminId]);
+        req.io.emit('update_tasks');
+        notifyDesktop(); // ✅ ADD
+        return res.json({ success: true });
+    } catch (err) {
         return res.status(500).json({ success: false });
     }
 });
