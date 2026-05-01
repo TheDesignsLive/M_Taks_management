@@ -178,15 +178,123 @@ function Input({ style: extra, ...props }) {
   return <input style={{ ...S.input, ...extra }} {...props} />;
 }
 
-function Select({ children, style: extra, ...props }) {
+function Select({ children, style: extra, value, onChange, disabled, ...props }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Extract option data from children
+  const options = React.Children.toArray(children).map(child => ({
+    value: child.props.value,
+    label: child.props.children,
+    disabled: child.props.disabled,
+  }));
+
+  const selected = options.find(o => String(o.value) === String(value));
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  function pick(val) {
+    if (disabled) return;
+    onChange({ target: { value: val } });
+    setOpen(false);
+  }
+
   return (
-    <div style={{ position: 'relative' }}>
-      <select style={{ ...S.input, appearance: 'none', WebkitAppearance: 'none', paddingRight: 36, ...extra }} {...props}>
-        {children}
-      </select>
-      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#0F8989' }}>
-        <ChevronIcon />
+    <div ref={ref} style={{ position: 'relative', ...extra }}>
+      {/* Trigger */}
+      <div
+        onClick={() => { if (!disabled) setOpen(v => !v); }}
+        style={{
+          ...S.input,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          userSelect: 'none',
+          opacity: disabled ? 0.5 : 1,
+          border: `1.5px solid ${open ? '#0F8989' : 'rgba(15,137,137,0.3)'}`,
+          boxShadow: open ? '0 0 0 3px rgba(15,137,137,0.12)' : 'none',
+          transition: 'border-color 0.18s, box-shadow 0.18s',
+        }}
+      >
+        <span style={{ color: selected && !selected.disabled ? '#eee' : '#666', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selected && !selected.disabled ? selected.label : options.find(o => o.disabled)?.label || 'Select'}
+        </span>
+        <span style={{ color: '#0F8989', display: 'inline-flex', flexShrink: 0, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          <ChevronIcon />
+        </span>
+      </div>
+
+      {/* Dropdown list */}
+      {open && (
+        <div style={{
+          position: 'absolute', left: 0, right: 0, zIndex: 99999,
+          marginTop: 4,
+          background: '#2E2D2D',
+          border: '1px solid rgba(15,137,137,0.35)',
+          borderRadius: 10, overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          maxHeight: 220, overflowY: 'auto',
+        }}>
+          {options.filter(o => !o.disabled).map((o, i, arr) => {
+            const isActive = String(value) === String(o.value);
+            return (
+              <SelectOption
+                key={o.value}
+                label={o.label}
+                isActive={isActive}
+                isLast={i === arr.length - 1}
+                onClick={() => pick(o.value)}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SelectOption({ label, isActive, isLast, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 14px',
+        cursor: 'pointer',
+        background: isActive ? 'rgba(15,137,137,0.18)' : hov ? 'rgba(15,137,137,0.08)' : 'transparent',
+        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+        transition: 'background 0.12s',
+      }}
+    >
+      <div style={{
+        width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+        background: isActive ? 'linear-gradient(135deg, #095959, #0F8989)' : 'rgba(255,255,255,0.08)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 10, fontWeight: 700, color: '#CDF4F4',
+      }}>
+        {label.charAt(0).toUpperCase()}
+      </div>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: isActive ? 700 : 500, color: isActive ? '#CDF4F4' : '#eee', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
       </span>
+      {isActive && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5" width="14" height="14" style={{ flexShrink: 0 }}>
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      )}
     </div>
   );
 }
