@@ -658,13 +658,18 @@ const Home = () => {
 
   useEffect(() => { fetchTasks(); }, []);
 
-  useEffect(() => {
-    if (window.io) {
-      const socket = window.io();
-      socket.on('update_tasks', fetchTasks);
-      return () => socket.disconnect();
-    }
-  }, [fetchTasks]);
+      useEffect(() => {
+        if (window.io) {
+          const socket = window.io();
+          socket.on('update_tasks', fetchTasks);
+          return () => socket.disconnect();
+        }
+      }, [fetchTasks]);
+
+      useEffect(() => {
+        window.addEventListener('task-added', fetchTasks);
+        return () => window.removeEventListener('task-added', fetchTasks);
+      }, [fetchTasks]);
 
   useEffect(() => {
     if (sliderRef.current) {

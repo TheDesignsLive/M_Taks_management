@@ -269,10 +269,11 @@ const Layout = () => {
         }),
       });
       const data = await res.json();
-      if (data.success) {
+    if (data.success) {
         showToast('✓ Task added successfully!');
         resetForm();
         setTaskOpen(false);
+        window.dispatchEvent(new CustomEvent('task-added'));
       } else {
         showToast(data.message || 'Failed to add task.');
       }
