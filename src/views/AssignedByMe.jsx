@@ -441,6 +441,7 @@ function AnimCheckbox({ checked, color, onChange, disabled }) {
 // ─── TASK CARD ────────────────────────────────────────────────────────────────
 function TaskCard({ task, members, teams, session, adminName, onRefresh, showToast, isCompleted }) {
 const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpward: false });
   const [expanded, setExpanded] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -449,16 +450,7 @@ const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const pc = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
-  // Close menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    function handler(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
-    }
-    document.addEventListener('touchstart', handler);
-    document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('touchstart', handler); document.removeEventListener('mousedown', handler); };
-  }, [menuOpen]);
+// intentionally removed — backdrop div handles closing
 
   async function handleToggle() {
     if (toggling) return;
@@ -502,123 +494,137 @@ const [menuOpen, setMenuOpen] = useState(false);
     setDeleteOpen(false);
   }
 
+const hasDesc = !!(task.description && task.description.trim() && task.description !== 'null');
+
   return (
     <>
-      <div style={{ ...S.taskCard, borderLeft: `4px solid ${pc.border}`, opacity: isCompleted ? 0.75 : 1 }}>
-        {/* Top row */}
+      <div style={{ ...S.taskCard, borderLeft: `4px solid ${pc.border}`, opacity: isCompleted ? 0.55 : toggling ? 0.4 : 1, transform: toggling ? 'scale(0.97)' : 'scale(1)', transition: 'opacity 0.4s, transform 0.4s' }}>
+
+{/* Row 1: Checkbox + Title only */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          {/* Checkbox */}
-         <AnimCheckbox
-            checked={isCompleted}
-            color={pc.border}
-            onChange={handleToggle}
-            disabled={toggling}
-          />
-
-          {/* Title + desc */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-       fontSize: 14, fontWeight: 700, color: isCompleted ? '#aaa' : '#fff',
-              textDecoration: 'none',
-              wordBreak: 'break-word', lineHeight: 1.35, textAlign: 'left',
-            }}>
-              {task.title}
-            </div>
- {expanded && task.description && task.description !== 'null' && task.description !== '' && (
-              <div style={{ fontSize: 11.5, color: '#aaa', marginTop: 3, wordBreak: 'break-word', lineHeight: 1.4, textAlign: 'left' }}>
-                {task.description}
-              </div>
-            )}
-          </div>
-{/* Info icon */}
-          {task.description && task.description !== 'null' && task.description !== '' && (
-            <button
-              onClick={() => setExpanded(v => !v)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, flexShrink: 0 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#0F8989' : '#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
-              </svg>
-            </button>
-          )}
-
-          {/* 3-dot menu */}
-          <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
-            <button style={S.dotsBtn} onClick={() => setMenuOpen(v => !v)}>⋮</button>
-            {menuOpen && (
-              <div style={S.dropMenu}>
-                <button style={S.dropItem} onClick={() => { setMenuOpen(false); setEditOpen(true); }}>✏️ Edit</button>
-                <div style={S.dropDivider} />
-                <button style={{ ...S.dropItem, color: '#ef4444' }} onClick={() => { setMenuOpen(false); setDeleteOpen(true); }}>🗑️ Delete</button>
-              </div>
-            )}
+          <AnimCheckbox checked={isCompleted} color={pc.border} onChange={handleToggle} disabled={toggling} />
+          <div style={{ flex: 1, minWidth: 0, color: isCompleted ? '#888' : '#eee', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', wordBreak: 'break-word' }}>
+            {task.title}
           </div>
         </div>
 
-        {/* Bottom row: badges + assignee + date */}
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-          {/* Priority */}
-          {/* <span style={{ ...S.badge, color: pc.text, background: pc.bg, border: `1px solid ${pc.border}44` }}>
-            {task.priority}
-          </span> */}
+        {/* Row 2: Section + Assignee (left) | Info + Date + 3dot (right) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 8, paddingLeft: 26 }}>
 
-          {/* Section */}
-          {task.section && (
-            <span style={{ ...S.badge, color: '#ccc', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
-              {task.section}
-            </span>
-          )}
+          {/* Left: section + assignee */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flexWrap: 'wrap' }}>
+            {task.section && !isCompleted && (
+              <span style={{ fontSize: 10, color: '#aaa', padding: '2px 8px', borderRadius: 20, background: '#3C3A3A', border: '1px solid #0F8989', whiteSpace: 'nowrap' }}>
+                {task.section}
+              </span>
+            )}
+            {isCompleted ? (
+              <span style={{ ...S.badge, color: '#14b8a6', background: 'rgba(15,137,137,0.18)', border: '1px solid rgba(15,137,137,0.3)' }}>
+                👤 {task.assigned_to}
+              </span>
+            ) : (
+              <button style={{ ...S.assignBtn }} onClick={() => setAssignOpen(true)}>
+                👤 {task.assigned_to || 'Assign'} ▾
+              </button>
+            )}
+          </div>
 
-          {/* Assignee */}
-          {isCompleted ? (
-            <span style={{ ...S.badge, color: '#14b8a6', background: 'rgba(15,137,137,0.18)', border: '1px solid rgba(15,137,137,0.3)', marginLeft: 'auto' }}>
-              👤 {task.assigned_to}
-            </span>
-          ) : (
-            <button style={{ ...S.assignBtn, marginLeft: 'auto' }} onClick={() => setAssignOpen(true)}>
-              👤 {task.assigned_to || 'Assign'} ▾
-            </button>
-          )}
-
-         {/* Date — clickable directly on card */}
-          {task.due_date && !isCompleted && (
-            <>
-              <input
-                type="date"
-                defaultValue={formatInputDate(task.due_date)}
-                onChange={async e => {
-                  if (!e.target.value) return; // never allow null
-                  try {
-                    const res = await fetch(`${BASE_URL}/api/assign_by_me/edit-task`, {
-                      method: 'POST',
-                      credentials: 'include',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ id: task.id, due_date: e.target.value }),
-                    });
-                    const data = await res.json();
-                    if (data.success) { showToast('Date updated'); onRefresh(); }
-                    else showToast('Failed to update date', 'error');
-                  } catch { showToast('Network error', 'error'); }
-                }}
-                id={`date-input-${task.id}`}
-                style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', top: 0, left: 0, width: 0, height: 0 }}
-              />
-              <span
-                onClick={() => document.getElementById(`date-input-${task.id}`)?.showPicker?.()}
-                style={{ ...S.badge, color: '#0F8989', background: 'rgba(15,137,137,0.15)', border: '1px solid rgba(15,137,137,0.3)', cursor: 'pointer' }}
+          {/* Right: info + date + 3dot */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {/* Info icon */}
+            {hasDesc && (
+              <button
+                onClick={() => setExpanded(v => !v)}
+                style={{ background: 'none', border: 'none', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, cursor: 'pointer' }}
               >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#0F8989' : '#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+                </svg>
+              </button>
+            )}
+
+            {/* Date */}
+            {task.due_date && !isCompleted && (
+              <>
+                <input
+                  type="date"
+                  defaultValue={formatInputDate(task.due_date)}
+                  onChange={async e => {
+                    if (!e.target.value) return;
+                    try {
+                      const res = await fetch(`${BASE_URL}/api/assign_by_me/edit-task`, {
+                        method: 'POST', credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: task.id, due_date: e.target.value }),
+                      });
+                      const data = await res.json();
+                      if (data.success) { showToast('Date updated'); onRefresh(); }
+                      else showToast('Failed to update date', 'error');
+                    } catch { showToast('Network error', 'error'); }
+                  }}
+                  id={`date-input-${task.id}`}
+                  style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', top: 0, left: 0, width: 0, height: 0 }}
+                />
+                <span
+                  onClick={() => document.getElementById(`date-input-${task.id}`)?.showPicker?.()}
+                  style={{ fontSize: 11, fontWeight: 600, color: '#0F8989', cursor: 'pointer', padding: '1px 6px', borderRadius: 4, background: '#095959', minWidth: 60, textAlign: 'center', whiteSpace: 'nowrap' }}
+                >
+                  📅 {formatDate(task.due_date)}
+                </span>
+              </>
+            )}
+            {task.due_date && isCompleted && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#aaa', padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', minWidth: 60, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 📅 {formatDate(task.due_date)}
               </span>
-            </>
-          )}
-          {task.due_date && isCompleted && (
-            <span style={{ ...S.badge, color: '#aaa', background: 'rgba(255,255,255,0.06)' }}>
-              📅 {formatDate(task.due_date)}
-            </span>
-          )}
+            )}
 
+            {/* 3-dot menu */}
+            <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}
+                onClick={() => {
+                  if (!menuOpen && menuRef.current) {
+                    const rect = menuRef.current.getBoundingClientRect();
+                    const menuHeight = 100, menuWidth = 140;
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const openUpward = spaceBelow < menuHeight + 8;
+                    setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom + 4, left: rect.right - menuWidth, openUpward });
+                  }
+                  setMenuOpen(v => !v);
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
+                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Description (expandable) — clamped to prevent overflowing card */}
+        {expanded && hasDesc && (
+          <div style={{ marginTop: 10, borderTop: '1px solid #3C3A3A', paddingTop: 10, paddingLeft: 26, fontSize: 12.5, color: '#aaa', lineHeight: 1.5, textAlign: 'left', wordBreak: 'break-word', maxHeight: 80, overflowY: 'auto' }}>
+            {task.description}
+          </div>
+        )}
       </div>
+
+{menuOpen && (
+        <div style={{
+          position: 'fixed', top: menuPos.top, left: menuPos.left,
+          background: '#2E2D2D', border: '1px solid #0F8989',
+          borderRadius: menuPos.openUpward ? '10px 10px 10px 4px' : '4px 10px 10px 10px',
+          zIndex: 99999, minWidth: 140, overflow: 'hidden',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        }} onMouseDown={e => e.stopPropagation()}>
+          <button style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'transparent', border: 'none', color: '#eee', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Arial, sans-serif', borderBottom: '1px solid #3C3A3A' }}
+            onClick={() => { setMenuOpen(false); setEditOpen(true); }}>✏️ Edit</button>
+          <button style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', background: 'transparent', border: 'none', color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Arial, sans-serif' }}
+onClick={() => { setMenuOpen(false); setDeleteOpen(true); }}>🗑️ Delete</button>
+        </div>
+      )}
+   {menuOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setMenuOpen(false)} />}
 
       {assignOpen && (
         <AssigneePicker
