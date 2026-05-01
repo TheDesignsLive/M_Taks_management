@@ -380,6 +380,12 @@ function AnimCheckbox({ checked, color, onChange, disabled }) {
     if (!checked) { setAnim(true); setTimeout(() => setAnim(false), 500); }
     onChange();
   };
+
+  // stroke color for checkmark — matches Home.jsx logic
+  const strokeColor = color === '#ff4d6d' ? '#7f1d1d'
+    : color === '#fbbf24' ? '#713f12'
+    : '#1e3a5f';
+
   return (
     <>
       <style>{`
@@ -407,14 +413,15 @@ function AnimCheckbox({ checked, color, onChange, disabled }) {
           transition: 'background 0.2s, border-color 0.2s',
           animation: anim ? 'abmBoxPop 0.45s ease forwards' : 'none',
           boxSizing: 'border-box',
+          position: 'relative',
         }}
       >
         {checked && (
-          <svg width="10" height="10" viewBox="0 0 10 10" style={{ display: 'block' }}>
+          <svg width="11" height="11" viewBox="0 0 10 10" style={{ display: 'block' }}>
             <polyline
               points="1.5,5 4,7.5 8.5,2"
               fill="none"
-              stroke="#fff"
+              stroke={strokeColor}
               strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
