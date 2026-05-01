@@ -21,7 +21,7 @@ function Avatar({ profilePic, name, size = 88 }) {
   if (profilePic && !imgError) {
     return (
       <img
-        src={`${BASE_URL}/public/images/${profilePic}`}
+       src={`https://tms.thedesigns.live/public/images/${profilePic}`}
         alt={name}
         onError={() => setImgError(true)}
         style={{
