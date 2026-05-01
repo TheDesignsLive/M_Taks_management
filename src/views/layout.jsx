@@ -141,6 +141,8 @@ const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activePage, setActivePage] = useState('home');
   const [notifCount, setNotifCount] = useState(0);
+  const [controlType, setControlType] = useState(''); // 🟢 Added
+const [userRole, setUserRole] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [taskOpen, setTaskOpen]       = useState(false);
@@ -175,7 +177,12 @@ const Layout = () => {
     if (!taskOpen) return;
     fetch(`${BASE_URL}/api/tasks/get-teams`, { credentials: 'include' })
       .then(r => r.json())
-      .then(d => { if (d.success) setTeams(d.teams || []); })
+      .then(d => { if (d.success) setTeams(d.teams || []);
+        if (data.loggedIn) {
+          setControlType(data.control_type); // 🟢 Store Control Type
+          setUserRole(data.role);           // 🟢 Store Role
+        }
+       })
       .catch(() => {});
   }, [taskOpen]);
 
@@ -332,8 +339,18 @@ const Layout = () => {
             { key: 'home',          icon: 'fa-house',            label: 'Home' },
             { key: 'notifications', icon: 'fa-bell',             label: 'Notifications', badge: notifCount },
             { key: 'assigned',      icon: 'fa-file-signature',   label: 'Assigned By Me' },
-             { key: 'allTasks', icon: 'fa-regular fa-clipboard', activeIcon: 'fa-solid fa-clipboard-check', label: 'All Member Tasks' },
-            { key: 'members',       icon: 'fa-users',            label: 'View Members' },
+
+              // 🟢 Condition for All Member Tasks
+            (controlType === 'ADMIN' || (userRole === 'user' && (controlType === 'ADMIN' || controlType === 'OWNER'))) 
+                ? { key: 'allTasks', icon: 'fa-regular fa-clipboard', label: 'All Member Tasks' } 
+                : null,
+
+
+              // 🟢 Condition for View Members
+            (controlType === 'ADMIN' || (userRole === 'user' && (controlType === 'ADMIN' || controlType === 'OWNER' || controlType === 'PARTIAL'))) 
+                ? { key: 'members', icon: 'fa-users', label: 'View Members' } 
+                : null,    
+                        
             { key: 'settings',      icon: 'fa-gear',             label: 'Settings' },
             { key: 'profile',       icon: 'fa-circle-user',      label: 'Profile' },
           ].map(({ key, icon, label, badge }) => (
