@@ -670,7 +670,9 @@ export default function AssignByMe() {
   const [session, setSession] = useState({});
   const [adminName, setAdminName] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'completed'
+ const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'completed'
+  const sliderRef = useRef(null);
+  const swipeStartX = useRef(null);
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const { toast, showToast } = useToast();
 
@@ -718,7 +720,18 @@ useEffect(() => {
     setDeleteAllOpen(false);
   }
 
-  const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, showToast };
+const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, showToast };
+
+  function onTouchStart(e) { swipeStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (swipeStartX.current === null) return;
+    const dx = swipeStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) {
+      if (dx > 0) setActiveTab('completed');
+      else setActiveTab('pending');
+    }
+    swipeStartX.current = null;
+  }
 
   if (loading) {
     return (
@@ -793,9 +806,13 @@ useEffect(() => {
         )}
 
       </div>
-
-      {/* ── TASK LIST ── */}
-      <div style={S.listWrap}>
+{/* ── TASK LIST ── */}
+      <div
+        ref={sliderRef}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{ ...S.listWrap, touchAction: 'pan-y' }}
+      >
         {activeTab === 'pending' && (
           <>
             {openTasks.length === 0 ? (
