@@ -1101,6 +1101,7 @@ const S = {
 
   label: {
     display: 'block',
+    textAlign: 'left',
     fontSize: 10.5, fontWeight: 800,
     color: '#14b8a6',
     textTransform: 'uppercase',
