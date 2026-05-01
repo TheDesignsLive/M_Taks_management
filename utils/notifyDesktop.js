@@ -1,5 +1,5 @@
 const DESKTOP_URL = 'https://tms.thedesigns.live'; // ← your desktop URL
-const NOTIFY_SECRET = 'tms_cross_notify_secret_2026';
+const NOTIFY_SECRET = 'tms_123';
 
 export async function notifyDesktop() {
     try {

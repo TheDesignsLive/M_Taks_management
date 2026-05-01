@@ -19,14 +19,6 @@ import AllMemberTask from './routes/all_member_task.js';
 
 const app = express();
 
-const server = createServer(app);              // ✅ ADD
-const io = new Server(server, {               // ✅ ADD
-  cors: {
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173", "https://m-tms.thedesigns.live"],
-    credentials: true
-  }
-});
-
 const MySQLStore = MySQLStoreFactory(session);
 const sessionStore = new MySQLStore({}, con);
 
@@ -53,25 +45,6 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
-
-
-// ✅ ADD — attach io to every request (same as desktop does)
-app.use((req, res, next) => {
-    req.io = io;
-    next();
-});
-
-// ✅ ADD — secret key to verify cross-server calls
-const NOTIFY_SECRET = 'tms_cross_notify_secret_2026';
-
-// ✅ ADD — desktop calls this when it changes a task
-app.post('/internal/notify-tasks', (req, res) => {
-    if (req.headers['x-notify-secret'] !== NOTIFY_SECRET) {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
-    io.emit('update_tasks');
-    res.json({ success: true });
-});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -100,8 +73,6 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, "0.0.0.0", () => {          // ✅ server.listen not app.listen
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
-
-export { io, NOTIFY_SECRET };  
