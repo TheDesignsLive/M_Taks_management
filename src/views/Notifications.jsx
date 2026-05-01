@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
 const BASE_URL =
   window.location.hostname === "localhost"
@@ -67,7 +67,6 @@ function ConfirmModal({ open, icon, title, message, confirmLabel, onConfirm, onC
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 const Notifications = () => {
-const swipeStartX = useRef(null);
   const [data, setData] = useState({
     announcements: [],
     memberRequests: [],
@@ -77,28 +76,16 @@ const swipeStartX = useRef(null);
     canManageMembers: false,
   });
   const [loading, setLoading] = useState(true);
- const [activeTab, setActiveTab] = useState("announce");
-  const swipeStartX = useRef(null);
+  const [activeTab, setActiveTab] = useState("announce");
   const [modal, setModal] = useState({ show: false, type: "add", editId: null });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
 
   // Form states
   const [form, setForm] = useState({ title: "", desc: "", teamId: "0", file: null });
 
-useEffect(() => {
+  useEffect(() => {
     fetchNotifications();
   }, []);
-
-  function onTouchStart(e) { swipeStartX.current = e.touches[0].clientX; }
-  function onTouchEnd(e) {
-    if (swipeStartX.current === null) return;
-    const dx = swipeStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(dx) > 50) {
-      if (dx > 0) setActiveTab('requests');
-      else setActiveTab('announce');
-    }
-    swipeStartX.current = null;
-  }
 
   const fetchNotifications = async () => {
     try {
@@ -154,7 +141,7 @@ useEffect(() => {
   if (loading) return <div style={styles.loader}>Loading...</div>;
 
   return (
-<div style={styles.container} onTouchStart={data.canManageMembers ? onTouchStart : undefined} onTouchEnd={data.canManageMembers ? onTouchEnd : undefined}>
+    <div style={styles.container}>
       <style>{CSS}</style>
 
       {/* Toggle Tab */}
