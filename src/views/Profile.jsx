@@ -737,6 +737,7 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.18s, box-shadow 0.18s',
     WebkitAppearance: 'none',
+      textAlign: 'left',  
   },
   inputErr: {
     borderColor: '#ef4444',
