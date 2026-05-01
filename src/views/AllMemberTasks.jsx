@@ -332,6 +332,7 @@ const styles = {
     padding: '10px 14px',
     background: '#2E2D2D',
     borderBottom: '1px solid #0F8989',
+      display: 'flex',   
       justifyContent: 'flex-start', 
   },
   select: {
