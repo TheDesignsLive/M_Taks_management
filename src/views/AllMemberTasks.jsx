@@ -332,6 +332,7 @@ const styles = {
     padding: '10px 14px',
     background: '#2E2D2D',
     borderBottom: '1px solid #0F8989',
+      justifyContent: 'flex-start', 
   },
   select: {
     background: '#3C3A3A',
@@ -340,10 +341,12 @@ const styles = {
     borderRadius: 6,
     padding: '7px 12px',
     fontSize: 13,
-    width: '100%',
+    
     maxWidth: 260,
     outline: 'none',
     cursor: 'pointer',
+    width: 'auto',        // ✅ change this
+  minWidth: 180,        // optional (good UI)
   },
   tabBar: {
     display: 'flex',
