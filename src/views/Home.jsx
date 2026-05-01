@@ -658,13 +658,28 @@ const Home = () => {
 
   useEffect(() => { fetchTasks(); }, []);
 
-      useEffect(() => {
-        if (window.io) {
-          const socket = window.io();
-          socket.on('update_tasks', fetchTasks);
-          return () => socket.disconnect();
-        }
-      }, [fetchTasks]);
+ // ✅ ADD THESE TWO — put them right after your fetchTasks useCallback
+
+// Ref always holds the latest fetchTasks — prevents stale closure
+const fetchTasksRef = useRef(fetchTasks);
+useEffect(() => {
+  fetchTasksRef.current = fetchTasks;
+}, [fetchTasks]);
+
+// Socket — connects once, never disconnects/reconnects on re-render
+useEffect(() => {
+  if (typeof window.io === 'undefined') {
+    console.warn('Socket.IO not loaded — check index.html');
+    return;
+  }
+  const socket = window.io(BASE_URL, { withCredentials: true });
+
+  socket.on('update_tasks', () => {
+    fetchTasksRef.current(); // always calls latest version
+  });
+
+  return () => socket.disconnect();
+}, []); // ← empty array: runs ONCE only
 
       useEffect(() => {
         window.addEventListener('task-added', fetchTasks);
