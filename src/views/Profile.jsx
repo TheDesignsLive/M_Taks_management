@@ -726,6 +726,8 @@ const styles = {
     display: 'block', fontSize: 10.5, fontWeight: 800,
     color: T.brand, textTransform: 'uppercase',
     letterSpacing: 0.7, marginBottom: 5,
+     textAlign: 'left', 
+
   },
   formInput: {
     width: '100%', boxSizing: 'border-box',
@@ -737,7 +739,8 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.18s, box-shadow 0.18s',
     WebkitAppearance: 'none',
-      textAlign: 'left',  
+    textAlign: 'left',  
+      width: '100%',  
   },
   inputErr: {
     borderColor: '#ef4444',
