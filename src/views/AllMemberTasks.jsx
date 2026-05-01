@@ -140,6 +140,158 @@ function SectionColumn({ section, tasks }) {
   );
 }
 
+// all member dropdwon design
+
+// ---- Member Dropdown ----
+function MemberDropdown({ users, selectedUser, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const selectedName = selectedUser === 'all'
+    ? 'All Members'
+    : users.find(u => String(u.id) === String(selectedUser))?.name || 'All Members';
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  function pick(val) {
+    onSelect(val);
+    setOpen(false);
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative', minWidth: 180, maxWidth: 280 }}>
+      {/* Trigger button */}
+      <div
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 8, cursor: 'pointer', userSelect: 'none',
+          background: '#3C3A3A',
+          border: `1.5px solid ${open ? '#0F8989' : 'rgba(15,137,137,0.4)'}`,
+          borderRadius: 8, padding: '8px 12px',
+          boxShadow: open ? '0 0 0 3px rgba(15,137,137,0.12)' : 'none',
+          transition: 'border-color 0.18s, box-shadow 0.18s',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2" width="15" height="15" style={{ flexShrink: 0 }}>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span style={{ fontSize: 13, color: '#eee', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {selectedName}
+          </span>
+        </div>
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5"
+          width="12" height="12" style={{ flexShrink: 0, transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+
+      {/* Dropdown list */}
+      {open && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0,
+          marginTop: 4, zIndex: 9999,
+          background: '#2E2D2D',
+          border: '1px solid rgba(15,137,137,0.35)',
+          borderRadius: 10, overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          maxHeight: 240, overflowY: 'auto',
+        }}>
+          {/* All Members option */}
+          <DropOption
+            label="All Members"
+            isActive={selectedUser === 'all'}
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            }
+            onClick={() => pick('all')}
+          />
+
+          {/* Divider */}
+          {users.length > 0 && (
+            <div style={{ height: 1, background: 'rgba(15,137,137,0.2)', margin: '2px 0' }} />
+          )}
+
+          {/* Individual members */}
+          {users.map((u, i) => (
+            <DropOption
+              key={u.id}
+              label={u.name}
+              isActive={String(selectedUser) === String(u.id)}
+              icon={
+                <div style={{
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #095959, #0F8989)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700, color: '#CDF4F4', flexShrink: 0,
+                }}>
+                  {u.name.charAt(0).toUpperCase()}
+                </div>
+              }
+              onClick={() => pick(String(u.id))}
+              isLast={i === users.length - 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DropOption({ label, isActive, icon, onClick, isLast }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 14px',
+        cursor: 'pointer',
+        background: isActive ? 'rgba(15,137,137,0.18)' : hov ? 'rgba(15,137,137,0.08)' : 'transparent',
+        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+        transition: 'background 0.12s',
+      }}
+    >
+      <span style={{ color: isActive ? '#0F8989' : '#aaa', display: 'flex', alignItems: 'center' }}>
+        {icon}
+      </span>
+      <span style={{ flex: 1, fontSize: 13, fontWeight: isActive ? 700 : 500, color: isActive ? '#CDF4F4' : '#eee', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+      {isActive && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5" width="14" height="14" style={{ flexShrink: 0 }}>
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      )}
+    </div>
+  );
+}
+// over
+
 // ---- Main Component ----
 const AllMemberTask = () => {
   const [tasks, setTasks] = useState([]);
@@ -242,18 +394,13 @@ const AllMemberTask = () => {
   return (
     <div style={styles.container}>
 
-      {/* FILTER BAR */}
+{/* FILTER BAR */}
       <div style={styles.filterBar}>
-        <select
-          value={selectedUser}
-          onChange={e => handleUserChange(e.target.value)}
-          style={styles.select}
-        >
-          <option value="all">All Members</option>
-          {users.map(u => (
-            <option key={u.id} value={u.id}>{u.name}</option>
-          ))}
-        </select>
+        <MemberDropdown
+          users={users}
+          selectedUser={selectedUser}
+          onSelect={(val) => handleUserChange(val)}
+        />
       </div>
 
       {/* TAB BAR */}
