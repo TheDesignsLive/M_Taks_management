@@ -475,10 +475,10 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
                 {task.assigned_by_name}
               </span>
             )}
-            {!isCompleted && (
+{!isCompleted && (
               <span
                 onClick={() => setSectionOpen(true)}
-                style={{ fontSize:10, color:'#aaa', cursor:'pointer', padding:'1px 6px', borderRadius:4, background:'#3C3A3A', border:'1px solid #0F8989', whiteSpace:'nowrap', flexShrink:0 }}
+                style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'1px 5px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1, display:'inline-flex', alignItems:'center', gap:3 }}
               >
                 ↕ {SECTION_LABELS[task.section] || 'Task'}
               </span>
