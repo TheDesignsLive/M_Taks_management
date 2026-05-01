@@ -140,7 +140,7 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activePage, setActivePage] = useState('home');
+const [activePage, setActivePage] = useState(() => sessionStorage.getItem('activePage') || 'home');
   const [notifCount, setNotifCount] = useState(0);
  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sessionRole, setSessionRole] = useState('');
@@ -287,7 +287,11 @@ const Layout = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   }
 
-  const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
+const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
+
+  useEffect(() => {
+    sessionStorage.setItem('activePage', activePage);
+  }, [activePage]);
 
   const renderContent = () => {
     switch (activePage) {
