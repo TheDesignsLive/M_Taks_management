@@ -347,7 +347,7 @@ const styles = {
     outline: 'none',
     cursor: 'pointer',
     width: 'auto',        // ✅ change this
-  minWidth: 180,        // optional (good UI)
+    minWidth: 180,        // optional (good UI)
   },
   tabBar: {
     display: 'flex',
