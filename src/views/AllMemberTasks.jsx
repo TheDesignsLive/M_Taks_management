@@ -332,13 +332,19 @@ const AllMemberTask = () => {
   }, []);
 
   // Socket.io live update
-  useEffect(() => {
-    if (window.io) {
-      const socket = window.io();
-      socket.on('update_tasks', () => fetchData(selectedUser));
-      return () => socket.disconnect();
-    }
-  }, [selectedUser]);
+useEffect(() => {
+  if (window.io) {
+    const socket = window.io();
+    socket.on('update_tasks', () => fetchData(selectedUser));
+    return () => socket.disconnect();
+  }
+}, [selectedUser]);
+
+useEffect(() => {
+  const handler = () => fetchData(selectedUser);
+  window.addEventListener('task-added', handler);
+  return () => window.removeEventListener('task-added', handler);
+}, [selectedUser]);
 
   // Snap slider to active section
   useEffect(() => {
