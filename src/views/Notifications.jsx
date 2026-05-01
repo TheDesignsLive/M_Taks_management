@@ -405,13 +405,14 @@ const S = {
     display: "flex", alignItems: "center", justifyContent: "center",
     padding: 0,
   },
-  label: {
+label: {
     display: "block",
     fontSize: 10.5, fontWeight: 800,
     color: "#14b8a6",
     textTransform: "uppercase",
     letterSpacing: 0.7,
     marginBottom: 5,
+    textAlign: "left",
   },
   input: {
     width: "100%", boxSizing: "border-box",
