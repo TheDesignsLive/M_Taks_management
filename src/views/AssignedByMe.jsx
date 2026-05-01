@@ -681,7 +681,12 @@ export default function AssignByMe() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+ useEffect(() => { fetchData(); }, [fetchData]);
+
+useEffect(() => {
+  window.addEventListener('task-added', fetchData);
+  return () => window.removeEventListener('task-added', fetchData);
+}, [fetchData]);
 
   async function handleDeleteAllCompleted() {
     try {
