@@ -440,7 +440,8 @@ function AnimCheckbox({ checked, color, onChange, disabled }) {
 
 // ─── TASK CARD ────────────────────────────────────────────────────────────────
 function TaskCard({ task, members, teams, session, adminName, onRefresh, showToast, isCompleted }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+const [menuOpen, setMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -523,12 +524,23 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
             }}>
               {task.title}
             </div>
-            {task.description && task.description !== 'null' && task.description !== '' && (
+ {expanded && task.description && task.description !== 'null' && task.description !== '' && (
               <div style={{ fontSize: 11.5, color: '#aaa', marginTop: 3, wordBreak: 'break-word', lineHeight: 1.4, textAlign: 'left' }}>
                 {task.description}
               </div>
             )}
           </div>
+{/* Info icon */}
+          {task.description && task.description !== 'null' && task.description !== '' && (
+            <button
+              onClick={() => setExpanded(v => !v)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, flexShrink: 0 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#0F8989' : '#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+              </svg>
+            </button>
+          )}
 
           {/* 3-dot menu */}
           <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
@@ -546,9 +558,9 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
         {/* Bottom row: badges + assignee + date */}
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {/* Priority */}
-          <span style={{ ...S.badge, color: pc.text, background: pc.bg, border: `1px solid ${pc.border}44` }}>
+          {/* <span style={{ ...S.badge, color: pc.text, background: pc.bg, border: `1px solid ${pc.border}44` }}>
             {task.priority}
-          </span>
+          </span> */}
 
           {/* Section */}
           {task.section && (
