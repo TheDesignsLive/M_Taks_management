@@ -517,14 +517,14 @@ function TaskCard({ task, members, teams, session, adminName, onRefresh, showToa
           {/* Title + desc */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 14, fontWeight: 700, color: isCompleted ? '#aaa' : '#fff',
+       fontSize: 14, fontWeight: 700, color: isCompleted ? '#aaa' : '#fff',
               textDecoration: 'none',
-              wordBreak: 'break-word', lineHeight: 1.35,
+              wordBreak: 'break-word', lineHeight: 1.35, textAlign: 'left',
             }}>
               {task.title}
             </div>
             {task.description && task.description !== 'null' && task.description !== '' && (
-              <div style={{ fontSize: 11.5, color: '#aaa', marginTop: 3, wordBreak: 'break-word', lineHeight: 1.4 }}>
+              <div style={{ fontSize: 11.5, color: '#aaa', marginTop: 3, wordBreak: 'break-word', lineHeight: 1.4, textAlign: 'left' }}>
                 {task.description}
               </div>
             )}
