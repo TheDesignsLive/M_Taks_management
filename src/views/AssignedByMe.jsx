@@ -798,6 +798,7 @@ const S = {
     display: 'block', fontSize: 10.5, fontWeight: 800,
     color: '#14b8a6', textTransform: 'uppercase',
     letterSpacing: 0.7, marginBottom: 5, marginTop: 14,
+    textAlign: "left",
   },
   formInput: {
     width: '100%', boxSizing: 'border-box',
