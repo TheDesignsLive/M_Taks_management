@@ -334,7 +334,7 @@ export default function ViewMember() {
       if (addFile) fd.append('profile_pic', addFile);
       const res = await fetch(`${BASE_URL}/api/view_member/add`, { method: 'POST', credentials: 'include', body: fd });
       const json = await res.json();
- if (json.success) {
+      if (json.success) {
         setAddOpen(false);
         resetAdd();
         showAlert(
@@ -400,7 +400,7 @@ export default function ViewMember() {
       const res = await fetch(`${BASE_URL}/api/view_member/delete/${deleteModal.userId}`, { credentials: 'include' });
       const json = await res.json();
       setDeleteModal(m => ({ ...m, open: false, loading: false }));
-  if (json.success) {
+      if (json.success) {
         showAlert(
           json.isRequest ? 'Request Submitted!' : 'Deleted!',
           json.message,
@@ -444,7 +444,6 @@ export default function ViewMember() {
     setEditOpen(true);
   }
 
-
   // ── LOADING STATE ─────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -457,22 +456,23 @@ export default function ViewMember() {
       </div>
     );
   }
-if (showRoles) {
-  return (
-    <ViewRoles
-      onBack={() => setShowRoles(false)}
-      onChangeToDept={
-        (data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'OWNER')
-          ? () => { setShowRoles(false); setShowTeams(true); }
-          : null
-      }
-    />
-  );
-}
 
-if (showTeams) {
-  return <ViewTeams onBack={() => setShowTeams(false)} />;
-}
+  if (showRoles) {
+    return (
+      <ViewRoles
+        onBack={() => setShowRoles(false)}
+        onChangeToDept={
+          (data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'OWNER')
+            ? () => { setShowRoles(false); setShowTeams(true); }
+            : null
+        }
+      />
+    );
+  }
+
+  if (showTeams) {
+    return <ViewTeams onBack={() => setShowTeams(false)} />;
+  }
 
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
   const hasRoles = data.roles.length > 0;
@@ -503,22 +503,21 @@ if (showTeams) {
         {/* Nav pills + Add button row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-
-              {/* ✅ MEMBERS (DEFAULT ACTIVE) */}
-         <button style={S.navPillActive} className="vt-nav-pill-active" title="Members">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-  </button>
-          
-{/* Department icon: admin, owner session role, OR user with OWNER control type */}
-          {(data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'OWNER') && (
-            <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)} title="Departments">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="16" width="6" height="4" rx="1"/><rect x="17" y="16" width="6" height="4" rx="1"/><path d="M12 5v4M12 9h-8v7M12 9h8v7"/></svg>
+            {/* ✅ MEMBERS (DEFAULT ACTIVE) */}
+            <button style={S.navPillActive} className="vt-nav-pill-active" title="Members">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </button>
-          )}
-          {/* Roles icon: always visible for everyone */}
-          <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowRoles(true)} title="Roles">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </button>
+
+            {/* Department icon: admin, owner session role, OR user with OWNER control type */}
+            {(data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'OWNER') && (
+              <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowTeams(true)} title="Departments">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><rect x="9" y="1" width="6" height="4" rx="1"/><rect x="1" y="16" width="6" height="4" rx="1"/><rect x="17" y="16" width="6" height="4" rx="1"/><path d="M12 5v4M12 9h-8v7M12 9h8v7"/></svg>
+              </button>
+            )}
+            {/* Roles icon: always visible for everyone */}
+            <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowRoles(true)} title="Roles">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </button>
           </div>
           <button style={S.addBtn} className="vm-add-btn" onClick={() => { resetAdd(); setAddOpen(true); }}>
             <PlusIcon />
@@ -806,9 +805,15 @@ if (showTeams) {
 function MemberCard({ user, index, sessionRole, sessionUserId, onEdit, onSuspend, onDelete }) {
   const isActive = user.status === 'ACTIVE';
   const isSelf = sessionUserId && user.id === sessionUserId;
+  // ── Only change: expand state for actions ──
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div style={S.card} className="vm-card" key={user.id}>
+    <div
+      style={S.card}
+      className="vm-card"
+      onClick={() => setExpanded(v => !v)}
+    >
       {/* Top row: avatar + name + status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <Avatar profilePic={user.profile_pic} name={user.name} size={44} />
@@ -819,7 +824,18 @@ function MemberCard({ user, index, sessionRole, sessionUserId, onEdit, onSuspend
           </div>
           <div style={S.cardEmail}>{user.email}</div>
         </div>
-        <div style={{ ...S.statusDot, background: isActive ? '#2ecc71' : '#e74c3c' }} title={user.status} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ ...S.statusDot, background: isActive ? '#2ecc71' : '#e74c3c' }} title={user.status} />
+          {/* Chevron indicator */}
+          <span style={{
+            color: '#0F8989',
+            display: 'inline-flex',
+            transition: 'transform 0.22s',
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}>
+            <ChevronIcon />
+          </span>
+        </div>
       </div>
 
       {/* Meta row */}
@@ -830,22 +846,27 @@ function MemberCard({ user, index, sessionRole, sessionUserId, onEdit, onSuspend
         </span>
       </div>
 
-      {/* Actions */}
-      <div style={S.cardActions}>
-        <button
-          style={{ ...S.actionBtn, background: isActive ? 'rgba(231,76,60,0.15)' : 'rgba(46,204,113,0.15)', color: isActive ? '#e74c3c' : '#2ecc71' }}
-          className="vm-action-btn"
-          onClick={onSuspend}
+      {/* Actions — only visible when expanded */}
+      {expanded && (
+        <div
+          style={S.cardActions}
+          onClick={e => e.stopPropagation()} // prevent card toggle when clicking buttons
         >
-          {isActive ? 'Suspend' : 'Activate'}
-        </button>
-        <button style={{ ...S.iconBtn, color: '#FFD000' }} className="vm-icon-btn" onClick={onEdit} title="Edit">
-          <PencilIcon size={15} />
-        </button>
-        <button style={{ ...S.iconBtn, color: '#e74c3c' }} className="vm-icon-btn" onClick={onDelete} title="Delete">
-          <TrashIcon size={15} />
-        </button>
-      </div>
+          <button
+            style={{ ...S.actionBtn, background: isActive ? 'rgba(231,76,60,0.15)' : 'rgba(46,204,113,0.15)', color: isActive ? '#e74c3c' : '#2ecc71' }}
+            className="vm-action-btn"
+            onClick={onSuspend}
+          >
+            {isActive ? 'Suspend' : 'Activate'}
+          </button>
+          <button style={{ ...S.iconBtn, color: '#FFD000' }} className="vm-icon-btn" onClick={onEdit} title="Edit">
+            <PencilIcon size={15} />
+          </button>
+          <button style={{ ...S.iconBtn, color: '#e74c3c' }} className="vm-icon-btn" onClick={onDelete} title="Delete">
+            <TrashIcon size={15} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -854,14 +875,13 @@ function MemberCard({ user, index, sessionRole, sessionUserId, onEdit, onSuspend
 const S = {
   page: {
     minHeight: '100%',
-    background: '#3C3A3A',           // ← same as AssignByMe
+    background: '#3C3A3A',
     fontFamily: "Arial, sans-serif",
     paddingBottom: 100,
   },
 
-  // Header — same as AssignByMe
   header: {
-    background: '#2E2D2D',           // ← same as AssignByMe
+    background: '#2E2D2D',
     padding: '20px 18px 16px',
     borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
@@ -873,7 +893,7 @@ const S = {
   },
   headerTitle: {
     margin: 0, fontSize: 20, fontWeight: 800,
-    color: '#CDF4F4',                // ← same as AssignByMe
+    color: '#CDF4F4',
     letterSpacing: -0.3,
   },
   headerSub: {
@@ -892,7 +912,7 @@ const S = {
 
   addBtn: {
     display: 'flex', alignItems: 'center',
-    background: '#0F8989',           // ← same as AssignByMe btnSave
+    background: '#0F8989',
     color: '#fff',
     border: 'none', borderRadius: 24,
     padding: '9px 18px',
@@ -902,26 +922,26 @@ const S = {
     letterSpacing: 0.3,
     whiteSpace: 'nowrap',
   },
-navPill: {
-  background: 'rgba(15,137,137,0.12)',
-  border: '1px solid rgba(15,137,137,0.25)',
-  color: '#14b8a6',
-  borderRadius: 20,
-  padding: '8px 14px',
-  cursor: 'pointer',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  fontFamily: "Arial, sans-serif",
-},
-navPillActive: {
-  background: 'rgba(15,137,137,0.3)',
-  border: '1px solid rgba(15,137,137,0.6)',
-  color: '#CDF4F4',
-  borderRadius: 20,
-  padding: '8px 14px',
-  cursor: 'default',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  fontFamily: "Arial, sans-serif",
-},
+  navPill: {
+    background: 'rgba(15,137,137,0.12)',
+    border: '1px solid rgba(15,137,137,0.25)',
+    color: '#14b8a6',
+    borderRadius: 20,
+    padding: '8px 14px',
+    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: "Arial, sans-serif",
+  },
+  navPillActive: {
+    background: 'rgba(15,137,137,0.3)',
+    border: '1px solid rgba(15,137,137,0.6)',
+    color: '#CDF4F4',
+    borderRadius: 20,
+    padding: '8px 14px',
+    cursor: 'default',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: "Arial, sans-serif",
+  },
   searchWrap: {
     position: 'relative',
     marginBottom: 4,
@@ -933,7 +953,7 @@ navPillActive: {
   searchInput: {
     width: '100%', boxSizing: 'border-box',
     padding: '11px 14px 11px 42px',
-    background: '#3C3A3A',           // ← same as AssignByMe formInput bg
+    background: '#3C3A3A',
     border: '1.5px solid rgba(15,137,137,0.3)',
     borderRadius: 24,
     color: '#eee',
@@ -942,7 +962,6 @@ navPillActive: {
     outline: 'none',
   },
 
-  // Body
   body: { padding: '16px 14px', maxWidth: 960, margin: '0 auto' },
   empty: {
     textAlign: 'center',
@@ -954,14 +973,14 @@ navPillActive: {
     gap: 12,
   },
 
-  // Card — same as AssignByMe taskCard
   card: {
-    background: '#444',              // ← same as AssignByMe taskCard
+    background: '#444',
     border: '1px solid rgba(255,255,255,0.06)',
     borderLeft: '4px solid rgba(15,137,137,0.5)',
     borderRadius: 8,
     padding: '14px 16px',
     transition: 'transform 0.15s, box-shadow 0.15s',
+    cursor: 'pointer',
   },
   cardName: {
     fontSize: 14, fontWeight: 700, color: '#fff',
@@ -969,7 +988,7 @@ navPillActive: {
   },
   cardEmail: {
     fontSize: 11, color: '#aaa', marginTop: 2,
-    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',  textAlign: 'left'  ,
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left',
   },
   statusDot: {
     width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
@@ -977,7 +996,7 @@ navPillActive: {
   },
   cardMeta: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 0,
   },
   metaChip: {
     background: 'rgba(15,137,137,0.18)',
@@ -1001,6 +1020,7 @@ navPillActive: {
     display: 'flex', alignItems: 'center', gap: 8,
     borderTop: '1px solid rgba(255,255,255,0.08)',
     paddingTop: 12,
+    marginTop: 12,
   },
   actionBtn: {
     flex: 1, padding: '7px 0',
@@ -1019,7 +1039,6 @@ navPillActive: {
     transition: 'background 0.15s',
   },
 
-  // Modal — same sheet style as AssignByMe
   backdrop: {
     position: 'fixed', inset: 0,
     background: 'rgba(0,0,0,0.75)',
@@ -1029,7 +1048,7 @@ navPillActive: {
   },
   modal: {
     width: '100%', maxWidth: 560,
-    background: '#2E2D2D',           // ← same as AssignByMe pickerSheet
+    background: '#2E2D2D',
     borderRadius: '22px 22px 0 0',
     padding: '0 18px 24px',
     maxHeight: '88dvh',
@@ -1053,7 +1072,7 @@ navPillActive: {
   },
   modalTitle: {
     fontSize: 16, fontWeight: 800,
-    color: '#CDF4F4',                // ← same as AssignByMe pickerTitle
+    color: '#CDF4F4',
     letterSpacing: -0.2,
   },
   closeBtn: {
@@ -1065,7 +1084,6 @@ navPillActive: {
     padding: 0,
   },
 
-  // Avatar edit row
   avatarEditRow: {
     display: 'flex', alignItems: 'center',
     padding: '8px 0 18px',
@@ -1081,11 +1099,10 @@ navPillActive: {
     padding: 0,
   },
 
-  // Form — same as AssignByMe formLabel / formInput
   label: {
     display: 'block',
     fontSize: 10.5, fontWeight: 800,
-    color: '#14b8a6',                // ← same as AssignByMe formLabel
+    color: '#14b8a6',
     textTransform: 'uppercase',
     letterSpacing: 0.7,
     marginBottom: 5, marginTop: 14,
@@ -1093,7 +1110,7 @@ navPillActive: {
   input: {
     width: '100%', boxSizing: 'border-box',
     padding: '10px 12px',
-    background: '#3C3A3A',           // ← same as AssignByMe formInput
+    background: '#3C3A3A',
     border: '1.5px solid rgba(15,137,137,0.3)',
     borderRadius: 8, fontSize: 14,
     fontFamily: "Arial, sans-serif",
@@ -1114,7 +1131,7 @@ navPillActive: {
   },
   btnSave: {
     padding: '13px',
-    background: '#0F8989',           // ← same as AssignByMe btnSave
+    background: '#0F8989',
     border: 'none', borderRadius: 12,
     color: '#fff', fontSize: 14, fontWeight: 700,
     cursor: 'pointer', fontFamily: "Arial, sans-serif",
@@ -1122,7 +1139,6 @@ navPillActive: {
     transition: 'opacity 0.15s',
   },
 
-  // Spinner
   spinner: {
     width: 40, height: 40,
     border: '3px solid rgba(15,137,137,0.2)',
@@ -1148,7 +1164,7 @@ const CSS = `
   .vm-icon-btn:hover  { background: rgba(255,255,255,0.15) !important; }
   .vm-close:hover     { background: rgba(15,137,137,0.15) !important; }
 
-input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !important; }
+  input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !important; }
   select option { background: #2E2D2D; color: #eee; }
 
   ::-webkit-scrollbar { width: 5px; }
