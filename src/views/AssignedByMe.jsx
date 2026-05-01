@@ -745,7 +745,7 @@ const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, 
   }
 
   return (
-    <div style={S.page}>
+   <div style={S.page} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <style>{CSS}</style>
 
       {/* ── HEADER ── */}
@@ -807,10 +807,8 @@ const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, 
 
       </div>
 {/* ── TASK LIST ── */}
-      <div
+<div
         ref={sliderRef}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
         style={{ ...S.listWrap, touchAction: 'pan-y' }}
       >
         {activeTab === 'pending' && (
