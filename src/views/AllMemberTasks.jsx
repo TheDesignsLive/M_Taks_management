@@ -67,7 +67,7 @@ function TaskCard({ task }) {
 
 return (
     <div style={{
-      background: '#2a2a2a', borderRadius: 10, marginBottom: 10,
+      background: '#444', borderRadius: 10, marginBottom: 10,
       borderLeft: `4px solid ${color}`, padding: '12px 12px 10px',
       opacity: isCompleted ? 0.55 : 1, transition: 'opacity 0.2s',
     }}>
@@ -88,28 +88,28 @@ return (
             </svg>
           )}
         </div>
-        <div style={{ flex: 1, minWidth: 0, color: isCompleted ? '#888' : '#e2e8f0', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', wordBreak: 'break-word' }}>
+        <div style={{ flex: 1, minWidth: 0, color: isCompleted ? '#aaa' : '#eee', fontSize: 13.5, fontWeight: 500, lineHeight: 1.3, textAlign: 'left', wordBreak: 'break-word' }}>
           {task.title}
         </div>
       </div>
 
       {/* Row 2: Name + Date + Info icon */}
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 6, paddingLeft: 26 }}>
-<span style={{ fontSize: 11, color: '#94a3b8', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
+        <span style={{ fontSize: 11, color: '#aaa', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
           {assignedName}
         </span>
 
-   <button
+        <button
           onClick={() => hasDesc && setExpanded(v => !v)}
           style={{ background: 'none', border: 'none', cursor: hasDesc ? 'pointer' : 'default', padding: '0 0 0 6px', marginRight: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: hasDesc ? 1 : 0 }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#14b8a6' : '#64748b'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded ? '#0F8989' : '#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
           </svg>
         </button>
 
-{date ? (
-          <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#14b8a6', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#14b8a610', flexShrink: 0, minWidth: 72, textAlign: 'center' }}>
+        {date ? (
+          <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#0F8989', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#095959', flexShrink: 0, minWidth: 72, textAlign: 'center' }}>
             📅 {date}
           </span>
         ) : <span style={{ minWidth: 72, flexShrink: 0 }} />}
@@ -118,7 +118,7 @@ return (
 
       {/* Expandable description */}
       {expanded && hasDesc && (
-        <div style={{ marginTop: 10, borderTop: '1px solid #333', paddingTop: 10, paddingLeft: 26, fontSize: 12.5, color: '#94a3b8', lineHeight: 1.6, textAlign: 'left' }}>
+        <div style={{ marginTop: 10, borderTop: '1px solid #3C3A3A', paddingTop: 10, paddingLeft: 26, fontSize: 12.5, color: '#aaa', lineHeight: 1.6, textAlign: 'left' }}>
           {task.description}
         </div>
       )}
@@ -130,9 +130,9 @@ return (
 function SectionColumn({ section, tasks }) {
   const filtered = tasks.filter(t => getSection(t) === section);
   return (
-<div style={{ flex: '0 0 100%', width: '100%', overflowY: 'auto', padding: '0 12px 80px 12px', boxSizing: 'border-box' }}>
+    <div style={{ flex: '0 0 100%', width: '100%', overflowY: 'auto', padding: '0 12px 80px 12px', boxSizing: 'border-box' }}>
       {filtered.length === 0 ? (
-        <div style={{ color: '#555', textAlign: 'center', marginTop: 40, fontSize: 13 }}>No tasks</div>
+        <div style={{ color: '#aaa', textAlign: 'center', marginTop: 40, fontSize: 13 }}>No tasks</div>
       ) : (
         filtered.map(task => <TaskCard key={task.id} task={task} />)
       )}
@@ -266,16 +266,16 @@ const AllMemberTask = () => {
               onClick={() => setActiveSection(sec)}
               style={{
                 ...styles.tabButton,
-                color: active ? '#14b8a6' : '#64748b',
-                borderBottom: active ? '2.5px solid #14b8a6' : '2.5px solid transparent',
+                color: active ? '#0F8989' : '#aaa',
+                borderBottom: active ? '2.5px solid #0F8989' : '2.5px solid transparent',
               }}
             >
               {SECTION_LABELS[sec]}
               {taskCounts[sec] > 0 && (
                 <span style={{
                   ...styles.badge,
-                  background: active ? '#14b8a6' : '#333',
-                  color: active ? '#fff' : '#888',
+                  background: active ? '#095959' : '#3C3A3A',
+                  color: active ? '#CDF4F4' : '#aaa',
                 }}>
                   {taskCounts[sec]}
                 </span>
@@ -290,7 +290,7 @@ const AllMemberTask = () => {
         {SECTIONS.map((sec, i) => (
           <div key={sec} style={{
             ...styles.dot,
-            background: i === sectionIndex ? '#14b8a6' : '#333',
+            background: i === sectionIndex ? '#0F8989' : '#3C3A3A',
             width: i === sectionIndex ? 20 : 7,
           }} />
         ))}
@@ -324,19 +324,19 @@ const styles = {
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    background: '#121212',
+    background: '#3C3A3A',
     overflow: 'hidden',
     fontFamily: 'Arial, sans-serif',
   },
   filterBar: {
     padding: '10px 14px',
-    background: '#1a1a1a',
-    borderBottom: '1px solid #2a2a2a',
+    background: '#2E2D2D',
+    borderBottom: '1px solid #0F8989',
   },
   select: {
-    background: '#2a2a2a',
-    color: '#e2e8f0',
-    border: '1px solid #3a3a3a',
+    background: '#3C3A3A',
+    color: '#eee',
+    border: '1px solid #0F8989',
     borderRadius: 6,
     padding: '7px 12px',
     fontSize: 13,
@@ -348,17 +348,17 @@ const styles = {
   tabBar: {
     display: 'flex',
     overflowX: 'auto',
-    background: '#1a1a1a',
-    borderBottom: '1px solid #2a2a2a',
+    background: '#2E2D2D',
+    borderBottom: '1px solid #0F8989',
     scrollbarWidth: 'none',
     WebkitOverflowScrolling: 'touch',
   },
   tabButton: {
     background: 'none',
     border: 'none',
-    padding: '10px 14px',
+    padding: '11px 14px',
     cursor: 'pointer',
-    fontWeight: 600,
+    fontWeight: 700,
     fontSize: 12,
     whiteSpace: 'nowrap',
     display: 'flex',
@@ -366,6 +366,7 @@ const styles = {
     gap: 5,
     transition: 'color 0.2s, border-color 0.2s',
     flexShrink: 0,
+    fontFamily: 'Arial, sans-serif',
   },
   badge: {
     borderRadius: 10,
@@ -379,11 +380,11 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     gap: 5,
-    padding: '6px 0',
-    background: '#1a1a1a',
+    padding: '7px 0',
+    background: '#2E2D2D',
   },
   dot: {
-    height: 7,
+    height: 5,
     borderRadius: 10,
     transition: 'width 0.3s, background 0.3s',
   },
@@ -402,7 +403,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#555',
+    color: '#aaa',
     fontSize: 14,
   },
 };
