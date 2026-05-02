@@ -1,4 +1,5 @@
 // ============================================================
+//Mobile Versionyy
 //  routes/profile.js  —  Express Router (ESM) — MOBILE
 //  ✅ FIX: Images are uploaded to DESKTOP server via its API
 //  so both desktop and mobile share the same image store
