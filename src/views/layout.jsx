@@ -21,6 +21,14 @@ const PRIORITIES = [
   { value: 'Low',     color: '#1a73e8' },
 ];
 
+// ─── WARN ICON (logout modal only) ──────────────────────────────────────────
+const WarnIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="#f39c12" strokeWidth="2" width="38" height="38">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+);
+
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function todayISO() {
   return new Date().toISOString().split('T')[0];
@@ -140,9 +148,9 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-const [activePage, setActivePage] = useState(() => sessionStorage.getItem('activePage') || 'home');
+  const [activePage, setActivePage] = useState('home');
   const [notifCount, setNotifCount] = useState(0);
- const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sessionRole, setSessionRole] = useState('');
   const [sessionControlType, setSessionControlType] = useState('');
 
@@ -269,7 +277,7 @@ const [activePage, setActivePage] = useState(() => sessionStorage.getItem('activ
         }),
       });
       const data = await res.json();
-    if (data.success) {
+      if (data.success) {
         showToast('✓ Task added successfully!');
         resetForm();
         setTaskOpen(false);
@@ -287,11 +295,7 @@ const [activePage, setActivePage] = useState(() => sessionStorage.getItem('activ
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
   }
 
-const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
-
-  useEffect(() => {
-    sessionStorage.setItem('activePage', activePage);
-  }, [activePage]);
+  const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
 
   const renderContent = () => {
     switch (activePage) {
@@ -537,16 +541,23 @@ const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
         </div>
       )}
 
-      {/* ─── LOGOUT MODAL ─── */}
+      {/* ─── LOGOUT MODAL (bottom sheet — matches Settings.jsx reference) ─── */}
       {showLogoutModal && (
-        <div className="modal-overlay">
-          <div className="modal-card">
-            <i className="fa-solid fa-circle-exclamation" style={{fontSize:'40px', color:'#ef4444', marginBottom:'15px'}}></i>
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to destroy your session and exit?</p>
-            <div style={s.modalButtons}>
-              <button style={s.btnCancel} onClick={() => setShowLogoutModal(false)}>Cancel</button>
-              <button style={s.btnLogout} onClick={handleLogout}>Logout</button>
+        <div style={s.logoutBackdrop} onClick={() => setShowLogoutModal(false)}>
+          <div style={s.logoutSheet} onClick={e => e.stopPropagation()}>
+            <div style={s.logoutPill} />
+            <div style={{ textAlign: 'center', padding: '20px 16px 8px' }}>
+              <div style={{ marginBottom: 12 }}><WarnIcon /></div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: '#CDF4F4', marginBottom: 8 }}>
+                Confirm Logout
+              </div>
+              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 22, lineHeight: 1.6 }}>
+                Are you sure you want to destroy your session and exit?
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button style={s.logoutCancelBtn} onClick={() => setShowLogoutModal(false)}>Cancel</button>
+                <button style={s.logoutConfirmBtn} onClick={handleLogout}>Logout</button>
+              </div>
             </div>
           </div>
         </div>
@@ -572,13 +583,49 @@ const s = {
   badge: { background: '#ff3b3b', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '10px', marginLeft: 'auto' },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', zIndex: 900 },
   fab: { position: 'fixed', bottom: '25px', right: '25px', width: '58px', height: '58px', background: 'linear-gradient(135deg, #095959 0%, #14b8a6 100%)', color: 'white', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 5px 20px rgba(9,89,89,0.45)', cursor: 'pointer', zIndex: 800, transition: 'transform 0.2s, box-shadow 0.2s' },
-  modalButtons: { display: 'flex', gap: '10px', marginTop: '25px' },
-  // ── CHANGED: dark theme buttons matching Notifications ──
-  btnCancel: { flex: 1, padding: '12px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', background: 'rgba(255,255,255,0.07)', color: '#aaa', fontWeight: '600', cursor: 'pointer', fontFamily: 'Arial, sans-serif' },
-  btnLogout: { flex: 1, padding: '12px', border: 'none', borderRadius: '8px', background: '#ef4444', color: 'white', fontWeight: '600', cursor: 'pointer', fontFamily: 'Arial, sans-serif' },
+
+  // ── Logout bottom sheet (only changed block) ──
+  logoutBackdrop: {
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.75)',
+    zIndex: 2000,
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    animation: 'atbFade 0.15s ease',
+  },
+  logoutSheet: {
+    width: '100%', maxWidth: 400,
+    background: '#2E2D2D',
+    borderRadius: '22px 22px 0 0',
+    padding: '0 18px 28px',
+    boxSizing: 'border-box',
+    border: '1px solid rgba(15,137,137,0.2)',
+    borderBottom: 'none',
+    boxShadow: '0 -8px 48px rgba(0,0,0,0.5)',
+    animation: 'atbSlide 0.24s cubic-bezier(.22,.68,0,1.18)',
+  },
+  logoutPill: {
+    width: 40, height: 4,
+    background: 'rgba(15,137,137,0.4)',
+    borderRadius: 4, margin: '12px auto 0',
+  },
+  logoutCancelBtn: {
+    flex: 1, padding: '12px 20px',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 12, color: '#aaa',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    fontFamily: 'Arial, sans-serif', letterSpacing: 0.3,
+  },
+  logoutConfirmBtn: {
+    flex: 1, padding: '12px 20px',
+    background: '#e74c3c', border: 'none',
+    borderRadius: 12, color: '#fff',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    fontFamily: 'Arial, sans-serif', letterSpacing: 0.3,
+  },
 };
 
-// ── CHANGED: full dark theme customCSS matching Notifications.jsx ──
+// ── customCSS unchanged ──
 const customCSS = `
   .drawer { position: fixed; top: 0; left: -240px; width: 240px; height: 100%; background: white; z-index: 1000; transition: 0.3s ease-in-out; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
   .drawer.open { left: 0; }
@@ -662,12 +709,6 @@ const customCSS = `
   /* TOAST */
   .atb-toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #095959; color: #CDF4F4; padding: 11px 22px; border-radius: 30px; font-size: 13px; z-index: 9999; transition: 0.32s; opacity: 0; border: 1px solid rgba(15,137,137,0.3); }
   .atb-toast.show { bottom: 28px; opacity: 1; }
-
-  /* LOGOUT MODAL */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 2000; animation: atbFade 0.15s ease; }
-  .modal-card { background: #2E2D2D; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; border: 1px solid rgba(15,137,137,0.2); box-shadow: 0 8px 48px rgba(0,0,0,0.5); }
-  .modal-card h3 { color: #CDF4F4; margin: 0 0 8px 0; font-size: 16px; font-weight: 800; }
-  .modal-card p { color: #aaa; font-size: 13px; line-height: 1.6; margin: 0; }
 
   select option { background: #2E2D2D; color: #eee; }
   ::-webkit-scrollbar { width: 3px; height: 3px; }
