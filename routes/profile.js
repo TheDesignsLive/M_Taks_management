@@ -270,8 +270,6 @@ router.post('/update-profile', requireAuth, (req, res) => {
                     );
                 }
             }
-// ✅ Notify desktop so it refreshes profile without reload
-import { notifyDesktop } from '../utils/notifyDesktop.js';
 notifyDesktop('profile');
 
 return res.json({
