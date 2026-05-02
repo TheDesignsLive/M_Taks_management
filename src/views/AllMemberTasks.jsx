@@ -47,12 +47,20 @@ function isPastDate(dateStr) {
 }
 
 function getSection(task) {
+  // Use computed_section from backend if available (respects DB updates)
+  if (task.computed_section) return task.computed_section;
+  // Fallback
   if (task.status === 'COMPLETED') return 'COMPLETED';
-  if (task.assigned_to === 0 && (task.who_assigned === 'user' || task.who_assigned === 'owner')) return 'OTHERS';
-  if (task.assigned_to === 0 && task.who_assigned === 'admin') return task.section || 'TASK';
-  if (task.assigned_to !== task.assigned_by) return 'OTHERS';
   return task.section || 'TASK';
 }
+
+// function getSection(task) {
+//   if (task.status === 'COMPLETED') return 'COMPLETED';
+//   if (task.assigned_to === 0 && (task.who_assigned === 'user' || task.who_assigned === 'owner')) return 'OTHERS';
+//   if (task.assigned_to === 0 && task.who_assigned === 'admin') return task.section || 'TASK';
+//   if (task.assigned_to !== task.assigned_by) return 'OTHERS';
+//   return task.section || 'TASK';
+// }
 
 // ---- Task Card ----
 function TaskCard({ task }) {
