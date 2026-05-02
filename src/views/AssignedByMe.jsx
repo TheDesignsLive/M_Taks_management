@@ -1,5 +1,6 @@
 // AssignByMe.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { io as socketIO } from 'socket.io-client';
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -701,11 +702,24 @@ export default function AssignByMe() {
     }
   }, []);
 
- useEffect(() => { fetchData(); }, [fetchData]);
+useEffect(() => { fetchData(); }, [fetchData]);
 
 useEffect(() => {
   window.addEventListener('task-added', fetchData);
   return () => window.removeEventListener('task-added', fetchData);
+}, [fetchData]);
+
+useEffect(() => {
+  const socket = socketIO(BASE_URL, {
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+  });
+  socket.on('update_tasks', () => {
+    fetchData();
+  });
+  return () => {
+    socket.disconnect();
+  };
 }, [fetchData]);
 
   async function handleDeleteAllCompleted() {
