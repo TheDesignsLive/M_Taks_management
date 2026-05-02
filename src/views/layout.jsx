@@ -148,7 +148,9 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activePage, setActivePage] = useState('home');
+const [activePage, setActivePage] = useState(() => {
+  return localStorage.getItem('tms_active_page') || 'home';
+});
   const [notifCount, setNotifCount] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sessionRole, setSessionRole] = useState('');
@@ -379,7 +381,7 @@ const Layout = () => {
      <div
               key={key}
               style={activePage === key ? s.activeLink : s.navItem}
-              onClick={() => { setActivePage(key); toggleDrawer(); }}
+             onClick={() => { setActivePage(key); localStorage.setItem('tms_active_page', key); toggleDrawer(); }}
             >
               <i className={`fa-solid ${icon} nav-icon`}></i>
               <span style={{marginLeft: '10px'}}>{label}</span>
