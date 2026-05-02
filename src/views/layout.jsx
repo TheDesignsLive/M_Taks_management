@@ -148,7 +148,13 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activePage, setActivePage] = useState('home');
+const [activePage, setActivePage] = useState(() => {
+  return localStorage.getItem('activePage') || 'home';
+});
+
+useEffect(() => {
+  localStorage.setItem('activePage', activePage);
+}, [activePage]);
   const [notifCount, setNotifCount] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [sessionRole, setSessionRole] = useState('');
