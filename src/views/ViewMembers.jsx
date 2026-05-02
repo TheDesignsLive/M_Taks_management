@@ -1,5 +1,6 @@
 // view_member.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { io as socketIO } from 'socket.io-client';
 import ViewTeams from './view_teams';
 
 import ViewRoles from './ViewRoles'
@@ -379,7 +380,16 @@ export default function ViewMember() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+useEffect(() => {
+  const socket = socketIO(BASE_URL, {
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+  });
+  socket.on('update_members', () => {
+    fetchData();
+  });
+  return () => { socket.disconnect(); };
+}, [fetchData]);
 
   // ── FILTERED USERS ───────────────────────────────────────────────────────
   const filtered = data.users.filter(u =>

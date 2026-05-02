@@ -3,9 +3,12 @@ const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
 const MOBILE_SECRET    = 'tms_mobile_bridge_2026';
 
 export function notifyDesktop(type = 'tasks') {
-    const endpoint = type === 'profile'
-        ? `${DESKTOP_BASE_URL}/api/notify-profile-update`
-        : `${DESKTOP_BASE_URL}/api/notify-task-update`;
+    const endpoints = {
+        tasks:   `${DESKTOP_BASE_URL}/api/notify-task-update`,
+        profile: `${DESKTOP_BASE_URL}/api/notify-profile-update`,
+        members: `${DESKTOP_BASE_URL}/api/notify-members-update`,
+    };
+    const endpoint = endpoints[type] || endpoints.tasks;
 
     fetch(endpoint, {
         method: 'POST',
