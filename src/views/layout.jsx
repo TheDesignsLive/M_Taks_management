@@ -120,7 +120,7 @@ function MiniCalendar({ value, onChange, onClose }) {
   );
 }
 
-// ─── FIXED PORTAL ────────────────────────────────────────────────────────────
+// ─── FIXED PORTAL ───────────────────────────────────────────────────────────
 function FixedPortal({ rect, width, children, forceUp }) {
   if (!rect) return null;
   const spaceAbove = rect.top;
