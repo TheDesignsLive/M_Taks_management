@@ -19,9 +19,6 @@ import Home from './routes/home.js';
 import AllMemberTask from './routes/all_member_task.js';
 import path from 'path';                          // ✅ NEW: needed for shared path
 import { fileURLToPath } from 'url';              // ✅ NEW: needed for __dirname in ESM
-import { createServer } from 'http';           // ✅ NEW
-import { Server as SocketIO } from 'socket.io'; // ✅ NEW
-import { notifyDesktop } from './utils/notifyDesktop.js'; // ✅ NEW: import the desktop notifier
 
 
 
@@ -31,18 +28,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app = express();
-
-
-// ✅ NEW: Create HTTP server so Socket.IO can attach to it
-const httpServer = createServer(app);
-
-// ✅ NEW: Initialize Socket.IO on mobile server
-const io = new SocketIO(httpServer, {
-    cors: {
-        origin: ["http://localhost:5173", "http://127.0.0.1:5173", "https://m-tms.thedesigns.live"],
-        credentials: true,
-    }
-});
 
 const MySQLStore = MySQLStoreFactory(session);
 const sessionStore = new MySQLStore({}, con);
@@ -70,14 +55,6 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
-
-
-// ✅ NEW: Make io available in all route handlers via req.io
-app.use((req, res, next) => {
-    req.io = io;
-    next();
-});
-
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -107,24 +84,6 @@ app.use('/public/images', express.static(SHARED_IMAGES_PATH));
 
 app.use('/public', express.static('public'));
 
-// ✅ NEW: Desktop pings this when a desktop task changes
-// Mobile then broadcasts to all mobile clients
-// NEW — paste this in mobile server.js
-app.post('/api/notify-task-update', (req, res) => {
-    const secret = req.headers['x-mobile-secret'];
-    if (secret !== 'tms_mobile_bridge_2026') {
-        return res.status(403).json({ success: false, message: 'Forbidden' });
-    }
-    // ✅ Only emit if ping came from desktop — prevents infinite loop
-    const source = req.headers['x-source'];
-    if (source !== 'desktop') {
-        return res.status(400).json({ success: false, message: 'Bad source' });
-    }
-    io.emit('update_tasks');
-    console.log('[Mobile] 🔔 task update broadcast triggered by desktop');
-    return res.json({ success: true });
-});
-
 app.get('/health', (req, res) => {
     res.send("Backend is 100% OK");
 });
@@ -133,8 +92,7 @@ app.get('/', (req, res) => {
     res.send("Server is running.");
 });
 
-// ✅ NEW: Use httpServer instead of app to listen (required for Socket.IO)
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, "0.0.0.0", () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
