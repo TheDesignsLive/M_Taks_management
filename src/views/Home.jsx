@@ -1,6 +1,15 @@
 // Home.jsx — Mobile Task Board
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+import { io } from 'socket.io-client';
+
+const socket = io(
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://m-tms.thedesigns.live',
+  { withCredentials: true }
+);
+
 const BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000'
   : 'https://m-tms.thedesigns.live';
@@ -656,7 +665,17 @@ const Home = () => {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchTasks(); }, []);
+useEffect(() => {
+    fetchTasks();
+
+    socket.on('update_tasks', () => {
+      fetchTasks();
+    });
+
+    return () => {
+      socket.off('update_tasks');
+    };
+  }, []);
 
  // ✅ ADD THESE TWO — put them right after your fetchTasks useCallback
 
