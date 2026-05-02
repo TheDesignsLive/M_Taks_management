@@ -12,7 +12,6 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ─── MULTER CONFIG ────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const dir = path.join(__dirname, '..', 'public', 'images');
@@ -37,7 +36,6 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.role) {
         return res.status(401).json({ success: false, message: 'Not authenticated. Please log in.' });
@@ -45,7 +43,6 @@ function requireAuth(req, res, next) {
     next();
 }
 
-// ─── HELPER: safe delete file ─────────────────────────────────────────────────
 function safeDeleteFile(filename) {
     if (!filename) return;
     try {
@@ -56,14 +53,12 @@ function safeDeleteFile(filename) {
     }
 }
 
-// ─── HELPER: get adminId based on session ────────────────────────────────────
 async function getAdminId(session) {
     if (session.role === 'admin') return session.adminId;
     const [rows] = await con.query('SELECT admin_id FROM users WHERE id=?', [session.userId]);
     return rows.length ? rows[0].admin_id : null;
 }
 
-// ─── HELPER: get control_type ────────────────────────────────────────────────
 async function getControlInfo(session) {
     if (session.role === 'admin') return { controlType: 'ADMIN', teamId: null };
     const [rows] = await con.query(
@@ -75,7 +70,7 @@ async function getControlInfo(session) {
 }
 
 // ════════════════════════════════════════════════════════════
-// GET /api/view_member  — fetch all members, roles, teams
+// GET /api/view_member
 // ════════════════════════════════════════════════════════════
 router.get('/', requireAuth, async (req, res) => {
     try {
@@ -136,7 +131,7 @@ router.get('/', requireAuth, async (req, res) => {
             users = userRows;
         }
 
-    return res.json({
+        return res.json({
             success: true,
             users,
             roles,
@@ -153,7 +148,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
-// POST /api/view_member/add  — add a new member
+// POST /api/view_member/add
 // ════════════════════════════════════════════════════════════
 router.post('/add', requireAuth, (req, res) => {
     upload.single('profile_pic')(req, res, async (uploadErr) => {
@@ -173,12 +168,10 @@ router.post('/add', requireAuth, (req, res) => {
                 if (profilePic) safeDeleteFile(profilePic);
                 return res.status(403).json({ success: false, message: 'Admin not found.' });
             }
-// ── CHECK: admin or owner → insert into users
-            //           any other user  → insert into member_requests
-            // Re-read control_type fresh from DB (don't trust stale session value)
-            const sessionRole = req.session.role; // 'admin' | 'owner' | 'user'
 
-            let freshControlType = req.session.control_type; // fallback
+            const sessionRole = req.session.role;
+
+            let freshControlType = req.session.control_type;
             if (req.session.userId) {
                 const [ctRows] = await con.query(
                     'SELECT r.control_type FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id=?',
@@ -195,7 +188,6 @@ router.post('/add', requireAuth, (req, res) => {
             const hashed = await bcrypt.hash(password, 10);
 
             if (canDirectInsert) {
-                // ── DIRECT INSERT INTO USERS ──────────────────────────────
                 const [existing] = await con.query('SELECT id FROM users WHERE email=?', [email]);
                 if (existing.length) {
                     if (profilePic) safeDeleteFile(profilePic);
@@ -207,13 +199,12 @@ router.post('/add', requireAuth, (req, res) => {
                     [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
                 );
 
-   if (req.io) req.io.emit('update_members');
-notifyDesktop('members');
+                if (req.io) req.io.emit('update_members');
+                notifyDesktop('members');
 
                 return res.json({ success: true, message: 'Member added successfully.' });
 
             } else {
-                // ── INSERT INTO MEMBER_REQUESTS ───────────────────────────
                 const [existing] = await con.query(
                     'SELECT id FROM member_requests WHERE email=? AND status="PENDING"', [email]
                 );
@@ -222,17 +213,17 @@ notifyDesktop('members');
                     return res.status(400).json({ success: false, message: 'A pending request for this email already exists.' });
                 }
 
-                const requestedBy = req.session.userId; // the user who is requesting
+                const requestedBy = req.session.userId;
 
                 await con.query(
                     'INSERT INTO member_requests (admin_id, role_id, requested_by, name, email, password, profile_pic, created_by, status) VALUES (?,?,?,?,?,?,?,?,?)',
                     [adminId, role_id, requestedBy, name.trim(), email.trim(), hashed, profilePic || null, requestedBy, 'PENDING']
                 );
 
-if (req.io) req.io.emit('update_members');
-notifyDesktop('members');
+                if (req.io) req.io.emit('update_member_requests');
+                notifyDesktop('members');
 
-            return res.json({ success: true, message: 'Member updated successfully.' });
+                return res.json({ success: true, message: 'Member request submitted. Awaiting admin approval.', isRequest: true });
             }
 
         } catch (err) {
@@ -247,7 +238,7 @@ notifyDesktop('members');
 });
 
 // ════════════════════════════════════════════════════════════
-// POST /api/view_member/edit/:id  — edit a member
+// POST /api/view_member/edit/:id
 // ════════════════════════════════════════════════════════════
 router.post('/edit/:id', requireAuth, (req, res) => {
     upload.single('profile_pic')(req, res, async (uploadErr) => {
@@ -297,6 +288,7 @@ router.post('/edit/:id', requireAuth, (req, res) => {
             }
 
             if (req.io) req.io.emit('update_members');
+            notifyDesktop('members');
 
             return res.json({ success: true, message: 'Member updated successfully.' });
         } catch (err) {
@@ -308,7 +300,7 @@ router.post('/edit/:id', requireAuth, (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
-// GET /api/view_member/suspend/:id  — toggle suspend/activate
+// GET /api/view_member/suspend/:id
 // ════════════════════════════════════════════════════════════
 router.get('/suspend/:id', requireAuth, async (req, res) => {
     try {
@@ -321,8 +313,8 @@ router.get('/suspend/:id', requireAuth, async (req, res) => {
         const newStatus = rows[0].status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         await con.query('UPDATE users SET status=? WHERE id=?', [newStatus, id]);
 
-if (req.io) req.io.emit('update_members');
-notifyDesktop('members');
+        if (req.io) req.io.emit('update_members');
+        notifyDesktop('members');
 
         const msg = newStatus === 'ACTIVE' ? 'Member activated successfully.' : 'Member suspended successfully.';
         return res.json({ success: true, message: msg, newStatus });
@@ -333,17 +325,16 @@ notifyDesktop('members');
 });
 
 // ════════════════════════════════════════════════════════════
-// GET /api/view_member/delete/:id  — delete a member
+// GET /api/view_member/delete/:id
 // ════════════════════════════════════════════════════════════
 router.get('/delete/:id', requireAuth, async (req, res) => {
     try {
         const adminId = await getAdminId(req.session);
         const { id } = req.params;
 
-       const [rows] = await con.query('SELECT profile_pic FROM users WHERE id=? AND admin_id=?', [id, adminId]);
+        const [rows] = await con.query('SELECT profile_pic FROM users WHERE id=? AND admin_id=?', [id, adminId]);
         if (!rows.length) return res.status(404).json({ success: false, message: 'Member not found.' });
 
-        // ── Re-read control_type fresh from DB ───────────────────────────
         const sessionRole = req.session.role;
         let freshControlType = req.session.control_type;
         if (req.session.userId) {
@@ -360,19 +351,16 @@ router.get('/delete/:id', requireAuth, async (req, res) => {
             freshControlType === 'OWNER';
 
         if (canDirectDelete) {
-            // ── DIRECT DELETE ─────────────────────────────────────────────
             safeDeleteFile(rows[0].profile_pic);
             await con.query('DELETE FROM users WHERE id=?', [id]);
 
- if (req.io) req.io.emit('update_members');
-notifyDesktop('members');
+            if (req.io) req.io.emit('update_members');
+            notifyDesktop('members');
 
             return res.json({ success: true, message: 'Member deleted successfully.' });
-} else {
-            // ── INSERT DELETE REQUEST INTO MEMBER_REQUESTS ────────────────
+        } else {
             const requestedBy = req.session.userId;
 
-            // Fetch full member data so we can copy it into the request row
             const [memberData] = await con.query(
                 'SELECT * FROM users WHERE id=? AND admin_id=?', [id, adminId]
             );
@@ -381,7 +369,6 @@ notifyDesktop('members');
             }
             const m = memberData[0];
 
-            // Check if a pending delete request already exists for this member
             const [existing] = await con.query(
                 'SELECT id FROM member_requests WHERE requested_by=? AND request_type="DELETE" AND status="PENDING" AND email=?',
                 [requestedBy, m.email]
@@ -397,7 +384,7 @@ notifyDesktop('members');
                 [adminId, m.role_id, requestedBy, m.name, m.email, m.password, m.profile_pic]
             );
 
-if (req.io) req.io.emit('member_request');
+            if (req.io) req.io.emit('member_request');
             if (req.io) req.io.emit('update_members');
             notifyDesktop('members');
 
