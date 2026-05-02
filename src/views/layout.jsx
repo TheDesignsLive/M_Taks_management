@@ -148,34 +148,40 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-const [activePage, setActivePage] = useState('home');
+const [activePage, setActivePage] = useState(() => {
+  // Read saved page immediately on first render — before any fetch
+  return localStorage.getItem('activePage') || 'home';
+});
+
+const [notifCount, setNotifCount] = useState(0);
+const [showLogoutModal, setShowLogoutModal] = useState(false);
+const [sessionRole, setSessionRole] = useState('');
+const [sessionControlType, setSessionControlType] = useState('');
+const [adminInfo, setAdminInfo] = useState(null);
+
+useEffect(() => {
+  fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.loggedIn) {
+        setSessionRole(d.role || '');
+        setSessionControlType(d.control_type || '');
+        if (d.role !== 'admin' && d.adminName) {
+          setAdminInfo({ name: d.adminName });
+        }
+        // Do NOT call setActivePage here — useState already read localStorage
+      } else {
+        // Logged out — clear saved page and go home
+        localStorage.removeItem('activePage');
+        setActivePage('home');
+      }
+    })
+    .catch(() => {});
+}, []);
 
 useEffect(() => {
   localStorage.setItem('activePage', activePage);
 }, [activePage]);
-  const [notifCount, setNotifCount] = useState(0);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-const [sessionRole, setSessionRole] = useState('');
-const [sessionControlType, setSessionControlType] = useState('');
-const [adminInfo, setAdminInfo] = useState(null);
-useEffect(() => {
-    fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        if (d.loggedIn) {
-          setSessionRole(d.role || '');
-          setSessionControlType(d.control_type || '');
-          if (d.role !== 'admin' && d.adminName) {
-            setAdminInfo({ name: d.adminName });
-          }
-          const saved = localStorage.getItem('activePage');
-          if (saved) setActivePage(saved);
-        } else {
-          localStorage.removeItem('activePage');
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const [taskOpen, setTaskOpen]       = useState(false);
   const [title, setTitle]             = useState('');
