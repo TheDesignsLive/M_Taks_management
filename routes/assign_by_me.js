@@ -1,6 +1,7 @@
 // routes/assign_by_me.js
 import express from 'express';
 import db from '../config/db.js'; // adjust path as needed
+import { notifyDesktop } from '../utils/notifyDesktop.js';
 
 const router = express.Router();
 
@@ -111,6 +112,7 @@ router.post('/update-status', requireAuth, async (req, res) => {
   try {
     await db.query('UPDATE tasks SET status=? WHERE id=?', [status, id]);
     if (req.io) req.io.emit('update_tasks');
+    notifyDesktop();
     res.json({ success: true });
   } catch (err) {
     console.error('[update-status]', err);
