@@ -106,19 +106,22 @@ router.post("/login", async (req, res) => {
             req.session.role = "admin";
             req.session.adminName = rows[0].name;
             req.session.control_type = "ADMIN";
-        } else {
+} else {
             req.session.userId = rows[0].id;
             req.session.adminId = rows[0].admin_id;
             req.session.role_id = rows[0].role_id;
             req.session.userName = rows[0].name;
-            req.session.control_type = rows[0].control_type; // ADMIN, PARTIAL, OWNER, etc.
+            req.session.control_type = rows[0].control_type;
             
-            // Set role string based on control_type or defaults
             if (rows[0].control_type === 'OWNER') {
                 req.session.role = "owner";
             } else {
                 req.session.role = "user";
             }
+
+            // Fetch and store admin name so user can assign tasks to admin
+            const [adminRows] = await con.query("SELECT name FROM admins WHERE id=?", [rows[0].admin_id]);
+            req.session.adminName = adminRows.length > 0 ? adminRows[0].name : null;
         }
         req.session.email = rows[0].email;
         // ================================================
