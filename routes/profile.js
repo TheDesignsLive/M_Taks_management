@@ -1,8 +1,7 @@
 // ============================================================
 //  routes/profile.js  —  Express Router (ESM) — MOBILE
-//  GET  /api/profile
-//  POST /api/profile/update-profile
-//  POST /api/profile/remove-picture
+//  ✅ FIX: Images are uploaded to DESKTOP server via its API
+//  so both desktop and mobile share the same image store
 // ============================================================
 
 import express from 'express';
@@ -10,29 +9,28 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import FormData from 'form-data';   // ✅ NEW: to forward image to desktop
+import fetch from 'node-fetch';     // ✅ NEW: to call desktop API
 import con from '../config/db.js';
 
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ✅ SHARED IMAGE FOLDER — same physical folder as desktop app on Hostinger
-// Desktop saves to:  /home/u213405511/nodejs/public/images/
-// Mobile now ALSO saves to the same folder — so both apps share one image store
-const SHARED_IMAGES_DIR = '/home/u213405511/nodejs/public/images';
+// ✅ Desktop server base URL — images will be saved here
+const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
 
-// ─── FILE UPLOAD CONFIG ──────────────────────────────────────────────────────
+// ✅ Temp folder on mobile server — image lands here first, then gets forwarded
+const TEMP_DIR = path.join(__dirname, '..', 'public', 'images');
+
+// ─── TEMP FILE UPLOAD CONFIG (mobile saves temporarily, then forwards) ───────
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // ✅ CHANGED: Save directly into desktop's shared images folder
-        if (!fs.existsSync(SHARED_IMAGES_DIR)) {
-            fs.mkdirSync(SHARED_IMAGES_DIR, { recursive: true });
-        }
-        cb(null, SHARED_IMAGES_DIR);
+        if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+        cb(null, TEMP_DIR);
     },
     filename: (req, file, cb) => {
         const ext  = path.extname(file.originalname).toLowerCase();
-        const safe = `profile_${Date.now()}${ext}`;
-        cb(null, safe);
+        cb(null, `profile_${Date.now()}${ext}`);
     },
 });
 
@@ -50,7 +48,7 @@ const upload = multer({
     },
 });
 
-// ─── AUTH MIDDLEWARE ─────────────────────────────────────────────────────────
+// ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.role) {
         return res.status(401).json({ success: false, message: 'Not authenticated. Please log in.' });
@@ -58,17 +56,50 @@ function requireAuth(req, res, next) {
     next();
 }
 
-// ─── HELPER: safe file delete from SHARED folder ─────────────────────────────
-function safeDeleteFile(filename) {
+// ─── HELPER: delete temp file on mobile ──────────────────────────────────────
+function deleteTempFile(filename) {
     if (!filename) return;
     try {
-        // ✅ CHANGED: Delete from shared images folder
-        const filePath = path.join(SHARED_IMAGES_DIR, filename);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+        const p = path.join(TEMP_DIR, filename);
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+    } catch (err) {
+        console.error('[Profile] Temp file delete error:', err.message);
+    }
+}
+
+// ─── HELPER: forward image to desktop server ─────────────────────────────────
+// ✅ Mobile uploads file to DESKTOP /profile/upload-image endpoint
+// Desktop saves it in its own public/images folder and returns the filename
+async function forwardImageToDesktop(localFilename, sessionCookie) {
+    try {
+        const filePath = path.join(TEMP_DIR, localFilename);
+        const form = new FormData();
+        form.append('profile_pic', fs.createReadStream(filePath), localFilename);
+
+        const response = await fetch(`${DESKTOP_BASE_URL}/profile/upload-image`, {
+            method: 'POST',
+            headers: {
+                ...form.getHeaders(),
+                'Cookie': sessionCookie || '',  // ✅ Pass session so desktop knows who is uploading
+            },
+            body: form,
+        });
+
+        const data = await response.json();
+
+        // ✅ Delete temp file from mobile after forwarding
+        deleteTempFile(localFilename);
+
+        if (data.success) {
+            return data.filename; // filename saved on desktop server
+        } else {
+            console.error('[Profile] Desktop upload failed:', data.message);
+            return null;
         }
     } catch (err) {
-        console.error('[Profile] File delete error:', err.message);
+        console.error('[Profile] forwardImageToDesktop error:', err.message);
+        deleteTempFile(localFilename);
+        return null;
     }
 }
 
@@ -99,8 +130,7 @@ router.get('/', requireAuth, async (req, res) => {
         else if (sessionRole === 'owner') {
             role = 'Admin';
             const [uRows] = await con.query(
-                `SELECT u.name, u.email, u.phone, u.profile_pic, u.admin_id
-                 FROM users u WHERE u.id = ?`,
+                `SELECT u.name, u.email, u.phone, u.profile_pic, u.admin_id FROM users u WHERE u.id = ?`,
                 [userId]
             );
             if (uRows.length) {
@@ -108,10 +138,7 @@ router.get('/', requireAuth, async (req, res) => {
                 email      = uRows[0].email       || '';
                 phone      = uRows[0].phone       || '';
                 profilePic = uRows[0].profile_pic  || null;
-                const [cRows] = await con.query(
-                    'SELECT company_name FROM admins WHERE id = ?',
-                    [uRows[0].admin_id]
-                );
+                const [cRows] = await con.query('SELECT company_name FROM admins WHERE id = ?', [uRows[0].admin_id]);
                 if (cRows.length) company = cRows[0].company_name || '';
             }
         }
@@ -119,9 +146,7 @@ router.get('/', requireAuth, async (req, res) => {
             role = 'User';
             const [uRows] = await con.query(
                 `SELECT u.name, u.email, u.phone, u.profile_pic, u.admin_id, r.role_name
-                 FROM users u
-                 LEFT JOIN roles r ON u.role_id = r.id
-                 WHERE u.id = ?`,
+                 FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.id = ?`,
                 [userId]
             );
             if (uRows.length) {
@@ -130,22 +155,17 @@ router.get('/', requireAuth, async (req, res) => {
                 phone        = uRows[0].phone       || '';
                 profilePic   = uRows[0].profile_pic  || null;
                 userRoleName = uRows[0].role_name   || '';
-                const [cRows] = await con.query(
-                    'SELECT company_name FROM admins WHERE id = ?',
-                    [uRows[0].admin_id]
-                );
+                const [cRows] = await con.query('SELECT company_name FROM admins WHERE id = ?', [uRows[0].admin_id]);
                 if (cRows.length) company = cRows[0].company_name || '';
             }
         }
 
         return res.json({
             success:      true,
-            name,
-            email,
+            name, email,
             phone:        phone   || '',
             company:      company || '',
-            role,
-            userRoleName,
+            role, userRoleName,
             profilePic:   profilePic || null,
             isAdmin:      sessionRole === 'admin' || sessionRole === 'owner',
             status:       'Active',
@@ -167,25 +187,33 @@ router.post('/update-profile', requireAuth, (req, res) => {
         }
 
         const { name, phone, company } = req.body;
-        const newPic    = req.file ? req.file.filename : null;
+        const tempFilename  = req.file ? req.file.filename : null; // temp file on mobile
         const { adminId, userId, role } = req.session;
 
         if (!name || !name.trim()) {
-            if (newPic) safeDeleteFile(newPic);
+            if (tempFilename) deleteTempFile(tempFilename);
             return res.status(400).json({ success: false, message: 'Name is required.' });
         }
 
         if (phone && phone.trim() && !/^\d{10}$/.test(phone.trim())) {
-            if (newPic) safeDeleteFile(newPic);
+            if (tempFilename) deleteTempFile(tempFilename);
             return res.status(400).json({ success: false, message: 'Enter a valid 10-digit phone number.' });
         }
 
         try {
+            // ✅ If image was uploaded, forward it to desktop server
+            let newPic = null;
+            if (tempFilename) {
+                const sessionCookie = req.headers.cookie || '';
+                newPic = await forwardImageToDesktop(tempFilename, sessionCookie);
+                if (!newPic) {
+                    return res.status(500).json({ success: false, message: 'Image upload to server failed. Please try again.' });
+                }
+            }
+
+            // ✅ Update DB with the filename returned by desktop server
             if (role === 'admin') {
                 if (newPic) {
-                    const [old] = await con.query('SELECT profile_pic FROM admins WHERE id = ?', [adminId]);
-                    // ✅ Delete old pic from shared folder
-                    if (old.length) safeDeleteFile(old[0].profile_pic);
                     await con.query(
                         'UPDATE admins SET name=?, phone=?, company_name=?, profile_pic=? WHERE id=?',
                         [name.trim(), phone?.trim() || '', company?.trim() || '', newPic, adminId]
@@ -197,12 +225,8 @@ router.post('/update-profile', requireAuth, (req, res) => {
                     );
                 }
                 req.session.adminName = name.trim();
-            }
-            else {
+            } else {
                 if (newPic) {
-                    const [old] = await con.query('SELECT profile_pic FROM users WHERE id = ?', [userId]);
-                    // ✅ Delete old pic from shared folder
-                    if (old.length) safeDeleteFile(old[0].profile_pic);
                     await con.query(
                         'UPDATE users SET name=?, phone=?, profile_pic=? WHERE id=?',
                         [name.trim(), phone?.trim() || '', newPic, userId]
@@ -223,11 +247,6 @@ router.post('/update-profile', requireAuth, (req, res) => {
                 }
             }
 
-            if (req.io) {
-                req.io.emit('update_session_name', { userId, adminId, newName: name.trim() });
-                req.io.emit('update_profiles', { userId, name: name.trim(), phone: phone?.trim() || '', company: company?.trim() || '', profilePic: newPic });
-            }
-
             return res.json({
                 success:    true,
                 name:       name.trim(),
@@ -238,7 +257,7 @@ router.post('/update-profile', requireAuth, (req, res) => {
 
         } catch (err) {
             console.error('[Profile UPDATE]', err);
-            if (newPic) safeDeleteFile(newPic);
+            if (tempFilename) deleteTempFile(tempFilename);
             return res.status(500).json({ success: false, message: 'Profile update failed. Please try again.' });
         }
     });
@@ -253,18 +272,28 @@ router.post('/remove-picture', requireAuth, async (req, res) => {
     const id    = role === 'admin' ? adminId  : userId;
 
     try {
-        const [rows] = await con.query(
-            `SELECT profile_pic, name FROM ${table} WHERE id = ?`,
-            [id]
-        );
+        const [rows] = await con.query(`SELECT profile_pic, name FROM ${table} WHERE id = ?`, [id]);
 
         if (!rows.length) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
         if (rows[0].profile_pic) {
-            // ✅ Delete from shared folder
-            safeDeleteFile(rows[0].profile_pic);
+            // ✅ Tell desktop server to delete the file from its folder
+            try {
+                await fetch(`${DESKTOP_BASE_URL}/profile/delete-image`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cookie': req.headers.cookie || '',
+                    },
+                    body: JSON.stringify({ filename: rows[0].profile_pic }),
+                });
+            } catch (e) {
+                console.error('[Profile] Desktop delete-image failed:', e.message);
+                // Continue anyway — update DB even if file delete fails
+            }
+
             await con.query(`UPDATE ${table} SET profile_pic = NULL WHERE id = ?`, [id]);
         }
 

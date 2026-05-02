@@ -20,6 +20,8 @@ function useToast() {
 // Since mobile server now serves images from the shared folder via /public/images/
 // the same filename works on both desktop (/images/file.jpg) and mobile (/public/images/file.jpg)
 
+// Profile.jsx — replace ONLY the Avatar function
+
 function Avatar({ profilePic, name, size = 88 }) {
   const [imgError, setImgError] = useState(false);
   const letter = name ? name.charAt(0).toUpperCase() : '?';
@@ -27,7 +29,8 @@ function Avatar({ profilePic, name, size = 88 }) {
   if (profilePic && !imgError) {
     return (
       <img
-        src={`${BASE_URL}/public/images/${profilePic}`}  // ✅ CHANGED: was hardcoded to tms.thedesigns.live
+        // ✅ Always load from DESKTOP server — that's where images physically live
+        src={`https://tms.thedesigns.live/images/${profilePic}`}
         alt={name}
         onError={() => setImgError(true)}
         style={{
