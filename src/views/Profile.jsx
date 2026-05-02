@@ -1,6 +1,6 @@
 // Profile.jsx  Updated to Teal & Black/Gray Theme
 import React, { useState, useRef, useEffect } from 'react';
-import { io as socketIO } from 'socket.io-client';
+
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 import FormData from 'form-data';   // ✅ NEW: to forward image to desktop
 import fetch from 'node-fetch';     // ✅ NEW: to call desktop API
 import con from '../config/db.js';
-import { notifyDesktop } from '../utils/notifyDesktop.js';
+
 
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
