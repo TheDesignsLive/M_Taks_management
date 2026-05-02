@@ -552,7 +552,7 @@ const Layout = () => {
                 Confirm Logout
               </div>
               <div style={{ fontSize: 13, color: '#aaa', marginBottom: 22, lineHeight: 1.6 }}>
-                Are you sure you want to destroy your session and exit?
+                Are you sure you want to logout from this Account?
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button style={s.logoutCancelBtn} onClick={() => setShowLogoutModal(false)}>Cancel</button>
