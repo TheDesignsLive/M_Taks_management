@@ -21,6 +21,7 @@ import path from 'path';                          // ✅ NEW: needed for shared 
 import { fileURLToPath } from 'url';              // ✅ NEW: needed for __dirname in ESM
 import { createServer } from 'http';           // ✅ NEW
 import { Server as SocketIO } from 'socket.io'; // ✅ NEW
+import { notifyDesktop } from './utils/notifyDesktop.js'; // ✅ NEW: import the desktop notifier
 
 
 
