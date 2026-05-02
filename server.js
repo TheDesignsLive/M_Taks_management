@@ -90,6 +90,21 @@ app.use('/public', express.static('public'));
 app.get('/health', (req, res) => res.send("Backend is 100% OK"));
 app.get('/', (req, res) => res.send("Server is running."));
 
+// ✅ Desktop pings this when a task changes → broadcast to mobile clients
+app.post('/api/notify-task-update', (req, res) => {
+    const secret = req.headers['x-mobile-secret'];
+    if (secret !== 'tms_mobile_bridge_2026') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const source = req.headers['x-source'];
+    if (source !== 'desktop') {
+        return res.status(400).json({ success: false, message: 'Bad source' });
+    }
+    io.emit('update_tasks');
+    console.log('[Mobile] 🔔 task update broadcast triggered by desktop');
+    return res.json({ success: true });
+});
+
 // ✅ CHANGE app.listen → httpServer.listen
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, "0.0.0.0", () => {
