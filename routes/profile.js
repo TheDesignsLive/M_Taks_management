@@ -70,20 +70,41 @@ function deleteTempFile(filename) {
 // ─── HELPER: forward image to desktop server ─────────────────────────────────
 // ✅ Mobile uploads file to DESKTOP /profile/upload-image endpoint
 // Desktop saves it in its own public/images folder and returns the filename
+// ─── HELPER: forward image to desktop server ─────────────────────────────────
 async function forwardImageToDesktop(localFilename, sessionCookie) {
     try {
         const filePath = path.join(TEMP_DIR, localFilename);
+
+        // ✅ Check file actually exists before trying to forward
+        if (!fs.existsSync(filePath)) {
+            console.error('[Profile] Temp file not found:', filePath);
+            return null;
+        }
+
         const form = new FormData();
         form.append('profile_pic', fs.createReadStream(filePath), localFilename);
+
+        console.log('[Mobile] Forwarding image to desktop:', localFilename);
 
         const response = await fetch(`${DESKTOP_BASE_URL}/profile/upload-image`, {
             method: 'POST',
             headers: {
                 ...form.getHeaders(),
-                'Cookie': sessionCookie || '',  // ✅ Pass session so desktop knows who is uploading
+                // ✅ CRITICAL: Send secret token — desktop checks this
+                // Also prevents the mobile-redirect middleware from redirecting this call
+                'x-mobile-secret': 'tms_mobile_bridge_2026',
             },
             body: form,
         });
+
+        // ✅ Check if response is actually JSON before parsing
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('[Mobile] Desktop returned non-JSON:', text.substring(0, 200));
+            deleteTempFile(localFilename);
+            return null;
+        }
 
         const data = await response.json();
 
@@ -91,13 +112,14 @@ async function forwardImageToDesktop(localFilename, sessionCookie) {
         deleteTempFile(localFilename);
 
         if (data.success) {
-            return data.filename; // filename saved on desktop server
+            console.log('[Mobile] Image forwarded successfully:', data.filename);
+            return data.filename;
         } else {
-            console.error('[Profile] Desktop upload failed:', data.message);
+            console.error('[Mobile] Desktop upload failed:', data.message);
             return null;
         }
     } catch (err) {
-        console.error('[Profile] forwardImageToDesktop error:', err.message);
+        console.error('[Mobile] forwardImageToDesktop error:', err.message);
         deleteTempFile(localFilename);
         return null;
     }
@@ -281,11 +303,12 @@ router.post('/remove-picture', requireAuth, async (req, res) => {
         if (rows[0].profile_pic) {
             // ✅ Tell desktop server to delete the file from its folder
             try {
+                    // In the remove-picture route, replace the fetch call:
                 await fetch(`${DESKTOP_BASE_URL}/profile/delete-image`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Cookie': req.headers.cookie || '',
+                        'x-mobile-secret': 'tms_mobile_bridge_2026', // ✅ ADD THIS
                     },
                     body: JSON.stringify({ filename: rows[0].profile_pic }),
                 });
