@@ -1,5 +1,6 @@
 // Profile.jsx  Updated to Teal & Black/Gray Theme
 import React, { useState, useRef, useEffect } from 'react';
+import { io as socketIO } from 'socket.io-client';
 
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -85,9 +86,26 @@ export default function Profile() {
   const fileRef = useRef(null);
   const { toast, showToast } = useToast();
 
-  useEffect(() => {
+useEffect(() => {
+  const socket = socketIO(BASE_URL, {
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+  });
+  socket.on('update_profile', () => {
     fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
-      .then(async r => {
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setProfile(d);
+          setEditName(d.name || '');
+          setEditPhone(d.phone || '');
+          setEditCompany(d.company || '');
+        }
+      })
+      .catch(() => {});
+  });
+  return () => { socket.disconnect(); };
+}, []);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
