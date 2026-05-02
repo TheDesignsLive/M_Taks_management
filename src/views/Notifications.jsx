@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
+
+// 🟢 Desktop Server (Hub) se connect karo
+const socket = io("https://tms.thedesigns.live", { withCredentials: true });
 
 const BASE_URL =
   window.location.hostname === "localhost"
@@ -85,7 +89,37 @@ const Notifications = () => {
   const [form, setForm] = useState({ title: "", desc: "", teamId: "0", file: null });
 useEffect(() => {
     fetchNotifications();
-  }, []);
+
+    // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
+    socket.on('new_announcement', (newAnn) => {
+        setData(prev => ({
+            ...prev,
+            announcements: [newAnn, ...prev.announcements]
+        }));
+    });
+
+    socket.on('delete_announcement', (deletedId) => {
+        setData(prev => ({
+            ...prev,
+            announcements: prev.announcements.filter(a => a.id != deletedId)
+        }));
+    });
+
+    socket.on('edit_announcement', (updatedData) => {
+        setData(prev => ({
+            ...prev,
+            announcements: prev.announcements.map(a => 
+                a.id == updatedData.id ? { ...a, ...updatedData } : a
+            )
+        }));
+    });
+
+    return () => {
+        socket.off('new_announcement');
+        socket.off('delete_announcement');
+        socket.off('edit_announcement');
+    };
+}, []);
 
   function onTouchStart(e) { swipeStartX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
