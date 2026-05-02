@@ -20,7 +20,7 @@ function useToast() {
 const PRIORITY_COLOR = {
   HIGH:   { border: '#ff4d6d', bg: 'rgba(255,77,109,0.15)', text: '#ff4d6d' },
   MEDIUM: { border: '#fbbf24', bg: 'rgba(251,191,36,0.15)', text: '#fbbf24' },
-  LOW:    { border: '#0F8989', bg: 'rgba(15,137,137,0.15)', text: '#14b8a6' },
+  LOW:    { border: '#3b82f6', bg: 'rgba(59,130,246,0.15)', text: '#3b82f6' },
 };
 
 // ─── FORMAT DATE ─────────────────────────────────────────────────────────────
