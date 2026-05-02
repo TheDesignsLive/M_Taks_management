@@ -87,6 +87,26 @@ export default function Profile() {
   const { toast, showToast } = useToast();
 
 useEffect(() => {
+  fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
+    .then(async r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(d => {
+      if (d.success) {
+        setProfile(d);
+        setEditName(d.name || '');
+        setEditPhone(d.phone || '');
+        setEditCompany(d.company || '');
+      } else {
+        setFetchError(d.message || 'Failed to load profile.');
+      }
+    })
+    .catch(() => setFetchError('Network error. Please check your connection.'))
+    .finally(() => setLoading(false));
+}, []);
+
+useEffect(() => {
   const socket = socketIO(BASE_URL, {
     withCredentials: true,
     transports: ['websocket', 'polling'],
@@ -106,22 +126,6 @@ useEffect(() => {
   });
   return () => { socket.disconnect(); };
 }, []);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(d => {
-        if (d.success) {
-          setProfile(d);
-          setEditName(d.name || '');
-          setEditPhone(d.phone || '');
-          setEditCompany(d.company || '');
-        } else {
-          setFetchError(d.message || 'Failed to load profile.');
-        }
-      })
-      .catch(() => setFetchError('Network error. Please check your connection.'))
-      .finally(() => setLoading(false));
-  }, []);
 
   function openEdit() {
     setEditName(profile.name || '');
