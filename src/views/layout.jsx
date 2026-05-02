@@ -157,16 +157,19 @@ useEffect(() => {
 }, [activePage]);
   const [notifCount, setNotifCount] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [sessionRole, setSessionRole] = useState('');
-  const [sessionControlType, setSessionControlType] = useState('');
-
-  useEffect(() => {
+const [sessionRole, setSessionRole] = useState('');
+const [sessionControlType, setSessionControlType] = useState('');
+const [adminInfo, setAdminInfo] = useState(null);
+useEffect(() => {
     fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
         if (d.loggedIn) {
           setSessionRole(d.role || '');
           setSessionControlType(d.control_type || '');
+          if (d.role !== 'admin' && d.adminName) {
+            setAdminInfo({ name: d.adminName });
+          }
         }
       })
       .catch(() => {});
@@ -510,7 +513,11 @@ useEffect(() => {
               <FixedPortal rect={assignRect} width={220}>
                 <div className="atb-drop-portal">
                   <div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}><span>👤</span><span style={{flex:1}}>Myself</span>{assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}</div>
-                  <div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}><span>👥</span><span style={{flex:1}}>All Members</span>{assignTo === 'all' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+                  {sessionRole !== 'admin' && adminInfo && (
+  <div className="atb-drop-item" onClick={() => selectAssign('admin', `${adminInfo.name} (Admin)`)}><span>👑</span><span style={{flex:1}}>{adminInfo.name} (Admin)</span>{assignTo === 'admin' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+)}
+<div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}><span>👥</span><span style={{flex:1}}>All Members</span>{assignTo === 'all' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+
                   {teams.length > 0 && <div className="atb-drop-sep"/>}
                   {teams.map(team => (
                     <div key={team.id}>
