@@ -63,14 +63,15 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         const { title, description, role_id } = req.body;
         const [result] = await con.query("INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)", [req.session.adminId, (req.session.role==='admin'?req.session.adminId:req.session.userId), req.session.role.toUpperCase(), role_id, title, description, (req.file?req.file.filename:null)]);
         
-        fetch('https://tms.thedesigns.live/profile/upload-image', { // Desktop Hub API
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': 'tms_mobile_bridge_2026' },
-             body: JSON.stringify({ 
-                 bridge_type: 'ANNOUNCEMENT_EMIT', 
-                 announcement_id: result.insertId 
-             })
-        }).catch(err => console.log("Bridge notification failed", err.message));
+        // Database insert ke thik niche ye fetch update kar:
+fetch('https://tms.thedesigns.live/api/notify-announcement', { 
+     method: 'POST',
+     headers: { 
+         'Content-Type': 'application/json', 
+         'x-mobile-secret': 'tms_mobile_bridge_2026' 
+     },
+     body: JSON.stringify({ announcement_id: result.insertId })
+}).catch(err => console.log("Signal failed", err.message));
         
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
