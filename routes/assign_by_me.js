@@ -207,7 +207,8 @@ router.post('/update-assignee', requireAuth, async (req, res) => {
       );
     }
 
-    if (req.io) req.io.emit('update_tasks');
+if (req.io) req.io.emit('update_tasks');
+    notifyDesktop();
     res.json({ success: true });
   } catch (err) {
     console.error('[update-assignee]', err);
@@ -220,6 +221,7 @@ router.post('/delete-task/:id', requireAuth, async (req, res) => {
   try {
     await db.query('DELETE FROM tasks WHERE id=?', [req.params.id]);
     if (req.io) req.io.emit('update_tasks');
+    notifyDesktop();
     res.json({ success: true });
   } catch (err) {
     console.error('[delete-task]', err);
@@ -248,6 +250,7 @@ router.post('/delete-all-completed', requireAuth, async (req, res) => {
       );
     }
     if (req.io) req.io.emit('update_tasks');
+    notifyDesktop();
     res.json({ success: true });
   } catch (err) {
     console.error('[delete-all-completed]', err);
@@ -274,6 +277,7 @@ router.post('/edit-task', requireAuth, async (req, res) => {
   try {
     await db.query(`UPDATE tasks SET ${fields.join(', ')} WHERE id=?`, values);
     if (req.io) req.io.emit('update_tasks');
+    notifyDesktop();
     res.json({ success: true });
   } catch (err) {
     console.error('[edit-task]', err);
