@@ -148,9 +148,7 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-const [activePage, setActivePage] = useState(() => {
-  return localStorage.getItem('activePage') || 'home';
-});
+const [activePage, setActivePage] = useState('home');
 
 useEffect(() => {
   localStorage.setItem('activePage', activePage);
@@ -170,6 +168,10 @@ useEffect(() => {
           if (d.role !== 'admin' && d.adminName) {
             setAdminInfo({ name: d.adminName });
           }
+          const saved = localStorage.getItem('activePage');
+          if (saved) setActivePage(saved);
+        } else {
+          localStorage.removeItem('activePage');
         }
       })
       .catch(() => {});
@@ -326,8 +328,9 @@ useEffect(() => {
         credentials: 'include',
       });
       const data = await res.json();
-      if (data.status === 'success') {
-        window.location.href = '/';
+  if (data.status === 'success') {
+  localStorage.removeItem('activePage');
+  window.location.href = '/';
       } else {
         alert('Logout failed. Please try again.');
       }
