@@ -10,6 +10,7 @@ export function notifyDesktop() {
         headers: {
             'Content-Type': 'application/json',
             'x-mobile-secret': MOBILE_SECRET,
+            'x-source': 'mobile',           // ✅ NEW: identify who sent this
         },
         body: JSON.stringify({ event: 'update_tasks' }),
     })
