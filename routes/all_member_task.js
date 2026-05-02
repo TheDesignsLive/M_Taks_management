@@ -111,13 +111,10 @@ router.get('/data', async (req, res) => {
         }
 
         // ================= TASK FETCH =================
-        let taskQuery = `
+let taskQuery = `
             SELECT t.*, 
             CASE 
                 WHEN t.status = 'COMPLETED' THEN 'COMPLETED'
-                WHEN t.assigned_to = 0 AND (t.who_assigned = 'user' OR t.who_assigned = 'owner') THEN 'OTHERS'
-                WHEN t.assigned_to = 0 AND t.who_assigned = 'admin' THEN t.section
-                WHEN t.assigned_to != t.assigned_by THEN 'OTHERS'
                 ELSE t.section
             END AS computed_section,
             CASE 
