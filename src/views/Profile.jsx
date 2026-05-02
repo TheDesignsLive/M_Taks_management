@@ -15,13 +15,19 @@ function useToast() {
   return { toast, showToast };
 }
 
+// Profile.jsx — replace ONLY this Avatar function (around line 20)
+// ✅ CHANGED: Use BASE_URL instead of hardcoded desktop URL
+// Since mobile server now serves images from the shared folder via /public/images/
+// the same filename works on both desktop (/images/file.jpg) and mobile (/public/images/file.jpg)
+
 function Avatar({ profilePic, name, size = 88 }) {
   const [imgError, setImgError] = useState(false);
   const letter = name ? name.charAt(0).toUpperCase() : '?';
+
   if (profilePic && !imgError) {
     return (
       <img
-       src={`https://tms.thedesigns.live/public/images/${profilePic}`}
+        src={`${BASE_URL}/public/images/${profilePic}`}  // ✅ CHANGED: was hardcoded to tms.thedesigns.live
         alt={name}
         onError={() => setImgError(true)}
         style={{
@@ -31,6 +37,7 @@ function Avatar({ profilePic, name, size = 88 }) {
       />
     );
   }
+
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',

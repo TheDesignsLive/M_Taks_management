@@ -1,10 +1,8 @@
 // ============================================================
-//  routes/profile.js  —  Express Router (ESM)
-//  Matches server.js import style & /api/profile base path
-//
-//  GET  /api/profile                → returns JSON profile data
-//  POST /api/profile/update-profile → update name, phone, company, pic
-//  POST /api/profile/remove-picture → remove profile picture
+//  routes/profile.js  —  Express Router (ESM) — MOBILE
+//  GET  /api/profile
+//  POST /api/profile/update-profile
+//  POST /api/profile/remove-picture
 // ============================================================
 
 import express from 'express';
@@ -17,12 +15,19 @@ import con from '../config/db.js';
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// ✅ SHARED IMAGE FOLDER — same physical folder as desktop app on Hostinger
+// Desktop saves to:  /home/u213405511/nodejs/public/images/
+// Mobile now ALSO saves to the same folder — so both apps share one image store
+const SHARED_IMAGES_DIR = '/home/u213405511/nodejs/public/images';
+
 // ─── FILE UPLOAD CONFIG ──────────────────────────────────────────────────────
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', 'public', 'images');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
+        // ✅ CHANGED: Save directly into desktop's shared images folder
+        if (!fs.existsSync(SHARED_IMAGES_DIR)) {
+            fs.mkdirSync(SHARED_IMAGES_DIR, { recursive: true });
+        }
+        cb(null, SHARED_IMAGES_DIR);
     },
     filename: (req, file, cb) => {
         const ext  = path.extname(file.originalname).toLowerCase();
@@ -53,11 +58,12 @@ function requireAuth(req, res, next) {
     next();
 }
 
-// ─── HELPER: safe file delete ────────────────────────────────────────────────
+// ─── HELPER: safe file delete from SHARED folder ─────────────────────────────
 function safeDeleteFile(filename) {
     if (!filename) return;
     try {
-        const filePath = path.join(__dirname, '..', 'public', 'images', filename);
+        // ✅ CHANGED: Delete from shared images folder
+        const filePath = path.join(SHARED_IMAGES_DIR, filename);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
@@ -70,13 +76,12 @@ function safeDeleteFile(filename) {
 //  GET /api/profile
 // ════════════════════════════════════════════════════════════
 router.get('/', requireAuth, async (req, res) => {
-    const { adminId, role: sessionRole, userId, role_id } = req.session;
+    const { adminId, role: sessionRole, userId } = req.session;
 
     try {
         let name = '', email = '', phone = '', company = '',
             role = '', userRoleName = '', profilePic = null;
 
-        // ── Admin ──
         if (sessionRole === 'admin') {
             role = 'Admin';
             const [rows] = await con.query(
@@ -84,14 +89,13 @@ router.get('/', requireAuth, async (req, res) => {
                 [adminId]
             );
             if (rows.length) {
-                name       = rows[0].name       || '';
-                email      = rows[0].email      || '';
-                phone      = rows[0].phone      || '';
+                name       = rows[0].name        || '';
+                email      = rows[0].email       || '';
+                phone      = rows[0].phone       || '';
                 company    = rows[0].company_name || '';
-                profilePic = rows[0].profile_pic || null;
+                profilePic = rows[0].profile_pic  || null;
             }
         }
-        // ── Owner (user with admin-level access) ──
         else if (sessionRole === 'owner') {
             role = 'Admin';
             const [uRows] = await con.query(
@@ -100,10 +104,10 @@ router.get('/', requireAuth, async (req, res) => {
                 [userId]
             );
             if (uRows.length) {
-                name       = uRows[0].name       || '';
-                email      = uRows[0].email      || '';
-                phone      = uRows[0].phone      || '';
-                profilePic = uRows[0].profile_pic || null;
+                name       = uRows[0].name        || '';
+                email      = uRows[0].email       || '';
+                phone      = uRows[0].phone       || '';
+                profilePic = uRows[0].profile_pic  || null;
                 const [cRows] = await con.query(
                     'SELECT company_name FROM admins WHERE id = ?',
                     [uRows[0].admin_id]
@@ -111,7 +115,6 @@ router.get('/', requireAuth, async (req, res) => {
                 if (cRows.length) company = cRows[0].company_name || '';
             }
         }
-        // ── Normal User ──
         else {
             role = 'User';
             const [uRows] = await con.query(
@@ -122,11 +125,11 @@ router.get('/', requireAuth, async (req, res) => {
                 [userId]
             );
             if (uRows.length) {
-                name         = uRows[0].name       || '';
-                email        = uRows[0].email      || '';
-                phone        = uRows[0].phone      || '';
-                profilePic   = uRows[0].profile_pic || null;
-                userRoleName = uRows[0].role_name  || '';
+                name         = uRows[0].name        || '';
+                email        = uRows[0].email       || '';
+                phone        = uRows[0].phone       || '';
+                profilePic   = uRows[0].profile_pic  || null;
+                userRoleName = uRows[0].role_name   || '';
                 const [cRows] = await con.query(
                     'SELECT company_name FROM admins WHERE id = ?',
                     [uRows[0].admin_id]
@@ -167,23 +170,21 @@ router.post('/update-profile', requireAuth, (req, res) => {
         const newPic    = req.file ? req.file.filename : null;
         const { adminId, userId, role } = req.session;
 
-        // Validate required fields
         if (!name || !name.trim()) {
-            if (newPic) safeDeleteFile(newPic); // clean up uploaded file
+            if (newPic) safeDeleteFile(newPic);
             return res.status(400).json({ success: false, message: 'Name is required.' });
         }
 
-        // Validate phone if provided
         if (phone && phone.trim() && !/^\d{10}$/.test(phone.trim())) {
             if (newPic) safeDeleteFile(newPic);
             return res.status(400).json({ success: false, message: 'Enter a valid 10-digit phone number.' });
         }
 
         try {
-            // ── Admin ──
             if (role === 'admin') {
                 if (newPic) {
                     const [old] = await con.query('SELECT profile_pic FROM admins WHERE id = ?', [adminId]);
+                    // ✅ Delete old pic from shared folder
                     if (old.length) safeDeleteFile(old[0].profile_pic);
                     await con.query(
                         'UPDATE admins SET name=?, phone=?, company_name=?, profile_pic=? WHERE id=?',
@@ -197,10 +198,10 @@ router.post('/update-profile', requireAuth, (req, res) => {
                 }
                 req.session.adminName = name.trim();
             }
-            // ── Normal User / Owner ──
             else {
                 if (newPic) {
                     const [old] = await con.query('SELECT profile_pic FROM users WHERE id = ?', [userId]);
+                    // ✅ Delete old pic from shared folder
                     if (old.length) safeDeleteFile(old[0].profile_pic);
                     await con.query(
                         'UPDATE users SET name=?, phone=?, profile_pic=? WHERE id=?',
@@ -214,7 +215,6 @@ router.post('/update-profile', requireAuth, (req, res) => {
                 }
                 req.session.userName = name.trim();
 
-                // Owner can also update company in admin record
                 if (role === 'owner' && company !== undefined) {
                     await con.query(
                         'UPDATE admins SET company_name=? WHERE id=?',
@@ -223,7 +223,6 @@ router.post('/update-profile', requireAuth, (req, res) => {
                 }
             }
 
-            // Emit socket events if io is available
             if (req.io) {
                 req.io.emit('update_session_name', { userId, adminId, newName: name.trim() });
                 req.io.emit('update_profiles', { userId, name: name.trim(), phone: phone?.trim() || '', company: company?.trim() || '', profilePic: newPic });
@@ -239,7 +238,7 @@ router.post('/update-profile', requireAuth, (req, res) => {
 
         } catch (err) {
             console.error('[Profile UPDATE]', err);
-            if (newPic) safeDeleteFile(newPic); // rollback uploaded file on DB error
+            if (newPic) safeDeleteFile(newPic);
             return res.status(500).json({ success: false, message: 'Profile update failed. Please try again.' });
         }
     });
@@ -264,6 +263,7 @@ router.post('/remove-picture', requireAuth, async (req, res) => {
         }
 
         if (rows[0].profile_pic) {
+            // ✅ Delete from shared folder
             safeDeleteFile(rows[0].profile_pic);
             await con.query(`UPDATE ${table} SET profile_pic = NULL WHERE id = ?`, [id]);
         }

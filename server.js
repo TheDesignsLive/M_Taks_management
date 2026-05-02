@@ -1,3 +1,4 @@
+// server.js- mobile version
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
@@ -16,6 +17,15 @@ import teams from './routes/view_teams.js';
 import roles from './routes/view_roles.js';
 import Home from './routes/home.js';
 import AllMemberTask from './routes/all_member_task.js';
+import path from 'path';                          // ✅ NEW: needed for shared path
+import { fileURLToPath } from 'url';              // ✅ NEW: needed for __dirname in ESM
+
+
+
+
+// ✅ NEW: __dirname fix for ESM modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 const app = express();
 
@@ -62,6 +72,16 @@ app.use('/api/home', Home);
 app.use('/api/all-member-tasks', AllMemberTask);
 // app.use('/api/sent-mail', sent_mail);
 app.use(express.static('dist'));
+
+
+
+
+// ✅ NEW: Serve images from DESKTOP app's shared images folder
+// Both apps now read/write from the SAME folder on Hostinger
+const SHARED_IMAGES_PATH = '/home/u213405511/nodejs/public/images';
+app.use('/public/images', express.static(SHARED_IMAGES_PATH));
+
+
 app.use('/public', express.static('public'));
 
 app.get('/health', (req, res) => {
