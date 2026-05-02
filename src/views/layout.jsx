@@ -148,13 +148,14 @@ function PillAnchor({ children }) { return children; }
 // ─── MAIN LAYOUT COMPONENT ───────────────────────────────────────────────────
 const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-const [activePage, setActivePage] = useState(() => {
+ const [activePage, setActivePage] = useState(() => {
   return localStorage.getItem('tms_active_page') || 'home';
 });
   const [notifCount, setNotifCount] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [sessionRole, setSessionRole] = useState('');
+const [sessionRole, setSessionRole] = useState('');
   const [sessionControlType, setSessionControlType] = useState('');
+  const [sessionAdminName, setSessionAdminName] = useState(''); // ✅ NEW
 
   useEffect(() => {
     fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
@@ -163,6 +164,7 @@ const [activePage, setActivePage] = useState(() => {
         if (d.loggedIn) {
           setSessionRole(d.role || '');
           setSessionControlType(d.control_type || '');
+          setSessionAdminName(d.adminName || '');       // ✅ NEW
         }
       })
       .catch(() => {});
@@ -381,7 +383,7 @@ const [activePage, setActivePage] = useState(() => {
      <div
               key={key}
               style={activePage === key ? s.activeLink : s.navItem}
-             onClick={() => { setActivePage(key); localStorage.setItem('tms_active_page', key); toggleDrawer(); }}
+              onClick={() => { setActivePage(key); localStorage.setItem('tms_active_page', key); toggleDrawer(); }}
             >
               <i className={`fa-solid ${icon} nav-icon`}></i>
               <span style={{marginLeft: '10px'}}>{label}</span>
@@ -505,7 +507,10 @@ const [activePage, setActivePage] = useState(() => {
             {showAssign && assignRect && (
               <FixedPortal rect={assignRect} width={220}>
                 <div className="atb-drop-portal">
-                  <div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}><span>👤</span><span style={{flex:1}}>Myself</span>{assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+<div className="atb-drop-item" onClick={() => selectAssign('self', 'Myself')}><span>👤</span><span style={{flex:1}}>Myself</span>{assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+                  {sessionRole !== 'admin' && sessionAdminName && (
+                    <div className="atb-drop-item" onClick={() => selectAssign('admin', `${sessionAdminName} (Admin)`)}><span>👑</span><span style={{flex:1}}>{sessionAdminName} <span style={{color:'#0F8989', fontSize:11}}>(Admin)</span></span>{assignTo === 'admin' && <span style={{color:'#0F8989'}}>✓</span>}</div>
+                  )}
                   <div className="atb-drop-item" onClick={() => selectAssign('all', 'All Members')}><span>👥</span><span style={{flex:1}}>All Members</span>{assignTo === 'all' && <span style={{color:'#0F8989'}}>✓</span>}</div>
                   {teams.length > 0 && <div className="atb-drop-sep"/>}
                   {teams.map(team => (

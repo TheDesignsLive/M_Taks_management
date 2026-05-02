@@ -138,6 +138,8 @@ router.get("/session", (req, res) => {
             loggedIn: true, 
             role: req.session.role,
             control_type: req.session.control_type,
+            adminName: req.session.adminName || null,  // ✅ NEW
+            userId: req.session.userId || null,         // ✅ NEW
             redirect: '/home' 
         });
     }
