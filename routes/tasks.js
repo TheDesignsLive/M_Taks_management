@@ -76,7 +76,8 @@ router.post('/add-task', async (req, res) => {
       if (rows.length === 0) return res.status(400).json({ success: false, message: 'User not found' });
       admin_id = rows[0].admin_id;
     }
-let finalAssignedTo = assignedTo;
+
+    let finalAssignedTo = assignedTo;
     if (req.session.role === 'admin') {
       if (parseInt(assignedTo) === req.session.adminId) finalAssignedTo = 0;
     } else {
@@ -85,17 +86,9 @@ let finalAssignedTo = assignedTo;
 
     const finalDate = date || new Date().toISOString().slice(0, 10);
 
-    // ✅ FIX: Use original assignedTo for section logic, not finalAssignedTo
-    // When user assigns to admin → assignedTo='admin' → section=OTHERS (correct)
-    // When user assigns to self  → assignedTo='self'  → section=TASK   (correct)
     let sectionValue = 'TASK';
-    if (req.session.role === 'admin') {
-      // Admin: OTHERS if assigned to someone else (not self/0)
-      if (assignedTo !== 'self' && parseInt(finalAssignedTo) !== 0) sectionValue = 'OTHERS';
-    } else {
-      // User: OTHERS if assigned to admin OR to another user (not self)
-      if (assignedTo !== 'self') sectionValue = 'OTHERS';
-    }
+    if (req.session.role === 'admin' && parseInt(finalAssignedTo) !== 0) sectionValue = 'OTHERS';
+    if (req.session.role !== 'admin' && parseInt(finalAssignedTo) !== parseInt(req.session.userId)) sectionValue = 'OTHERS';
 
     // TEAM ASSIGNMENT
     if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
