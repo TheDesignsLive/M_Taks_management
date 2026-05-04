@@ -1,7 +1,10 @@
 //notifications.js mobile
 import express from 'express';
 import fs from 'fs';
-import FormData from 'form-data';
+import path from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const FormData = require('form-data');
 import con from '../config/db.js';
 import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
@@ -72,10 +75,14 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         let desktopFilename = null;
 if (req.file) {
             try {
+                // Read file into buffer BEFORE creating stream — avoids stream timing issues
+                const fileBuffer = fs.readFileSync(req.file.path);
+                
                 const formData = new FormData();
-                formData.append('attachment', fs.createReadStream(req.file.path), {
+                formData.append('attachment', fileBuffer, {
                     filename: req.file.filename,
                     contentType: req.file.mimetype,
+                    knownLength: fileBuffer.length,
                 });
 
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
@@ -86,17 +93,22 @@ if (req.file) {
                     },
                     body: formData,
                 });
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) {
-                    desktopFilename = uploadData.filename;
-                    console.log('[Mobile] ✅ Attachment uploaded to desktop:', desktopFilename);
+                
+                if (!uploadRes.ok) {
+                    console.error('[Mobile] ❌ Desktop upload HTTP error:', uploadRes.status, uploadRes.statusText);
                 } else {
-                    console.error('[Mobile] ❌ Desktop rejected attachment upload:', uploadData);
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.success) {
+                        desktopFilename = uploadData.filename;
+                        console.log('[Mobile] ✅ Attachment uploaded to desktop:', desktopFilename);
+                    } else {
+                        console.error('[Mobile] ❌ Desktop rejected:', uploadData);
+                    }
                 }
             } catch (uploadErr) {
-                console.error('[Mobile] ❌ Attachment upload to desktop failed:', uploadErr.message);
+                console.error('[Mobile] ❌ Attachment upload failed:', uploadErr.message);
             }
-            // Clean up local temp file regardless
+            // Clean up local temp file AFTER upload attempt
             try { fs.unlinkSync(req.file.path); } catch (_) {}
         }
 
@@ -167,6 +179,7 @@ router.get('/delete-announcement/:id', async (req, res) => {
     }
 });
 
+
 // EDIT ANNOUNCEMENT ROUTE (Bhai isse add kar le tabhi save hoga)
 router.post('/edit-announcement/:id', upload.single('attachment'), async (req, res) => {
     try {
@@ -183,10 +196,13 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         let desktopFilename = null;
 if (req.file) {
             try {
+                const fileBuffer = fs.readFileSync(req.file.path);
+
                 const formData = new FormData();
-                formData.append('attachment', fs.createReadStream(req.file.path), {
+                formData.append('attachment', fileBuffer, {
                     filename: req.file.filename,
                     contentType: req.file.mimetype,
+                    knownLength: fileBuffer.length,
                 });
 
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
@@ -197,15 +213,21 @@ if (req.file) {
                     },
                     body: formData,
                 });
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) {
-                    desktopFilename = uploadData.filename;
-                    console.log('[Mobile] ✅ Edit attachment uploaded to desktop:', desktopFilename);
+
+                if (!uploadRes.ok) {
+                    console.error('[Mobile] ❌ Desktop upload HTTP error:', uploadRes.status, uploadRes.statusText);
+                } else {
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.success) {
+                        desktopFilename = uploadData.filename;
+                        console.log('[Mobile] ✅ Edit attachment uploaded to desktop:', desktopFilename);
+                    } else {
+                        console.error('[Mobile] ❌ Desktop rejected:', uploadData);
+                    }
                 }
             } catch (uploadErr) {
                 console.error('[Mobile] ❌ Edit attachment upload failed:', uploadErr.message);
             }
-            // Clean up local temp file
             try { fs.unlinkSync(req.file.path); } catch (_) {}
         }
 
@@ -250,4 +272,6 @@ if (req.file) {
         res.status(500).json({ success: false });
     }
 });
+
+
 export default router;
