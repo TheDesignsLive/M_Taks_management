@@ -606,9 +606,7 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
           <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
             ✏️ Edit
           </button>
-          <button style={styles.menuItem} onClick={()=>{setSectionOpen(true);setShowMenu(false);}}>
-            ↕ Move Section
-          </button>
+      
           <button style={styles.menuItem} onClick={()=>{ setShowMenu(false); setTimeout(()=>dateInputRef.current?.showPicker?.(), 50); }}>
             📅 Change Date
           </button>
