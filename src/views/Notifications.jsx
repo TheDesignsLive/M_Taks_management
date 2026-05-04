@@ -98,20 +98,16 @@ useEffect(() => {
         }));
     });
 
-    socket.on('delete_announcement', (deletedId) => {
+socket.on('delete_announcement', (deletedId) => {
         setData(prev => ({
             ...prev,
-            announcements: prev.announcements.filter(a => a.id != deletedId)
+            announcements: prev.announcements.filter(a => String(a.id) !== String(deletedId))
         }));
     });
 
     socket.on('edit_announcement', (updatedData) => {
-        setData(prev => ({
-            ...prev,
-            announcements: prev.announcements.map(a => 
-                a.id == updatedData.id ? { ...a, ...updatedData } : a
-            )
-        }));
+        // Full refetch so attachment file is also updated correctly
+        fetchNotifications();
     });
 
     return () => {

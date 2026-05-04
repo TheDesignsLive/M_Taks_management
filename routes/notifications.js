@@ -61,20 +61,49 @@ router.get('/process-request/:action/:id', async (req, res) => {
 router.post('/add-announcement', upload.single('attachment'), async (req, res) => {
     try {
         const { title, description, role_id } = req.body;
-        const [result] = await con.query("INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)", [req.session.adminId, (req.session.role==='admin'?req.session.adminId:req.session.userId), req.session.role.toUpperCase(), role_id, title, description, (req.file?req.file.filename:null)]);
-        
-        // Database insert ke thik niche ye fetch update kar:
-fetch('https://tms.thedesigns.live/api/notify-announcement', { 
-     method: 'POST',
-     headers: { 
-         'Content-Type': 'application/json', 
-         'x-mobile-secret': 'tms_mobile_bridge_2026' 
-     },
-     body: JSON.stringify({ announcement_id: result.insertId })
-}).catch(err => console.log("Signal failed", err.message));
-        
+        const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
+        const MOBILE_SECRET = 'tms_mobile_bridge_2026';
+
+        // ✅ If attachment exists, upload to desktop first (same as profile pic pattern)
+        let desktopFilename = null;
+        if (req.file) {
+            try {
+                const formData = new FormData();
+                const blob = new Blob([req.file.buffer || require('fs').readFileSync(req.file.path)], { type: req.file.mimetype });
+                formData.append('attachment', blob, req.file.filename);
+
+                const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
+                    method: 'POST',
+                    headers: { 'x-mobile-secret': MOBILE_SECRET },
+                    body: formData,
+                });
+                const uploadData = await uploadRes.json();
+                if (uploadData.success) desktopFilename = uploadData.filename;
+            } catch (uploadErr) {
+                console.error('[Mobile] Attachment upload to desktop failed:', uploadErr.message);
+            }
+        }
+
+        const [result] = await con.query(
+            "INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)",
+            [req.session.adminId, (req.session.role === 'admin' ? req.session.adminId : req.session.userId), req.session.role.toUpperCase(), role_id, title, description, desktopFilename]
+        );
+
+        // ✅ Notify desktop hub → desktop broadcasts new_announcement to all desktop clients
+        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET },
+            body: JSON.stringify({ announcement_id: result.insertId })
+        }).catch(err => console.log('[Mobile] Signal failed:', err.message));
+
+        // ✅ Also emit to mobile clients directly
+        if (req.io) req.io.emit('new_announcement', { id: result.insertId, title, description, role_id, attachment: desktopFilename });
+
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ success: false }); }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
 });
 
 router.get('/delete-announcement/:id', async (req, res) => {
