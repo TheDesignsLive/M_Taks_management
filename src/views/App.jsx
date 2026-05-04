@@ -236,10 +236,15 @@ export default function App() {
     }
   }
 
- async function sendOtp() {
+async function sendOtp() {
   if (!contact) { showAlert('Error', 'Please enter email or phone', false); return; }
+
+  // 1. ✅ IMEDIATELY: Purana OTP clear karo aur Input box show karo (Don't wait for backend)
+  setOtp(''); 
+  setOtpSent(true);
+
   try {
-    // 1. Pehle check karo user exist karta hai ya nahi
+    // 2. Background mein check karo user exist karta hai ya nahi
     const res = await fetch(`${BASE_URL}/api/auth/forgot-password/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -248,35 +253,26 @@ export default function App() {
     const data = await res.json();
     
     if (data.status === 'not_found') {
+      setOtpSent(false); // Agar user nahi mila toh wapas band kar do
       showAlert('Not Found', 'Email or Phone not found in our records.', false);
       setContact('');
       return;
     }
 
-    // 2. Agar user mil gaya, toh OTP generate karo
+    // 3. OTP generate karo
     const newOtp = Math.floor(100000 + Math.random() * 900000);
     setGeneratedOtp(newOtp);
 
-    // 3. Backend ko request bhejo mail bhejne ke liye (Sahi URL use karein)
-    const mailRes = await fetch(`${BASE_URL}/api/auth/forgot-password/send-otp`, { // ✅ Sahi Path
+    // 4. Background mein mail bhejte raho
+    fetch(`${BASE_URL}/api/auth/forgot-password/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        contact, 
-        otp: newOtp, 
-        sent_for: 'forget_password' // ✅ Match with backend logic
-      })
+      body: JSON.stringify({ contact, otp: newOtp, sent_for: 'forget_password' })
     });
-    
-    const mailData = await mailRes.json();
-    if (mailData.status === 'success') {
-      setOtpSent(true);
-      showAlert('Sent', 'OTP sent to your email!', true);
-    } else {
-      showAlert('Error', 'Failed to send OTP email', false);
-    }
+
   } catch (err) { 
-    showAlert('Error', 'Server error', false); 
+    // Error handling background mein
+    console.error("OTP Error:", err);
   }
 }
 
