@@ -285,6 +285,7 @@ useEffect(() => {
                 <div style={{ flex: 1, marginLeft: 10, textAlign: "left" }}>
                   <h4 style={{ margin: 0, color: "#fff" }}>{r.name}</h4>
                   <p style={styles.metaRow}>{r.email} | {r.role_name}</p>
+                  <p style={{ ...styles.metaRow, fontSize: 10 }}>Requested on {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
                 <div style={styles.btnStack}>
                   <button onClick={() => handleAction("approve-member", r.id)} style={styles.btnSmlGreen}>Accept</button>
@@ -591,7 +592,7 @@ const styles = {
     borderRadius: 8,
     marginBottom: 10,
   },
-  reqFlex: { display: "flex", alignItems: "center" },
+  reqFlex: { display: "flex", alignItems: "stretch", gap: "10px"},
   avatar: {
     width: 40,
     height: 40,
@@ -603,24 +604,26 @@ const styles = {
     justifyContent: "center",
     fontWeight: "bold",
   },
-  btnStack: { display: "flex", flexDirection: "column", gap: 5 },
+  btnStack: { display: "flex", flexDirection: "column",justifyContent: "space-between", gap: 5, minWidth: "70px" },
   btnSmlGreen: {
     background: "#2ecc71",
     color: "white",
     border: "none",
-    padding: "5px 10px",
+    padding: "8px 10px",
     borderRadius: 4,
     fontSize: 10,
     cursor: "pointer",
+    flex: 1,
   },
   btnSmlRed: {
     background: "#e74c3c",
     color: "white",
     border: "none",
-    padding: "5px 10px",
+    padding: "8px 10px",
     borderRadius: 4,
     fontSize: 10,
     cursor: "pointer",
+    flex: 1,
   },
 };
 
