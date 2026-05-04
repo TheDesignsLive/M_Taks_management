@@ -48,6 +48,12 @@ function toInputDate(dateStr) {
   return dateStr.split('T')[0];
 }
 
+// normalize date to YYYY-MM-DD string or null
+function normDateKey(dateStr) {
+  if (!dateStr) return 'nodate';
+  return dateStr.split('T')[0];
+}
+
 // ─── CheckboxAnim ────────────────────────────────────────────────────────────
 function AnimCheckbox({ checked, color, onChange }) {
   const [anim, setAnim] = useState(false);
@@ -419,7 +425,7 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
 }
 
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
-function TaskCard({ task, members, adminName, role, onRefresh }) {
+function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }) {
   const [expanded, setExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
@@ -499,13 +505,16 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
 
   return (
     <>
-      <div style={{
-        ...styles.taskCard,
-        borderLeft: `4px solid ${color}`,
-        opacity: isCompleted ? 0.55 : completing ? 0.4 : 1,
-        transform: completing ? 'scale(0.97)' : 'scale(1)',
-        transition: 'opacity 0.4s, transform 0.4s',
-      }}>
+      <div
+        style={{
+          ...styles.taskCard,
+          borderLeft: `4px solid ${color}`,
+          opacity: isCompleted ? 0.55 : completing ? 0.4 : 1,
+          transform: completing ? 'scale(0.97)' : 'scale(1)',
+          transition: 'opacity 0.4s, transform 0.4s',
+        }}
+        {...(dragHandleProps || {})}
+      >
 
         {/* Row 1: Checkbox + Title */}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -515,75 +524,75 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
           </div>
         </div>
 
-        {/* Row 2: Name+Move (left) | Info+Date+3dot (right) */}
-   {/* Row 2: Name (left) | Info+Section+Date+3dot (right) */}
-<div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, paddingLeft:26 }}>
+        {/* Row 2: Name (left) | Info+Section+Date+3dot (right) */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, paddingLeft:26 }}>
 
-  {/* Left side — name only */}
-  <div style={{ display:'flex', alignItems:'center', minWidth:0 }}>
-    {task.assigned_by_name && (
-      <span style={{ fontSize:11, color:'#aaa', maxWidth:110, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-        {task.assigned_by_name}
-      </span>
-    )}
-  </div>
+          {/* Left side — name only */}
+          <div style={{ display:'flex', alignItems:'center', minWidth:0 }}>
+            {task.assigned_by_name && (
+              <span style={{ fontSize:11, color:'#aaa', maxWidth:110, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {task.assigned_by_name}
+              </span>
+            )}
+          </div>
 
-  {/* Right side — info | section | date | 3dot */}
-  <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
+          {/* Right side — info | section | date | 3dot */}
+          <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
 
-    {/* Info icon */}
-    <button
-      onClick={() => hasDesc && setExpanded(v=>!v)}
-      style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#0F8989':'#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
-      </svg>
-    </button>
+            {/* Info icon */}
+            <button
+              onClick={() => hasDesc && setExpanded(v=>!v)}
+              style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#0F8989':'#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+              </svg>
+            </button>
 
-    {/* Section badge — moved to right, before date */}
-    {!isCompleted && (
-      <span
-        onClick={() => setSectionOpen(true)}
-        style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'2px 6px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1.4, display:'inline-flex', alignItems:'center', gap:3 }}
-      >
-        ↕ {SECTION_LABELS[task.section] || 'Task'}
-      </span>
-    )}
+            {/* Section badge — moved to right, before date */}
+            {!isCompleted && (
+              <span
+                onClick={() => setSectionOpen(true)}
+                style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'2px 6px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1.4, display:'inline-flex', alignItems:'center', gap:3 }}
+              >
+                ↕ {SECTION_LABELS[task.section] || 'Task'}
+              </span>
+            )}
 
-    {/* Date */}
-    {date ? (
-      <span
-        onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
-        style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'2px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:56, textAlign:'center', lineHeight:1.4 }}
-      >
-        📅 {date}
-      </span>
-    ) : <span style={{ minWidth:56 }}/>}
+            {/* Date */}
+            {date ? (
+              <span
+                onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
+                style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'2px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:56, textAlign:'center', lineHeight:1.4 }}
+              >
+                📅 {date}
+              </span>
+            ) : <span style={{ minWidth:56 }}/>}
 
-    {/* 3-dot menu */}
-    {!isCompleted && (
-      <button
-        ref={menuBtnRef}
-        onClick={() => {
-          if (!showMenu && menuBtnRef.current) {
-            const rect = menuBtnRef.current.getBoundingClientRect();
-            const menuHeight = 164, menuWidth = 160;
-            const spaceBelow = window.innerHeight - rect.bottom;
-            const openUpward = spaceBelow < menuHeight + 8;
-            setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom, left: rect.right - menuWidth, openUpward });
-          }
-          setShowMenu(v => !v);
-        }}
-        style={styles.iconBtn}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
-          <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-        </svg>
-      </button>
-    )}
-  </div>
-</div>
+            {/* 3-dot menu */}
+            {!isCompleted && (
+              <button
+                ref={menuBtnRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!showMenu && menuBtnRef.current) {
+                    const rect = menuBtnRef.current.getBoundingClientRect();
+                    const menuHeight = 164, menuWidth = 160;
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const openUpward = spaceBelow < menuHeight + 8;
+                    setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom, left: rect.right - menuWidth, openUpward });
+                  }
+                  setShowMenu(v => !v);
+                }}
+                style={styles.iconBtn}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
+                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Description */}
         {expanded && hasDesc && (
@@ -610,7 +619,6 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
           <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
             ✏️ Edit
           </button>
-      
           <button style={styles.menuItem} onClick={()=>{ setShowMenu(false); setTimeout(()=>dateInputRef.current?.showPicker?.(), 50); }}>
             📅 Change Date
           </button>
@@ -644,9 +652,11 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
 }
 
 // ─── SectionColumn ────────────────────────────────────────────────────────────
+// Drag and drop logic lives here
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
   const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
+  // Build sorted flat list
   const filtered = tasks
     .filter(t => {
       if (section === 'COMPLETED') return t.status === 'COMPLETED';
@@ -661,17 +671,271 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
       return pa - pb;
     });
 
+  // ── Drag state ──
+  const [orderedTasks, setOrderedTasks] = useState(filtered);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [overIndex, setOverIndex] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const scrollContainerRef = useRef(null);
+  const autoScrollRef = useRef(null);
+  const touchStartYRef = useRef(null);
+  const touchCurrentYRef = useRef(null);
+  const ghostRef = useRef(null);
+
+  // Sync when tasks prop changes (refresh from server)
+  useEffect(() => {
+    setOrderedTasks(filtered);
+  }, [tasks, section]);
+
+  // Stop auto-scroll on unmount
+  useEffect(() => () => stopAutoScroll(), []);
+
+  function stopAutoScroll() {
+    if (autoScrollRef.current) {
+      cancelAnimationFrame(autoScrollRef.current);
+      autoScrollRef.current = null;
+    }
+  }
+
+  function startAutoScroll(clientY) {
+    stopAutoScroll();
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    function step() {
+      const rect = container.getBoundingClientRect();
+      const ZONE = 80;
+      const SPEED = 8;
+      if (clientY < rect.top + ZONE) {
+        container.scrollTop -= SPEED * (1 - (clientY - rect.top) / ZONE);
+      } else if (clientY > rect.bottom - ZONE) {
+        container.scrollTop += SPEED * (1 - (rect.bottom - clientY) / ZONE);
+      }
+      autoScrollRef.current = requestAnimationFrame(step);
+    }
+    autoScrollRef.current = requestAnimationFrame(step);
+  }
+
+  // Find index at a Y clientY
+  function getIndexAtY(clientY) {
+    const container = scrollContainerRef.current;
+    if (!container) return null;
+    const cards = container.querySelectorAll('[data-taskcard]');
+    for (let i = 0; i < cards.length; i++) {
+      const rect = cards[i].getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (clientY < mid) return i;
+    }
+    return cards.length - 1;
+  }
+
+  // Touch handlers (mobile)
+  const onTouchStart = (e, idx) => {
+    // Only start drag on long press — use a timer
+    const touch = e.touches[0];
+    touchStartYRef.current = touch.clientY;
+    touchCurrentYRef.current = touch.clientY;
+  };
+
+  const handleLongPressStart = (idx) => {
+    setDragIndex(idx);
+    setOverIndex(idx);
+    setIsDragging(true);
+  };
+
+  // We use pointer events for unified mouse+touch handling
+  const pointerDownTimerRef = useRef(null);
+  const pointerDownIdxRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragIndexRef = useRef(null);
+  const overIndexRef = useRef(null);
+
+  const onPointerDown = (e, idx) => {
+    if (e.button && e.button !== 0) return;
+    pointerDownIdxRef.current = idx;
+    pointerDownTimerRef.current = setTimeout(() => {
+      isDraggingRef.current = true;
+      dragIndexRef.current = idx;
+      overIndexRef.current = idx;
+      setDragIndex(idx);
+      setOverIndex(idx);
+      setIsDragging(true);
+      startAutoScroll(e.clientY);
+      // Prevent scroll while dragging
+      e.target.setPointerCapture?.(e.pointerId);
+    }, 300); // 300ms long press to initiate drag
+  };
+
+  const onPointerMove = (e) => {
+    if (!isDraggingRef.current) return;
+    touchCurrentYRef.current = e.clientY;
+    startAutoScroll(e.clientY);
+    const newOver = getIndexAtY(e.clientY);
+    if (newOver !== null && newOver !== overIndexRef.current) {
+      overIndexRef.current = newOver;
+      setOverIndex(newOver);
+    }
+  };
+
+  const onPointerUp = async (e) => {
+    clearTimeout(pointerDownTimerRef.current);
+    stopAutoScroll();
+
+    if (!isDraggingRef.current) {
+      isDraggingRef.current = false;
+      return;
+    }
+
+    const fromIdx = dragIndexRef.current;
+    const toIdx = overIndexRef.current ?? fromIdx;
+
+    isDraggingRef.current = false;
+    dragIndexRef.current = null;
+    overIndexRef.current = null;
+    setDragIndex(null);
+    setOverIndex(null);
+    setIsDragging(false);
+
+    if (fromIdx === null || fromIdx === toIdx) return;
+
+    // Reorder
+    const newList = [...orderedTasks];
+    const [moved] = newList.splice(fromIdx, 1);
+    newList.splice(toIdx, 0, moved);
+    setOrderedTasks(newList);
+
+    // Determine the date group the task landed in
+    const targetTask = newList[toIdx];
+    const neighborDate = targetTask?.due_date;
+    const movedDate = moved.due_date;
+
+    // Find surrounding tasks (prev and next) to determine date context
+    const prevTask = toIdx > 0 ? newList[toIdx - 1] : null;
+    const nextTask = toIdx < newList.length - 1 ? newList[toIdx + 1] : null;
+
+    // Determine new date: use the date of the neighbor in direction of drop
+    let newDate = movedDate; // default: keep same date
+
+    // If dropped between tasks of the same date group, adopt that date
+    const prevDate = prevTask ? normDateKey(prevTask.due_date) : null;
+    const nextDate = nextTask ? normDateKey(nextTask.due_date) : null;
+
+    if (prevDate && nextDate && prevDate === nextDate) {
+      // Dropped inside a date group
+      newDate = prevTask.due_date;
+    } else if (!prevTask && nextDate) {
+      // Dropped before everything — adopt next date
+      newDate = nextTask.due_date;
+    } else if (!nextTask && prevDate) {
+      // Dropped after everything — adopt prev date
+      newDate = prevTask.due_date;
+    } else if (prevDate) {
+      // Between two different date groups — use prev group's date
+      newDate = prevTask.due_date;
+    } else if (nextDate) {
+      newDate = nextTask.due_date;
+    }
+
+    // Only update date if it changed
+    if (normDateKey(newDate) !== normDateKey(movedDate)) {
+      await fetch(`${BASE_URL}/api/home/update-task-date`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: moved.id, due_date: normDateKey(newDate) === 'nodate' ? null : normDateKey(newDate) })
+      });
+    }
+
+    onRefresh();
+  };
+
+  const onPointerCancel = () => {
+    clearTimeout(pointerDownTimerRef.current);
+    stopAutoScroll();
+    isDraggingRef.current = false;
+    dragIndexRef.current = null;
+    overIndexRef.current = null;
+    setDragIndex(null);
+    setOverIndex(null);
+    setIsDragging(false);
+  };
+
+  // Build render list with date separators
+  // Within each date group, tasks are sorted HIGH→MEDIUM→LOW (already done in filtered sort by priority within same date)
+  // Just need to insert separators between date groups
+  const renderItems = [];
+  let lastDateKey = null;
+
+  orderedTasks.forEach((task, idx) => {
+    const dk = normDateKey(task.due_date);
+    // Insert separator between date groups (not before the first group)
+    if (lastDateKey !== null && dk !== lastDateKey) {
+      renderItems.push({ type: 'separator', key: `sep-${idx}` });
+    }
+    lastDateKey = dk;
+    renderItems.push({ type: 'task', task, idx, key: `task-${task.id}` });
+  });
+
   return (
-    <div style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}>
-      {filtered.length === 0 ? (
+    <div
+      ref={scrollContainerRef}
+      style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}
+      onPointerMove={isDragging ? onPointerMove : undefined}
+      onPointerUp={isDragging ? onPointerUp : undefined}
+      onPointerCancel={isDragging ? onPointerCancel : undefined}
+    >
+      {orderedTasks.length === 0 ? (
         <div style={{ color:'#aaa', textAlign:'center', marginTop:60, fontSize:13 }}>
           <div style={{fontSize:32, marginBottom:8}}>📭</div>
           No tasks in {SECTION_LABELS[section]}
         </div>
       ) : (
-        filtered.map(task => (
-          <TaskCard key={task.id} task={task} members={members} adminName={adminName} role={role} onRefresh={onRefresh}/>
-        ))
+        renderItems.map(item => {
+          if (item.type === 'separator') {
+            return (
+              <div key={item.key} style={{
+                height: 1,
+                background: 'rgba(150,150,150,0.25)',
+                margin: '8px 0',
+                borderRadius: 1,
+              }} />
+            );
+          }
+          const { task, idx } = item;
+          const isBeingDragged = isDragging && dragIndex === idx;
+          const isDropTarget = isDragging && overIndex === idx && dragIndex !== idx;
+
+          return (
+            <div
+              key={item.key}
+              data-taskcard
+              style={{
+                opacity: isBeingDragged ? 0.35 : 1,
+                transform: isDropTarget ? 'scale(1.02)' : 'scale(1)',
+                transition: isDragging ? 'transform 0.15s, opacity 0.15s' : 'none',
+                position: 'relative',
+                touchAction: 'none',
+                cursor: isDragging ? 'grabbing' : 'grab',
+              }}
+              onPointerDown={(e) => onPointerDown(e, idx)}
+            >
+              {/* Drop indicator line above */}
+              {isDropTarget && (
+                <div style={{
+                  position: 'absolute', top: -3, left: 0, right: 0,
+                  height: 3, background: '#0F8989', borderRadius: 2,
+                  zIndex: 10,
+                }} />
+              )}
+              <TaskCard
+                task={task}
+                members={members}
+                adminName={adminName}
+                role={role}
+                onRefresh={onRefresh}
+              />
+            </div>
+          );
+        })
       )}
     </div>
   );
@@ -688,7 +952,7 @@ const Home = () => {
   const [deleteCompleteOpen, setDeleteCompleteOpen] = useState(false);
 
   const sliderRef = useRef(null);
-  const tabBarRef = useRef(null); // ✅ Added ref for header scroll
+  const tabBarRef = useRef(null);
   const startXRef = useRef(null);
   const sectionIndex = SECTIONS.indexOf(activeSection);
 
@@ -709,7 +973,7 @@ const Home = () => {
     finally { setLoading(false); }
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     fetchTasks();
 
     socket.on('update_tasks', () => {
@@ -721,46 +985,43 @@ useEffect(() => {
     };
   }, []);
 
- // ✅ ADD THESE TWO — put them right after your fetchTasks useCallback
+  // Ref always holds the latest fetchTasks — prevents stale closure
+  const fetchTasksRef = useRef(fetchTasks);
+  useEffect(() => {
+    fetchTasksRef.current = fetchTasks;
+  }, [fetchTasks]);
 
-// Ref always holds the latest fetchTasks — prevents stale closure
-const fetchTasksRef = useRef(fetchTasks);
-useEffect(() => {
-  fetchTasksRef.current = fetchTasks;
-}, [fetchTasks]);
+  // Socket — connects once, never disconnects/reconnects on re-render
+  useEffect(() => {
+    if (typeof window.io === 'undefined') {
+      console.warn('Socket.IO not loaded — check index.html');
+      return;
+    }
+    const socket = window.io(BASE_URL, { withCredentials: true });
 
-// Socket — connects once, never disconnects/reconnects on re-render
-useEffect(() => {
-  if (typeof window.io === 'undefined') {
-    console.warn('Socket.IO not loaded — check index.html');
-    return;
-  }
-  const socket = window.io(BASE_URL, { withCredentials: true });
+    socket.on('update_tasks', () => {
+      fetchTasksRef.current();
+    });
 
-  socket.on('update_tasks', () => {
-    fetchTasksRef.current(); // always calls latest version
-  });
+    return () => socket.disconnect();
+  }, []);
 
-  return () => socket.disconnect();
-}, []); // ← empty array: runs ONCE only
+  useEffect(() => {
+    window.addEventListener('task-added', fetchTasks);
+    return () => window.removeEventListener('task-added', fetchTasks);
+  }, [fetchTasks]);
 
-      useEffect(() => {
-        window.addEventListener('task-added', fetchTasks);
-        return () => window.removeEventListener('task-added', fetchTasks);
-      }, [fetchTasks]);
-
- useEffect(() => {
-  if (sliderRef.current) {
-   sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
-  }
-  // ✅ Added Auto-scroll for Header (Tab Bar)
-  if (tabBarRef.current) {
-   const activeTab = tabBarRef.current.children[sectionIndex];
-   if (activeTab) {
-    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-   }
-  }
- }, [activeSection, sectionIndex]);
+  useEffect(() => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
+    }
+    if (tabBarRef.current) {
+      const activeTab = tabBarRef.current.children[sectionIndex];
+      if (activeTab) {
+        activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [activeSection, sectionIndex]);
 
   const onTouchStart = e => { startXRef.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
@@ -807,7 +1068,8 @@ useEffect(() => {
       `}</style>
 
       {/* TAB BAR */}
-<div ref={tabBarRef} style={styles.tabBar}>        {SECTIONS.map(sec => {
+      <div ref={tabBarRef} style={styles.tabBar}>
+        {SECTIONS.map(sec => {
           const active = activeSection === sec;
           return (
             <button key={sec} onClick={()=>setActiveSection(sec)} style={{
