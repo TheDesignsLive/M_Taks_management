@@ -74,6 +74,7 @@ app.use('/api/profile', Profile);
 app.use('/api/notifications', memberActions);
 app.use('/api/settings', Settings);
 app.use('/api/sentmail', sentmail);
+app.use('/api/forgot-password', sentmail);
 app.use('/api/assign_by_me', assign_by_me);
 app.use('/api/view_member', view_member);
 app.use('/api/teams', teams);
