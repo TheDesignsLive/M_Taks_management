@@ -65,15 +65,17 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         const { title, description, role_id } = req.body;
         const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
         const MOBILE_SECRET = 'tms_mobile_bridge_2026';
+        const fs = await import('fs');
 
-        // ✅ If attachment exists, upload to desktop first (same as profile pic pattern)
+        // 1. Upload attachment to desktop (so one shared copy lives there)
         let desktopFilename = null;
         if (req.file) {
             try {
+                const { FormData: FD, Blob: BL } = await import('node-fetch').catch(() => ({ FormData, Blob }));
                 const formData = new FormData();
-                const blob = new Blob([req.file.buffer || require('fs').readFileSync(req.file.path)], { type: req.file.mimetype });
+                const buf = fs.readFileSync(req.file.path);
+                const blob = new Blob([buf], { type: req.file.mimetype });
                 formData.append('attachment', blob, req.file.filename);
-
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
                     method: 'POST',
                     headers: { 'x-mobile-secret': MOBILE_SECRET },
@@ -86,22 +88,39 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
             }
         }
 
+        // 2. Insert into DB (use desktopFilename so both servers serve from same path)
+        const addedBy = req.session.role === 'admin' ? req.session.adminId : req.session.userId;
+        const whoAdded = req.session.role.toUpperCase();
         const [result] = await con.query(
             "INSERT INTO announcements (admin_id, added_by, who_added, role_id, title, description, attachment) VALUES (?,?,?,?,?,?,?)",
-            [req.session.adminId, (req.session.role === 'admin' ? req.session.adminId : req.session.userId), req.session.role.toUpperCase(), role_id, title, description, desktopFilename]
+            [req.session.adminId, addedBy, whoAdded, role_id, title, description, desktopFilename]
         );
 
-        // ✅ Notify desktop hub → desktop broadcasts new_announcement to all desktop clients
-        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement`, {
+        // 3. Fetch the full row with joins so socket payload is identical on both servers
+        const [rows] = await con.query(`
+            SELECT a.*, IF(a.role_id=0,'All Members',t.name) AS target_team_name,
+            IF(a.role_id=0,'All Members',t.name) AS target_role,
+            CASE WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
+                 WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
+                 ELSE usr.name END AS added_by_name
+            FROM announcements a
+            LEFT JOIN teams t ON a.role_id = t.id
+            LEFT JOIN admins adm ON a.added_by=adm.id AND a.who_added='ADMIN'
+            LEFT JOIN users usr ON a.added_by=usr.id AND (a.who_added='USER' OR a.who_added='OWNER')
+            WHERE a.id=? AND a.admin_id=?`, [result.insertId, req.session.adminId]);
+
+        const ann = rows[0];
+        if (!ann) return res.status(500).json({ success: false });
+
+        // 4. Emit to own (mobile) socket clients
+        if (req.io) req.io.emit('new_announcement', ann);
+
+        // 5. Ping desktop → desktop emits to its own socket clients
+        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET },
-            body: JSON.stringify({ announcement_id: result.insertId })
-        }).catch(err => console.log('[Mobile] Signal failed:', err.message));
-
-// ✅ Also emit to mobile clients directly
-        if (req.io) req.io.emit('new_announcement', { id: result.insertId, title, description, role_id, attachment: desktopFilename });
-
-        notifyDesktop('announcement_add'); // ✅ PUSH TO DESKTOP
+            headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
+            body: JSON.stringify({ id: ann.id }),
+        }).catch(err => console.error('[Mobile] notifyDesktop announcement_add failed:', err.message));
 
         res.json({ success: true });
     } catch (err) {
@@ -111,11 +130,28 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
 });
 
 router.get('/delete-announcement/:id', async (req, res) => {
-    const id = req.params.id;
-    await con.query("DELETE FROM announcements WHERE id=?", [id]);
-    if (req.io) req.io.emit('delete_announcement', id); // ✅ mobile clients
-    notifyDesktop('announcement_delete', { id });        // ✅ PUSH TO DESKTOP
-    res.json({ success: true });
+    try {
+        const id = req.params.id;
+        // Verify this announcement belongs to this admin before deleting
+        const [check] = await con.query(
+            "SELECT id FROM announcements WHERE id=? AND admin_id=?", [id, req.session.adminId]);
+        if (!check.length) return res.status(403).json({ success: false, message: 'Not found' });
+
+        await con.query("DELETE FROM announcements WHERE id=? AND admin_id=?", [id, req.session.adminId]);
+
+        if (req.io) req.io.emit('delete_announcement', id);
+
+        fetch('https://tms.thedesigns.live/api/notify-announcement-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-mobile-secret': 'tms_mobile_bridge_2026', 'x-source': 'mobile' },
+            body: JSON.stringify({ id }),
+        }).catch(err => console.error('[Mobile] notifyDesktop delete failed:', err.message));
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false });
+    }
 });
 
 // EDIT ANNOUNCEMENT ROUTE (Bhai isse add kar le tabhi save hoga)
@@ -126,12 +162,16 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
         const MOBILE_SECRET = 'tms_mobile_bridge_2026';
 
-        // ✅ If new attachment, upload to desktop first (same as add pattern)
+        // Verify ownership
+        const [check] = await con.query(
+            "SELECT id FROM announcements WHERE id=? AND admin_id=?", [announcementId, req.session.adminId]);
+        if (!check.length) return res.status(403).json({ success: false, message: 'Not found' });
+
         let desktopFilename = null;
         if (req.file) {
             try {
-                const formData = new FormData();
                 const fs = await import('fs');
+                const formData = new FormData();
                 const blob = new Blob([fs.readFileSync(req.file.path)], { type: req.file.mimetype });
                 formData.append('attachment', blob, req.file.filename);
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
@@ -142,26 +182,48 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
                 const uploadData = await uploadRes.json();
                 if (uploadData.success) desktopFilename = uploadData.filename;
             } catch (uploadErr) {
-                console.error('[Mobile] Edit attachment upload to desktop failed:', uploadErr.message);
+                console.error('[Mobile] Edit attachment upload failed:', uploadErr.message);
             }
         }
 
-        let query = "UPDATE announcements SET title=?, description=?, role_id=? WHERE id=?";
-        let params = [title, description, role_id, announcementId];
-
         if (desktopFilename) {
-            query = "UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=?";
-            params = [title, description, role_id, desktopFilename, announcementId];
+            await con.query(
+                "UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=? AND admin_id=?",
+                [title, description, role_id, desktopFilename, announcementId, req.session.adminId]);
+        } else {
+            await con.query(
+                "UPDATE announcements SET title=?, description=?, role_id=? WHERE id=? AND admin_id=?",
+                [title, description, role_id, announcementId, req.session.adminId]);
         }
 
-        await con.query(query, params);
-        if (req.io) req.io.emit('edit_announcement', { id: announcementId }); // ✅ mobile clients
-        notifyDesktop('announcement_edit', { id: announcementId });            // ✅ PUSH TO DESKTOP
-        res.json({ success: true, message: "Announcement updated!" });
+        // Fetch fresh row with all joins for consistent socket payload
+        const [rows] = await con.query(`
+            SELECT a.*, IF(a.role_id=0,'All Members',t.name) AS target_team_name,
+            IF(a.role_id=0,'All Members',t.name) AS target_role,
+            CASE WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
+                 WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
+                 ELSE usr.name END AS added_by_name
+            FROM announcements a
+            LEFT JOIN teams t ON a.role_id = t.id
+            LEFT JOIN admins adm ON a.added_by=adm.id AND a.who_added='ADMIN'
+            LEFT JOIN users usr ON a.added_by=usr.id AND (a.who_added='USER' OR a.who_added='OWNER')
+            WHERE a.id=? AND a.admin_id=?`, [announcementId, req.session.adminId]);
+
+        const ann = rows[0];
+        if (!ann) return res.status(500).json({ success: false });
+
+        if (req.io) req.io.emit('edit_announcement', ann);
+
+        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-edit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
+            body: JSON.stringify({ id: announcementId }),
+        }).catch(err => console.error('[Mobile] notifyDesktop edit failed:', err.message));
+
+        res.json({ success: true });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false });
     }
 });
-
 export default router;
