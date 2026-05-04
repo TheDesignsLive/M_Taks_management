@@ -516,70 +516,74 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
         </div>
 
         {/* Row 2: Name+Move (left) | Info+Date+3dot (right) */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, paddingLeft:26 }}>
+   {/* Row 2: Name (left) | Info+Section+Date+3dot (right) */}
+<div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, paddingLeft:26 }}>
 
-          {/* Left side */}
-          <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0 }}>
-            {task.assigned_by_name && (
-              <span style={{ fontSize:11, color:'#aaa', maxWidth:100, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {task.assigned_by_name}
-              </span>
-            )}
-{!isCompleted && (
-              <span
-                onClick={() => setSectionOpen(true)}
-                style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'1px 5px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1, display:'inline-flex', alignItems:'center', gap:3 }}
-              >
-                ↕ {SECTION_LABELS[task.section] || 'Task'}
-              </span>
-            )}
-          </div>
+  {/* Left side — name only */}
+  <div style={{ display:'flex', alignItems:'center', minWidth:0 }}>
+    {task.assigned_by_name && (
+      <span style={{ fontSize:11, color:'#aaa', maxWidth:110, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+        {task.assigned_by_name}
+      </span>
+    )}
+  </div>
 
-          {/* Right side */}
-          <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-            {/* Info icon */}
-            <button
-              onClick={() => hasDesc && setExpanded(v=>!v)}
-              style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#0F8989':'#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
-              </svg>
-            </button>
+  {/* Right side — info | section | date | 3dot */}
+  <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
 
-            {/* Date */}
-            {date ? (
-              <span
-                onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
-                style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'1px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:60, textAlign:'center' }}
-              >
-                📅 {date}
-              </span>
-            ) : <span style={{ minWidth:60 }}/>}
+    {/* Info icon */}
+    <button
+      onClick={() => hasDesc && setExpanded(v=>!v)}
+      style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expanded?'#0F8989':'#aaa'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8.5"/><line x1="12" y1="11" x2="12" y2="16"/>
+      </svg>
+    </button>
 
-            {/* 3-dot menu */}
-            {!isCompleted && (
-              <button
-                ref={menuBtnRef}
-                onClick={() => {
-                  if (!showMenu && menuBtnRef.current) {
-                    const rect = menuBtnRef.current.getBoundingClientRect();
-                    const menuHeight = 164, menuWidth = 160;
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    const openUpward = spaceBelow < menuHeight + 8;
-                    setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom, left: rect.right - menuWidth, openUpward });
-                  }
-                  setShowMenu(v => !v);
-                }}
-                style={styles.iconBtn}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
-                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
+    {/* Section badge — moved to right, before date */}
+    {!isCompleted && (
+      <span
+        onClick={() => setSectionOpen(true)}
+        style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'2px 6px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1.4, display:'inline-flex', alignItems:'center', gap:3 }}
+      >
+        ↕ {SECTION_LABELS[task.section] || 'Task'}
+      </span>
+    )}
+
+    {/* Date */}
+    {date ? (
+      <span
+        onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
+        style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'2px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:56, textAlign:'center', lineHeight:1.4 }}
+      >
+        📅 {date}
+      </span>
+    ) : <span style={{ minWidth:56 }}/>}
+
+    {/* 3-dot menu */}
+    {!isCompleted && (
+      <button
+        ref={menuBtnRef}
+        onClick={() => {
+          if (!showMenu && menuBtnRef.current) {
+            const rect = menuBtnRef.current.getBoundingClientRect();
+            const menuHeight = 164, menuWidth = 160;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const openUpward = spaceBelow < menuHeight + 8;
+            setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom, left: rect.right - menuWidth, openUpward });
+          }
+          setShowMenu(v => !v);
+        }}
+        style={styles.iconBtn}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
+          <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
 
         {/* Description */}
         {expanded && hasDesc && (
