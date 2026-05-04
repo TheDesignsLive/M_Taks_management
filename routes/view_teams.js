@@ -1,6 +1,7 @@
 // routes/view_teams.js
 import express from 'express';
 import con from '../config/db.js';
+import { notifyDesktop } from '../utils/notifyDesktop.js'; 
 
 const router = express.Router();
 
@@ -65,6 +66,7 @@ router.post('/add', async (req, res) => {
       [adminId, name.trim()]
     );
 
+notifyDesktop('teams'); // ✅ PUSH TO DESKTOP
     return res.json({ success: true, message: 'Department successfully created' });
   } catch (err) {
     console.error('POST /api/teams/add error:', err);
@@ -100,6 +102,7 @@ router.post('/edit/:id', async (req, res) => {
       );
     }
 
+  notifyDesktop('teams'); // ✅ PUSH TO DESKTOP
     return res.json({ success: true, message: 'Department successfully updated' });
   } catch (err) {
     console.error('POST /api/teams/edit/:id error:', err);
@@ -130,6 +133,7 @@ router.get('/delete/:id', async (req, res) => {
       );
     }
 
+    notifyDesktop('teams'); // ✅ PUSH TO DESKTOP
     return res.json({ success: true, message: 'Department successfully deleted' });
   } catch (err) {
     console.error('GET /api/teams/delete/:id error:', err);
