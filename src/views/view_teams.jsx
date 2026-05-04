@@ -630,9 +630,10 @@ const S = {
   cardName: {
     fontSize: 14, fontWeight: 700, color: '#fff',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    textAlign: 'left',
   },
   cardSub: {
-    fontSize: 11, color: '#aaa', marginTop: 2,
+    fontSize: 11, color: '#aaa', marginTop: 2,textAlign: 'left',
   },
   indexBadge: {
     background: 'rgba(15,137,137,0.18)',
@@ -706,6 +707,7 @@ const S = {
     textTransform: 'uppercase',
     letterSpacing: 0.7,
     marginBottom: 5, marginTop: 14,
+    textAlign: 'left',
   },
   input: {
     width: '100%', boxSizing: 'border-box',
