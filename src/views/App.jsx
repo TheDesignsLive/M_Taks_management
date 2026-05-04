@@ -103,8 +103,19 @@ export default function App() {
   const [resetPassError, setResetPassError] = useState('');
   const [resetConfError, setResetConfError] = useState('');
 
-  // ── Scroll animation ──
+// ── Browser Tab Logo & Title ──
   useEffect(() => {
+    // 1. Set Title
+    document.title = "TMS Workspace";
+
+    // 2. Set Favicon (Logo)
+    const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+    link.type = 'image/jpeg';
+    link.rel = 'icon';
+    link.href = '/images/tms_logo.jpeg'; // Aapka logo path
+    document.getElementsByTagName('head')[0].appendChild(link);
+
+    // Baki aapka purana session check
     fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
