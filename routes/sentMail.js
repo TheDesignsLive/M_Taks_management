@@ -1,7 +1,6 @@
 import express from 'express';
 const router = express.Router();
 import nodemailer from 'nodemailer';
-import con from '../config/db.js';
 
 // ✅ Logic ko export kiya taaki settings.js bina fetch ke call kar sake
 export const sendMailLogic = async (contact, otp, sent_for) => {
@@ -99,7 +98,7 @@ export const sendMailLogic = async (contact, otp, sent_for) => {
     return transporter.sendMail(mailOptions);
 };
 
-// ─── SEND OTP ROUTE ───────────────────────────────────────────────────────────
+// Route normal kaam karega
 router.post("/send-otp", async (req, res) => {
     const { contact, otp, sent_for } = req.body;
     try {
@@ -108,65 +107,6 @@ router.post("/send-otp", async (req, res) => {
     } catch (err) {
         console.error("Mailer Error:", err);
         res.status(500).json({ status: "error", message: "Failed to send email" });
-    }
-});
-
-// ─── CHECK EMAIL/PHONE EXISTS (for forgot password) ───────────────────────────
-router.post("/check", async (req, res) => {
-    const { contact } = req.body;
-    if (!contact) return res.status(400).json({ status: "error", message: "Contact required" });
-
-    try {
-        // Check in admins table by email
-        const [adminRows] = await con.query(
-            `SELECT id FROM admins WHERE email = ? LIMIT 1`, [contact]
-        );
-        if (adminRows.length > 0) return res.json({ status: "found", userType: "admin" });
-
-        // Check in users table by email or phone
-        const [userRows] = await con.query(
-            `SELECT id FROM users WHERE email = ? OR phone = ? LIMIT 1`, [contact, contact]
-        );
-        if (userRows.length > 0) return res.json({ status: "found", userType: "user" });
-
-        // Not found
-        return res.json({ status: "not_found" });
-
-    } catch (err) {
-        console.error("Check error:", err);
-        return res.status(500).json({ status: "error", message: "Server error" });
-    }
-});
-
-// ─── RESET PASSWORD ───────────────────────────────────────────────────────────
-router.post("/reset", async (req, res) => {
-    const { contact, new_password } = req.body;
-    if (!contact || !new_password) {
-        return res.status(400).json({ status: "error", message: "Missing fields" });
-    }
-
-    try {
-        // Try updating admin first
-        const [adminResult] = await con.query(
-            `UPDATE admins SET password = ? WHERE email = ?`, [new_password, contact]
-        );
-        if (adminResult.affectedRows > 0) {
-            return res.json({ status: "success" });
-        }
-
-        // Try updating user by email or phone
-        const [userResult] = await con.query(
-            `UPDATE users SET password = ? WHERE email = ? OR phone = ?`, [new_password, contact, contact]
-        );
-        if (userResult.affectedRows > 0) {
-            return res.json({ status: "success" });
-        }
-
-        return res.status(404).json({ status: "error", message: "User not found" });
-
-    } catch (err) {
-        console.error("Reset error:", err);
-        return res.status(500).json({ status: "error", message: "Server error" });
     }
 });
 
