@@ -645,6 +645,7 @@ const Home = () => {
   const [deleteCompleteOpen, setDeleteCompleteOpen] = useState(false);
 
   const sliderRef = useRef(null);
+  const tabBarRef = useRef(null); // ✅ Added ref for header scroll
   const startXRef = useRef(null);
   const sectionIndex = SECTIONS.indexOf(activeSection);
 
@@ -705,11 +706,18 @@ useEffect(() => {
         return () => window.removeEventListener('task-added', fetchTasks);
       }, [fetchTasks]);
 
-  useEffect(() => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
-    }
-  }, [activeSection]);
+ useEffect(() => {
+  if (sliderRef.current) {
+   sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
+  }
+  // ✅ Added Auto-scroll for Header (Tab Bar)
+  if (tabBarRef.current) {
+   const activeTab = tabBarRef.current.children[sectionIndex];
+   if (activeTab) {
+    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+   }
+  }
+ }, [activeSection, sectionIndex]);
 
   const onTouchStart = e => { startXRef.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
@@ -756,8 +764,7 @@ useEffect(() => {
       `}</style>
 
       {/* TAB BAR */}
-      <div style={styles.tabBar}>
-        {SECTIONS.map(sec => {
+<div ref={tabBarRef} style={styles.tabBar}>        {SECTIONS.map(sec => {
           const active = activeSection === sec;
           return (
             <button key={sec} onClick={()=>setActiveSection(sec)} style={{
