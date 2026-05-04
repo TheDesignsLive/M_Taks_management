@@ -1,6 +1,6 @@
-// Home.jsx — Mobile Task Board
+// Home.jsx — Mobile Task Board (Fixed)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-
+import { createPortal } from 'react-dom';
 import { io } from 'socket.io-client';
 
 const socket = io(
@@ -48,13 +48,16 @@ function toInputDate(dateStr) {
   return dateStr.split('T')[0];
 }
 
-// normalize date to YYYY-MM-DD string or null
 function normDateKey(dateStr) {
   if (!dateStr) return 'nodate';
   return dateStr.split('T')[0];
 }
 
-// ─── CheckboxAnim ────────────────────────────────────────────────────────────
+// ─── Global modal open tracker ────────────────────────────────────────────────
+// Any modal/menu open → drag is disabled
+window.__taskModalOpen = false;
+
+// ─── AnimCheckbox ─────────────────────────────────────────────────────────────
 function AnimCheckbox({ checked, color, onChange }) {
   const [anim, setAnim] = useState(false);
   const handleChange = () => {
@@ -123,7 +126,6 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [teamMembers, setTeamMembers] = useState({});
   const [openTeam, setOpenTeam] = useState(null);
   const [showAssignDrop, setShowAssignDrop] = useState(false);
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0, maxHeight: 240 });
   const assignTriggerRef = useRef(null);
 
   useEffect(() => {
@@ -162,10 +164,9 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   };
 
   const dropStyle = {
-    position: 'fixed', zIndex: 99999,
     background: '#2E2D2D', border: '1px solid #0F8989', borderRadius: 10,
-    overflowY: 'auto',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+    overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+    marginTop: 4,
   };
   const dropItemStyle = {
     padding: '10px 14px', fontSize: 13, cursor: 'pointer',
@@ -176,7 +177,7 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
     ...dropItemStyle, paddingLeft: 28, background: '#3C3A3A', color: '#aaa',
   };
 
-  return (
+  return createPortal(
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={styles.modal} onClick={() => { setShowAssignDrop(false); setOpenTeam(null); }}>
         <div style={styles.modalHeader}>
@@ -207,25 +208,12 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Assign To — custom dropdown */}
+        {/* Assign To — inline dropdown */}
         <div style={{...styles.field, position:'relative'}} onClick={e => e.stopPropagation()}>
           <label style={styles.label}>Assign To</label>
           <div
             ref={assignTriggerRef}
-            onClick={() => {
-              if (!showAssignDrop && assignTriggerRef.current) {
-                const rect = assignTriggerRef.current.getBoundingClientRect();
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const maxH = Math.min(240, spaceBelow > 160 ? spaceBelow - 12 : rect.top - 12);
-                setDropPos({
-                  top: spaceBelow > 160 ? rect.bottom + 4 : rect.top - maxH - 4,
-                  left: rect.left,
-                  width: rect.width,
-                  maxHeight: maxH,
-                });
-              }
-              setShowAssignDrop(v => !v);
-            }}
+            onClick={() => setShowAssignDrop(v => !v)}
             style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
           >
             <span style={{color:'#eee'}}>{assignLabel}</span>
@@ -233,62 +221,45 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           </div>
 
           {showAssignDrop && (
-            <div style={{...dropStyle, top: dropPos.top, left: dropPos.left, width: dropPos.width, maxHeight: dropPos.maxHeight}}>
+            <div style={{...dropStyle, position:'absolute', top:'100%', left:0, right:0, zIndex:200, maxHeight:200}}>
               <div style={dropItemStyle} onClick={() => selectAssign('self', 'Myself')}>
                 <span>👤</span><span style={{flex:1}}>Myself</span>
                 {assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}
               </div>
-
               {role !== 'admin' && (
                 <div style={dropItemStyle} onClick={() => selectAssign('0', `${adminName} (Admin)`)}>
                   <span>🔑</span><span style={{flex:1}}>{adminName} (Admin)</span>
                   {assignTo === '0' && <span style={{color:'#0F8989'}}>✓</span>}
                 </div>
               )}
-
-              {teams.length === 0 && members.length > 0 && (
-                <>
-                  <div style={{...dropItemStyle, color:'#aaa', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #0F8989'}}>
-                    MEMBERS
+              {teams.length === 0 && members.length > 0 && members.map(m => (
+                <div key={m.id} style={dropItemStyle} onClick={() => selectAssign(String(m.id), m.name)}>
+                  <span>👤</span><span style={{flex:1}}>{m.name}</span>
+                  {assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}
+                </div>
+              ))}
+              {teams.length > 0 && teams.map(team => (
+                <div key={team.id}>
+                  <div style={dropItemStyle} onClick={() => { setOpenTeam(v => v === team.id ? null : team.id); loadTeam(team.id); }}>
+                    <span>🏷</span><span style={{flex:1}}>{team.name}</span>
+                    <span style={{color: openTeam===team.id ? '#0F8989':'#aaa', fontSize:11, display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'none', transition:'transform 0.2s'}}>›</span>
                   </div>
-                  {members.map(m => (
-                    <div key={m.id} style={dropItemStyle} onClick={() => selectAssign(String(m.id), m.name)}>
-                      <span>👤</span><span style={{flex:1}}>{m.name}</span>
-                      {assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}
-                    </div>
-                  ))}
-                </>
-              )}
-
-              {teams.length > 0 && (
-                <>
-                  <div style={{...dropItemStyle, color:'#aaa', fontSize:11, cursor:'default', paddingTop:6, paddingBottom:4, borderBottom:'1px solid #0F8989'}}>
-                    TEAMS
-                  </div>
-                  {teams.map(team => (
-                    <div key={team.id}>
-                      <div style={dropItemStyle} onClick={() => { setOpenTeam(v => v === team.id ? null : team.id); loadTeam(team.id); }}>
-                        <span>🏷</span><span style={{flex:1}}>{team.name}</span>
-                        <span style={{color: openTeam===team.id ? '#0F8989':'#aaa', fontSize:11, display:'inline-block', transform: openTeam===team.id ? 'rotate(90deg)':'rotate(0deg)', transition:'transform 0.2s'}}>›</span>
+                  {openTeam === team.id && (
+                    <>
+                      <div style={subItemStyle} onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}>
+                        <span style={{color:'#0F8989'}}>↳</span><span style={{flex:1}}>All {team.name}</span>
+                        {assignTo===`team_${team.id}` && <span style={{color:'#0F8989'}}>✓</span>}
                       </div>
-                      {openTeam === team.id && (
-                        <>
-                          <div style={subItemStyle} onClick={() => selectAssign(`team_${team.id}`, `All ${team.name}`)}>
-                            <span style={{color:'#0F8989'}}>↳</span><span style={{flex:1}}>All {team.name}</span>
-                            {assignTo===`team_${team.id}` && <span style={{color:'#0F8989'}}>✓</span>}
-                          </div>
-                          {(teamMembers[team.id] || []).map(m => (
-                            <div key={m.id} style={{...subItemStyle, paddingLeft:36}} onClick={() => selectAssign(String(m.id), m.name)}>
-                              <span style={{flex:1}}>{m.name}</span>
-                              {assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}
-                            </div>
-                          ))}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
+                      {(teamMembers[team.id] || []).map(m => (
+                        <div key={m.id} style={{...subItemStyle, paddingLeft:36}} onClick={() => selectAssign(String(m.id), m.name)}>
+                          <span style={{flex:1}}>{m.name}</span>
+                          {assignTo === String(m.id) && <span style={{color:'#0F8989'}}>✓</span>}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -300,11 +271,12 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
-// ─── ChangeSectionModal ───────────────────────────────────────────────────────
+// ─── ChangeSectionModal — sticky bottom sheet via portal ──────────────────────
 function ChangeSectionModal({ task, role, onMove, onClose }) {
   const currentSection = task.section || 'TASK';
   const isSelfTask = task.is_self_task === true;
@@ -317,63 +289,53 @@ function ChangeSectionModal({ task, role, onMove, onClose }) {
     return true;
   });
 
-  return (
-    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{...styles.modal, padding:0, overflow:'hidden'}}>
-        <div style={{...styles.modalHeader, padding:'16px 18px 12px'}}>
-          <span style={styles.modalTitle}>Move to Section</span>
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+        zIndex: 99000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{
+        width: '100%', maxWidth: 500,
+        background: '#2E2D2D',
+        borderRadius: '22px 22px 0 0',
+        borderTop: '2px solid #0F8989',
+        boxShadow: '0 -8px 48px rgba(0,0,0,0.6)',
+        overflow: 'hidden',
+        animation: 'slideUp 0.25s cubic-bezier(.22,.68,0,1.1)',
+        // STICKY — stays fixed at bottom
+        position: 'sticky',
+        bottom: 0,
+      }}>
+        {/* Handle bar */}
+        <div style={{ width: 40, height: 4, background: 'rgba(15,137,137,0.5)', borderRadius: 4, margin: '12px auto 0' }} />
+        <div style={{ padding: '12px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#CDF4F4', fontWeight: 700, fontSize: 15 }}>Move to Section</span>
           <button onClick={onClose} style={styles.closeBtn}>✕</button>
         </div>
-        {available.map(sec => (
-          <button key={sec} onClick={() => onMove(sec)} style={styles.sectionOption}>
-            <span style={styles.sectionDot(sec)}/>
-            {SECTION_LABELS[sec]}
-          </button>
-        ))}
+        <div style={{ paddingBottom: 24 }}>
+          {available.map(sec => (
+            <button key={sec} onClick={() => onMove(sec)} style={styles.sectionOption}>
+              <span style={styles.sectionDot(sec)}/>
+              {SECTION_LABELS[sec]}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
-  );
-}
-
-// ─── DatePickerModal ──────────────────────────────────────────────────────────
-function DatePickerModal({ current, onSave, onClose }) {
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.value = toInputDate(current);
-    setTimeout(() => el.showPicker?.(), 50);
-    const handleChange = e => {
-      if (e.target.value) { onSave(e.target.value); }
-      onClose();
-    };
-    const handleBlur = () => onClose();
-    el.addEventListener('change', handleChange);
-    el.addEventListener('blur', handleBlur);
-    return () => {
-      el.removeEventListener('change', handleChange);
-      el.removeEventListener('blur', handleBlur);
-    };
-  }, []);
-
-  return (
-    <input
-      ref={inputRef}
-      type="date"
-      style={{ position:'fixed', opacity:0, pointerEvents:'none', top:0, left:0, width:0, height:0 }}
-    />
+    </div>,
+    document.body
   );
 }
 
 // ─── DeleteConfirmModal ───────────────────────────────────────────────────────
 function DeleteConfirmModal({ message, onConfirm, onClose }) {
-  return (
+  return createPortal(
     <div style={{
       position:'fixed', inset:0,
       background:'rgba(0,0,0,0.75)',
-      zIndex:9000, display:'flex', alignItems:'flex-end', justifyContent:'center',
-      animation:'atbFade 0.15s ease',
+      zIndex:99000, display:'flex', alignItems:'flex-end', justifyContent:'center',
     }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{
         width:'100%', maxWidth:400,
@@ -384,7 +346,7 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
         border:'1px solid rgba(15,137,137,0.2)',
         borderBottom:'none',
         boxShadow:'0 -8px 48px rgba(0,0,0,0.5)',
-        animation:'atbSlide 0.24s cubic-bezier(.22,.68,0,1.18)',
+        animation:'slideUp 0.24s cubic-bezier(.22,.68,0,1.18)',
       }}>
         <div style={{ width:40, height:4, background:'rgba(15,137,137,0.4)', borderRadius:4, margin:'12px auto 0' }} />
         <div style={{ textAlign:'center', padding:'20px 16px 8px' }}>
@@ -392,44 +354,64 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
           <div style={{ fontSize:17, fontWeight:800, color:'#CDF4F4', marginBottom:8 }}>Delete Task?</div>
           <div style={{ fontSize:13, color:'#aaa', marginBottom:22, lineHeight:1.6 }}>{message}</div>
           <div style={{ display:'flex', gap:10 }}>
-            <button
-              style={{
-                flex:1, padding:'12px 20px',
-                background:'rgba(255,255,255,0.07)',
-                border:'1px solid rgba(255,255,255,0.12)',
-                borderRadius:12, color:'#aaa',
-                fontSize:13, fontWeight:700, cursor:'pointer',
-                fontFamily:'Arial, sans-serif', letterSpacing:0.3,
-              }}
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              style={{
-                flex:1, padding:'12px 20px',
-                background:'#e74c3c', border:'none',
-                borderRadius:12, color:'#fff',
-                fontSize:13, fontWeight:700, cursor:'pointer',
-                fontFamily:'Arial, sans-serif', letterSpacing:0.3,
-              }}
-              onClick={onConfirm}
-            >
-              Delete
-            </button>
+            <button style={{
+              flex:1, padding:'12px 20px',
+              background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:12, color:'#aaa', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'Arial, sans-serif',
+            }} onClick={onClose}>Cancel</button>
+            <button style={{
+              flex:1, padding:'12px 20px',
+              background:'#e74c3c', border:'none',
+              borderRadius:12, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'Arial, sans-serif',
+            }} onClick={onConfirm}>Delete</button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── 3-dot Menu Portal ────────────────────────────────────────────────────────
+function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onClose }) {
+  return createPortal(
+    <>
+      {/* Backdrop — catches taps outside */}
+      <div
+        style={{ position:'fixed', inset:0, zIndex:99990 }}
+        onClick={onClose}
+        onTouchStart={e => { e.stopPropagation(); onClose(); }}
+      />
+      <div style={{
+        position: 'fixed',
+        top: menuPos.top,
+        left: menuPos.left,
+        zIndex: 99999,
+        background:'#2E2D2D',
+        border:'1px solid #0F8989',
+        borderRadius: menuPos.openUpward ? '10px 10px 4px 10px' : '4px 10px 10px 10px',
+        boxShadow:'0 8px 32px rgba(0,0,0,0.8)',
+        overflow:'hidden',
+        minWidth:160,
+        animation:'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
+      }}>
+        <button style={styles.menuItem} onClick={e=>{e.stopPropagation(); onEdit();}}>
+          ✏️ Edit
+        </button>
+        <button style={styles.menuItem} onClick={e=>{e.stopPropagation(); onChangeDate();}}>
+          📅 Change Date
+        </button>
+        <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={e=>{e.stopPropagation(); onDelete();}}>
+          🗑️ Delete
+        </button>
+      </div>
+    </>,
+    document.body
   );
 }
 
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
-// Global open-section tracker so only one ChangeSectionModal is open at a time
-if (!window.__openSectionTaskId) window.__openSectionTaskId = { current: null };
-const sectionModalSetters = {};
-
-function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }) {
+function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }) {
   const [expanded, setExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpward: false });
@@ -441,17 +423,14 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
   const menuBtnRef = useRef(null);
   const dateInputRef = useRef(null);
 
-  // Register this card's setSectionOpen so others can close it
-  useEffect(() => {
-    sectionModalSetters[task.id] = setSectionOpen;
-    return () => { delete sectionModalSetters[task.id]; };
-  }, [task.id]);
-
-  // Track modal/menu open state globally so drag is disabled
+  // Track any open modal/menu globally so drag knows to stay off
   useEffect(() => {
     const anyOpen = showMenu || editOpen || sectionOpen || deleteOpen;
     window.__taskModalOpen = anyOpen;
   }, [showMenu, editOpen, sectionOpen, deleteOpen]);
+
+  // Cleanup on unmount
+  useEffect(() => () => { window.__taskModalOpen = false; }, []);
 
   const priority = (task.priority || 'LOW').toUpperCase();
   const color = PRIORITY_COLORS[priority] || '#3b82f6';
@@ -478,6 +457,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
 
   const handleMove = async (section) => {
     setSectionOpen(false);
+    if (onSectionChange) onSectionChange(task.id, section);
     await fetch(`${BASE_URL}/api/home/update-task-section`, {
       method:'POST', credentials:'include',
       headers:{'Content-Type':'application/json'},
@@ -513,32 +493,29 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
     onRefresh();
   };
 
-  const openSectionModal = () => {
-    // Close all other section modals first
-    Object.entries(sectionModalSetters).forEach(([id, setter]) => {
-      if (Number(id) !== task.id) setter(false);
-    });
-    setSectionOpen(true);
-  };
-
-const openMenu = (e) => {
+  // ── 3-dot menu: measure exact button position at click time ──────────────
+  const openMenu = (e) => {
     e.stopPropagation();
     e.preventDefault();
     if (!menuBtnRef.current) return;
-    // Always recalculate position at click time — fresh getBoundingClientRect
+
+    // Force a fresh layout measurement
     const rect = menuBtnRef.current.getBoundingClientRect();
-    const menuHeight = 126; // 3 items × 42px
-    const menuWidth = 162;
+    const menuHeight = 126; // 3 items × 42px approx
+    const menuWidth = 165;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    // Prefer opening below; open above only if not enough space below AND enough above
-    const openUpward = spaceBelow < menuHeight + 12 && spaceAbove > menuHeight + 12;
+    const openUpward = spaceBelow < menuHeight + 16 && spaceAbove > menuHeight + 16;
+
     const top = openUpward
       ? rect.top - menuHeight - 6
       : rect.bottom + 6;
+
+    // Align right edge of menu to right edge of button, but clamp to screen
     const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+
     setMenuPos({ top, left, openUpward });
-    setShowMenu(v => !v);
+    setShowMenu(true);
   };
 
   if (!cardVisible) return (
@@ -547,16 +524,14 @@ const openMenu = (e) => {
 
   return (
     <>
-      <div
-        style={{
-          ...styles.taskCard,
-          borderLeft: `4px solid ${color}`,
-          opacity: isCompleted ? 0.55 : completing ? 0.4 : 1,
-          transform: completing ? 'scale(0.97)' : 'scale(1)',
-          transition: 'opacity 0.4s, transform 0.4s',
-        }}
-      >
-        {/* Row 1: Checkbox + Title */}
+      <div style={{
+        ...styles.taskCard,
+        borderLeft: `4px solid ${color}`,
+        opacity: isCompleted ? 0.55 : completing ? 0.4 : 1,
+        transform: completing ? 'scale(0.97)' : 'scale(1)',
+        transition: 'opacity 0.4s, transform 0.4s',
+      }}>
+        {/* Row 1 */}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
           <div style={{ flex:1, minWidth:0, color: isCompleted ? '#888' : '#eee', fontSize:13.5, fontWeight:500, lineHeight:1.3, textAlign:'left', wordBreak:'break-word' }}>
@@ -575,6 +550,7 @@ const openMenu = (e) => {
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
+            {/* Info / description toggle */}
             <button
               onClick={() => hasDesc && setExpanded(v=>!v)}
               style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
@@ -584,26 +560,39 @@ const openMenu = (e) => {
               </svg>
             </button>
 
+            {/* Section badge */}
             {!isCompleted && (
               <span
-                onClick={openSectionModal}
+                onClick={(e) => { e.stopPropagation(); setSectionOpen(true); }}
                 style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'2px 6px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1.4, display:'inline-flex', alignItems:'center', gap:3 }}
               >
                 ↕ {SECTION_LABELS[task.section] || 'Task'}
               </span>
             )}
 
+            {/* Due date */}
             {date ? (
               <span
-                onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
+                onClick={() => { if (!isCompleted) dateInputRef.current?.showPicker?.(); }}
                 style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'2px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:56, textAlign:'center', lineHeight:1.4 }}
               >
                 📅 {date}
               </span>
             ) : <span style={{ minWidth:56 }}/>}
 
+            {/* 3-dot menu — bigger touch target */}
             {!isCompleted && (
-              <button ref={menuBtnRef} onClick={openMenu} style={styles.iconBtn}>
+              <button
+                ref={menuBtnRef}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={openMenu}
+                style={{
+                  ...styles.iconBtn,
+                  // Bigger touch target
+                  padding: 8, margin: -4,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
                   <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                 </svg>
@@ -619,41 +608,32 @@ const openMenu = (e) => {
         )}
       </div>
 
-      {/* Menu backdrop + menu rendered in fixed position (never behind cards) */}
-      {showMenu && <div style={{ position:'fixed', inset:0, zIndex:99990 }} onClick={()=>setShowMenu(false)}/>}
+      {/* 3-dot menu via portal — always above everything */}
       {showMenu && (
-        <div style={{
-          position: 'fixed',
-          top: menuPos.top,
-          left: menuPos.left,
-          zIndex: 99999,
-          background:'#2E2D2D',
-          border:'1px solid #0F8989',
-          borderRadius: menuPos.openUpward ? '10px 10px 4px 10px' : '4px 10px 10px 10px',
-          boxShadow:'0 8px 32px rgba(0,0,0,0.7)',
-          overflow:'hidden',
-          minWidth:160,
-          animation:'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
-        }}>
-          <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
-            ✏️ Edit
-          </button>
-          <button style={styles.menuItem} onClick={()=>{ setShowMenu(false); setTimeout(()=>dateInputRef.current?.showPicker?.(), 50); }}>
-            📅 Change Date
-          </button>
-          <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={()=>{setDeleteOpen(true);setShowMenu(false);}}>
-            🗑️ Delete
-          </button>
-        </div>
+        <TaskMenu
+          menuPos={menuPos}
+          onEdit={() => { setEditOpen(true); setShowMenu(false); }}
+          onChangeDate={() => { setShowMenu(false); setTimeout(() => dateInputRef.current?.showPicker?.(), 50); }}
+          onDelete={() => { setDeleteOpen(true); setShowMenu(false); }}
+          onClose={() => setShowMenu(false)}
+        />
       )}
 
       {editOpen && (
-        <EditTaskModal task={task} members={members} adminName={adminName} role={role}
-          onSave={handleSaveEdit} onClose={()=>setEditOpen(false)}/>
+        <EditTaskModal
+          task={task} members={members} adminName={adminName} role={role}
+          onSave={handleSaveEdit} onClose={() => setEditOpen(false)}
+        />
       )}
+
       {sectionOpen && (
-        <ChangeSectionModal task={task} role={role} onMove={handleMove} onClose={()=>setSectionOpen(false)}/>
+        <ChangeSectionModal
+          task={task} role={role}
+          onMove={handleMove} onClose={() => setSectionOpen(false)}
+        />
       )}
+
+      {/* Hidden native date picker */}
       <input
         ref={dateInputRef}
         type="date"
@@ -661,52 +641,65 @@ const openMenu = (e) => {
         onChange={e => { if (e.target.value) handleDateSave(e.target.value); }}
         style={{ position:'fixed', opacity:0, pointerEvents:'none', top:0, left:0, width:0, height:0 }}
       />
+
       {deleteOpen && (
         <DeleteConfirmModal
           message="This task will be permanently removed."
-          onConfirm={handleDelete} onClose={()=>setDeleteOpen(false)}/>
+          onConfirm={handleDelete}
+          onClose={() => setDeleteOpen(false)}
+        />
       )}
     </>
   );
 }
 
 // ─── SectionColumn ────────────────────────────────────────────────────────────
-// Drag and drop logic lives here
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
   const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
-  // Build sorted flat list
-  const filtered = tasks
-    .filter(t => {
-      if (section === 'COMPLETED') return t.status === 'COMPLETED';
-      return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
-    })
-    .sort((a, b) => {
-      const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
-      const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
-      if (dateA - dateB !== 0) return dateA - dateB;
-      const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
-      const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
-      return pa - pb;
-    });
+  const buildSorted = useCallback(() =>
+    tasks
+      .filter(t => {
+        if (section === 'COMPLETED') return t.status === 'COMPLETED';
+        return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
+      })
+      .sort((a, b) => {
+        const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
+        const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
+        if (dateA - dateB !== 0) return dateA - dateB;
+        const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
+        const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
+        return pa - pb;
+      }),
+  [tasks, section]);
 
-  // ── Drag state ──
-  const [orderedTasks, setOrderedTasks] = useState(filtered);
+  const [orderedTasks, setOrderedTasks] = useState(buildSorted);
+
+  // Only sync from server if not currently dragging
+  const isDraggingRef = useRef(false);
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setOrderedTasks(buildSorted());
+    }
+  }, [tasks, section]);
+
+  // ── Drag state ──────────────────────────────────────────────────────────────
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+
   const scrollContainerRef = useRef(null);
   const autoScrollRef = useRef(null);
-  const touchStartYRef = useRef(null);
-  const touchCurrentYRef = useRef(null);
-  const ghostRef = useRef(null);
+  const longPressTimerRef = useRef(null);
+  const longPressIdxRef = useRef(null);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
+  const dragIndexRef = useRef(null);
+  const overIndexRef = useRef(null);
+  const activeTouchYRef = useRef(0);
 
-  // Sync when tasks prop changes (refresh from server)
-  useEffect(() => {
-    setOrderedTasks(filtered);
-  }, [tasks, section]);
+  // Track if user is scrolling (moved significantly before long-press fires)
+  const isScrollingRef = useRef(false);
 
-  // Stop auto-scroll on unmount
   useEffect(() => () => stopAutoScroll(), []);
 
   function stopAutoScroll() {
@@ -720,11 +713,9 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     stopAutoScroll();
     const container = scrollContainerRef.current;
     if (!container) return;
-
     function step() {
       const rect = container.getBoundingClientRect();
-      const ZONE = 80;
-      const SPEED = 8;
+      const ZONE = 80, SPEED = 8;
       if (clientY < rect.top + ZONE) {
         container.scrollTop -= SPEED * (1 - (clientY - rect.top) / ZONE);
       } else if (clientY > rect.bottom - ZONE) {
@@ -735,28 +726,16 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     autoScrollRef.current = requestAnimationFrame(step);
   }
 
-  // Find index at a Y clientY
   function getIndexAtY(clientY) {
     const container = scrollContainerRef.current;
     if (!container) return null;
     const cards = container.querySelectorAll('[data-taskcard]');
     for (let i = 0; i < cards.length; i++) {
       const rect = cards[i].getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      if (clientY < mid) return i;
+      if (clientY < rect.top + rect.height / 2) return i;
     }
-    return cards.length - 1;
+    return cards.length > 0 ? cards.length - 1 : null;
   }
-
-// ── Long-press drag via touch events only (pointer hover does NOT trigger) ──
-  const longPressTimerRef = useRef(null);
-  const longPressIdxRef = useRef(null);
-  const touchStartPosRef = useRef({ x: 0, y: 0 });
-  const isDraggingRef = useRef(false);
-  const dragIndexRef = useRef(null);
-  const overIndexRef = useRef(null);
-  // Track current touch Y for auto-scroll during drag
-  const activeTouchYRef = useRef(0);
 
   const cancelLongPress = () => {
     clearTimeout(longPressTimerRef.current);
@@ -764,15 +743,21 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
   };
 
   const onCardTouchStart = (e, idx) => {
+    // If any modal/menu is open, never start drag
     if (window.__taskModalOpen) return;
+
     const touch = e.touches[0];
     touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
     activeTouchYRef.current = touch.clientY;
     longPressIdxRef.current = idx;
+    isScrollingRef.current = false;
 
     longPressTimerRef.current = setTimeout(() => {
+      // Double-check modal state when timer fires
       if (window.__taskModalOpen) return;
-      // Vibrate to give haptic feedback that drag started
+      // If user has started scrolling, don't start drag
+      if (isScrollingRef.current) return;
+
       try { navigator.vibrate?.(40); } catch {}
       isDraggingRef.current = true;
       dragIndexRef.current = idx;
@@ -781,18 +766,19 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
       setOverIndex(idx);
       setIsDragging(true);
       startAutoScroll(activeTouchYRef.current);
-    }, 1200);
+    }, 500); // Reduced to 500ms for better feel, but still distinct from scroll
   };
 
   const onCardTouchMove = (e, idx) => {
     const touch = e.touches[0];
     activeTouchYRef.current = touch.clientY;
 
-    // If moved more than 8px before long-press fires → cancel drag initiation
     if (!isDraggingRef.current) {
       const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
       const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
-      if (dx > 8 || dy > 8) {
+      // If moved more than 10px vertically before drag starts → it's a scroll
+      if (dy > 10 || dx > 10) {
+        isScrollingRef.current = true;
         cancelLongPress();
       }
       return;
@@ -801,6 +787,7 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     // Drag is active — prevent page scroll
     e.preventDefault();
     startAutoScroll(touch.clientY);
+
     const newOver = getIndexAtY(touch.clientY);
     if (newOver !== null && newOver !== overIndexRef.current) {
       overIndexRef.current = newOver;
@@ -808,12 +795,13 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     }
   };
 
-  const onCardTouchEnd = async (e) => {
+  const onCardTouchEnd = async () => {
     cancelLongPress();
     stopAutoScroll();
 
     if (!isDraggingRef.current) {
       isDraggingRef.current = false;
+      isScrollingRef.current = false;
       return;
     }
 
@@ -823,17 +811,20 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     isDraggingRef.current = false;
     dragIndexRef.current = null;
     overIndexRef.current = null;
+    isScrollingRef.current = false;
     setDragIndex(null);
     setOverIndex(null);
     setIsDragging(false);
 
     if (fromIdx === null || fromIdx === toIdx) return;
 
+    // Update local state immediately — NO full refresh
     const newList = [...orderedTasks];
     const [moved] = newList.splice(fromIdx, 1);
     newList.splice(toIdx, 0, moved);
     setOrderedTasks(newList);
 
+    // Calculate new date based on neighbors
     const prevTask = toIdx > 0 ? newList[toIdx - 1] : null;
     const nextTask = toIdx < newList.length - 1 ? newList[toIdx + 1] : null;
     const movedDate = moved.due_date;
@@ -854,15 +845,15 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
       newDate = nextTask.due_date;
     }
 
+    // Only hit API if date actually changed — silent update, no refresh
     if (normDateKey(newDate) !== normDateKey(movedDate)) {
-      await fetch(`${BASE_URL}/api/home/update-task-date`, {
+      fetch(`${BASE_URL}/api/home/update-task-date`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: moved.id, due_date: normDateKey(newDate) === 'nodate' ? null : normDateKey(newDate) })
-      });
+      }).catch(() => {}); // fire-and-forget
     }
-
-    onRefresh();
+    // No onRefresh() call — list stays as user dragged it
   };
 
   const onCardTouchCancel = () => {
@@ -871,20 +862,17 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     isDraggingRef.current = false;
     dragIndexRef.current = null;
     overIndexRef.current = null;
+    isScrollingRef.current = false;
     setDragIndex(null);
     setOverIndex(null);
     setIsDragging(false);
   };
 
-  // Build render list with date separators
-  // Within each date group, tasks are sorted HIGH→MEDIUM→LOW (already done in filtered sort by priority within same date)
-  // Just need to insert separators between date groups
+  // Build render list with date group separators
   const renderItems = [];
   let lastDateKey = null;
-
   orderedTasks.forEach((task, idx) => {
     const dk = normDateKey(task.due_date);
-    // Insert separator between date groups (not before the first group)
     if (lastDateKey !== null && dk !== lastDateKey) {
       renderItems.push({ type: 'separator', key: `sep-${idx}` });
     }
@@ -893,9 +881,14 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
   });
 
   return (
-<div
+    <div
       ref={scrollContainerRef}
-      style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}
+      style={{
+        flex:'0 0 100%', width:'100%', overflowY:'auto',
+        padding:'12px 14px 80px', boxSizing:'border-box',
+        // Allow scroll normally; prevent only during drag
+        touchAction: isDragging ? 'none' : 'pan-y',
+      }}
     >
       {orderedTasks.length === 0 ? (
         <div style={{ color:'#aaa', textAlign:'center', marginTop:60, fontSize:13 }}>
@@ -907,40 +900,38 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
           if (item.type === 'separator') {
             return (
               <div key={item.key} style={{
-                height: 1,
-                background: 'rgba(150,150,150,0.25)',
-                margin: '8px 0',
-                borderRadius: 1,
+                height:1, background:'rgba(150,150,150,0.25)',
+                margin:'8px 0', borderRadius:1,
               }} />
             );
           }
+
           const { task, idx } = item;
           const isBeingDragged = isDragging && dragIndex === idx;
           const isDropTarget = isDragging && overIndex === idx && dragIndex !== idx;
 
-return (
+          return (
             <div
               key={item.key}
               data-taskcard
               style={{
-                opacity: isBeingDragged ? 0.35 : 1,
-                transform: isDropTarget ? 'scale(1.02)' : 'scale(1)',
-                transition: isDragging ? 'transform 0.15s, opacity 0.15s' : 'none',
+                opacity: isBeingDragged ? 0.3 : 1,
+                transform: isDropTarget ? 'translateY(2px) scale(1.02)' : 'scale(1)',
+                transition: isDragging ? 'transform 0.12s, opacity 0.12s' : 'none',
                 position: 'relative',
+                // Individual card: allow touch events for long-press, but don't block scroll
                 touchAction: isDragging ? 'none' : 'pan-y',
-                cursor: isDragging ? 'grabbing' : 'default',
               }}
-              onTouchStart={(e) => onCardTouchStart(e, idx)}
-              onTouchMove={(e) => onCardTouchMove(e, idx)}
+              onTouchStart={e => onCardTouchStart(e, idx)}
+              onTouchMove={e => onCardTouchMove(e, idx)}
               onTouchEnd={onCardTouchEnd}
               onTouchCancel={onCardTouchCancel}
             >
-              {/* Drop indicator line above */}
+              {/* Drop indicator */}
               {isDropTarget && (
                 <div style={{
-                  position: 'absolute', top: -3, left: 0, right: 0,
-                  height: 3, background: '#0F8989', borderRadius: 2,
-                  zIndex: 10,
+                  position:'absolute', top:-3, left:0, right:0,
+                  height:3, background:'#0F8989', borderRadius:2, zIndex:10,
                 }} />
               )}
               <TaskCard
@@ -990,37 +981,17 @@ const Home = () => {
     finally { setLoading(false); }
   }, []);
 
+  const fetchTasksRef = useRef(fetchTasks);
+  useEffect(() => { fetchTasksRef.current = fetchTasks; }, [fetchTasks]);
+
   useEffect(() => {
     fetchTasks();
-
-    socket.on('update_tasks', () => {
-      fetchTasks();
-    });
-
-    return () => {
-      socket.off('update_tasks');
-    };
   }, []);
 
-  // Ref always holds the latest fetchTasks — prevents stale closure
-  const fetchTasksRef = useRef(fetchTasks);
+  // Socket — connect once
   useEffect(() => {
-    fetchTasksRef.current = fetchTasks;
-  }, [fetchTasks]);
-
-  // Socket — connects once, never disconnects/reconnects on re-render
-  useEffect(() => {
-    if (typeof window.io === 'undefined') {
-      console.warn('Socket.IO not loaded — check index.html');
-      return;
-    }
-    const socket = window.io(BASE_URL, { withCredentials: true });
-
-    socket.on('update_tasks', () => {
-      fetchTasksRef.current();
-    });
-
-    return () => socket.disconnect();
+    socket.on('update_tasks', () => { fetchTasksRef.current(); });
+    return () => { socket.off('update_tasks'); };
   }, []);
 
   useEffect(() => {
@@ -1028,18 +999,18 @@ const Home = () => {
     return () => window.removeEventListener('task-added', fetchTasks);
   }, [fetchTasks]);
 
+  // Tab / slider sync
   useEffect(() => {
     if (sliderRef.current) {
       sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
     }
     if (tabBarRef.current) {
       const activeTab = tabBarRef.current.children[sectionIndex];
-      if (activeTab) {
-        activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
+      if (activeTab) activeTab.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
     }
   }, [activeSection, sectionIndex]);
 
+  // Swipe between sections
   const onTouchStart = e => { startXRef.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
     if (startXRef.current === null) return;
@@ -1069,19 +1040,20 @@ const Home = () => {
   return (
     <div style={styles.container}>
       <style>{`
-        @keyframes ringPulse {
-          0% { transform: scale(1); opacity: 0.8; }
-          100% { transform: scale(2.5); opacity: 0; }
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
         }
         @keyframes menuPop {
-          0%   { transform: scale(0.85); opacity: 0; }
-          100% { transform: scale(1);    opacity: 1; }
+          0%   { transform: scale(0.82) translateY(4px); opacity: 0; }
+          100% { transform: scale(1)    translateY(0);   opacity: 1; }
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
         ::-webkit-scrollbar { width: 2px; height: 2px; }
         ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 4px; }
+        * { -webkit-tap-highlight-color: transparent; }
       `}</style>
 
       {/* TAB BAR */}
@@ -1105,16 +1077,15 @@ const Home = () => {
         })}
       </div>
 
-      {/* SECTION DOTS */}
+      {/* DOTS */}
       <div style={{ background:'#2E2D2D', flexShrink:0 }}>
-        <div style={{ ...styles.dotRow }}>
+        <div style={styles.dotRow}>
           {SECTIONS.map((sec, i) => (
             <div key={sec} onClick={()=>setActiveSection(sec)} style={{
-              height: 5, borderRadius: 10,
+              height:5, borderRadius:10,
               width: i === sectionIndex ? 22 : 6,
               background: i === sectionIndex ? '#0F8989' : '#3C3A3A',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
+              transition:'all 0.3s ease', cursor:'pointer',
             }}/>
           ))}
         </div>
@@ -1128,9 +1099,8 @@ const Home = () => {
                 cursor:'pointer', padding:'7px 16px',
                 display:'flex', alignItems:'center', gap:6,
                 color:'#ef4444', fontSize:13, fontWeight:700, fontFamily:'Arial, sans-serif',
-                minHeight: 36,
+                minHeight:36,
               }}
-              title="Delete all completed"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -1178,7 +1148,7 @@ const Home = () => {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = {
   container: {
-    height: '100%', display:'flex', flexDirection:'column',
+    height:'100%', display:'flex', flexDirection:'column',
     background:'#3C3A3A', overflow:'hidden', fontFamily:'Arial, sans-serif',
     userSelect:'none',
   },
@@ -1195,8 +1165,7 @@ const styles = {
     fontFamily:'Arial, sans-serif',
   },
   badge: {
-    borderRadius:10, padding:'1px 6px', fontSize:10,
-    fontWeight:700, transition:'all 0.2s',
+    borderRadius:10, padding:'1px 6px', fontSize:10, fontWeight:700, transition:'all 0.2s',
   },
   dotRow: {
     display:'flex', justifyContent:'center', alignItems:'center',
@@ -1225,40 +1194,28 @@ const styles = {
     padding:4, display:'flex', alignItems:'center', justifyContent:'center',
     borderRadius:4, transition:'background 0.15s',
   },
-  contextMenu: {
-    background:'#2E2D2D',
-    border:'1px solid #0F8989', borderRadius:10, zIndex:99999,
-    boxShadow:'0 8px 24px rgba(0,0,0,0.5)', overflow:'hidden',
-    minWidth:150, animation:'menuPop 0.15s ease',
-  },
   menuItem: {
-    display:'block', width:'100%', padding:'10px 14px', background:'none',
+    display:'block', width:'100%', padding:'12px 16px', background:'none',
     border:'none', textAlign:'left', color:'#eee', fontSize:13,
     cursor:'pointer', fontFamily:'Arial, sans-serif',
     borderBottom:'1px solid #3C3A3A',
-  },
-  menuBackdrop: {
-    position:'fixed', inset:0, zIndex:9998,
+    WebkitTapHighlightColor: 'transparent',
   },
   overlay: {
     position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
-    zIndex:9000, display:'flex', alignItems:'flex-end',
-    justifyContent:'center', padding:'0 0 0 0',
+    zIndex:99000, display:'flex', alignItems:'flex-end', justifyContent:'center',
   },
   modal: {
     background:'#2E2D2D', width:'100%', maxWidth:500,
     borderRadius:'18px 18px 0 0', padding:'20px 18px 32px',
     maxHeight:'85vh', overflowY:'auto', boxSizing:'border-box',
     animation:'slideUp 0.25s ease',
-    borderTop: '2px solid #0F8989',
+    borderTop:'2px solid #0F8989',
   },
   modalHeader: {
-    display:'flex', justifyContent:'space-between', alignItems:'center',
-    marginBottom:16,
+    display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16,
   },
-  modalTitle: {
-    color:'#CDF4F4', fontWeight:700, fontSize:15,
-  },
+  modalTitle: { color:'#CDF4F4', fontWeight:700, fontSize:15 },
   closeBtn: {
     background:'#3C3A3A', border:'1px solid #0F8989', color:'#aaa',
     width:28, height:28, borderRadius:8, cursor:'pointer', fontSize:12,
@@ -1273,23 +1230,22 @@ const styles = {
   modalActions: { display:'flex', gap:10, justifyContent:'flex-end', marginTop:16 },
   cancelBtn: {
     background:'#3C3A3A', color:'#aaa', border:'1px solid #555',
-    padding:'9px 18px', borderRadius:8, cursor:'pointer',
-    fontSize:13, fontFamily:'Arial, sans-serif',
+    padding:'9px 18px', borderRadius:8, cursor:'pointer', fontSize:13, fontFamily:'Arial, sans-serif',
   },
   saveBtn: {
     background:'#0F8989', color:'#fff', border:'none',
-    padding:'9px 20px', borderRadius:8, cursor:'pointer',
-    fontSize:13, fontFamily:'Arial, sans-serif', fontWeight:600,
+    padding:'9px 20px', borderRadius:8, cursor:'pointer', fontSize:13, fontFamily:'Arial, sans-serif', fontWeight:600,
   },
   sectionOption: {
     display:'flex', alignItems:'center', gap:10, width:'100%',
     background:'none', border:'none', borderBottom:'1px solid #3C3A3A',
-    padding:'13px 18px', color:'#eee', fontSize:13, cursor:'pointer',
+    padding:'14px 18px', color:'#eee', fontSize:14, cursor:'pointer',
     fontFamily:'Arial, sans-serif', textAlign:'left',
+    WebkitTapHighlightColor:'transparent',
   },
   sectionDot: (sec) => ({
     width:8, height:8, borderRadius:'50%', flexShrink:0,
-    background: sec === 'TASK' ? '#0F8989' : sec === 'CHANGES' ? '#f59e0b' : sec === 'UPDATE' ? '#3b82f6' : '#a78bfa',
+    background: sec==='TASK'?'#0F8989': sec==='CHANGES'?'#f59e0b': sec==='UPDATE'?'#3b82f6':'#a78bfa',
   }),
 };
 
