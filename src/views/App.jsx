@@ -236,31 +236,49 @@ export default function App() {
     }
   }
 
-  async function sendOtp() {
-    if (!contact) { showAlert('Error', 'Please enter email or phone', false); return; }
-    try {
-      const res = await fetch(`${BASE_URL}/api/auth/forgot-password/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ contact })
-      });
-      const data = await res.json();
-      if (data.status === 'not_found') {
-        showAlert('Not Found', 'Email or Phone not found in our records.', false);
-        setContact('');
-        return;
-      }
-      const newOtp = Math.floor(100000 + Math.random() * 900000);
-      setGeneratedOtp(newOtp);
-      setOtpSent(true);
-      await fetch(`${BASE_URL}/api/forgot-password/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contact, otp: newOtp, sent_for: 'forget_password' })
-      });
-    } catch (err) { showAlert('Error', 'Server error', false); }
-  }
+ async function sendOtp() {
+  if (!contact) { showAlert('Error', 'Please enter email or phone', false); return; }
+  try {
+    // 1. Pehle check karo user exist karta hai ya nahi
+    const res = await fetch(`${BASE_URL}/api/auth/forgot-password/check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact })
+    });
+    const data = await res.json();
+    
+    if (data.status === 'not_found') {
+      showAlert('Not Found', 'Email or Phone not found in our records.', false);
+      setContact('');
+      return;
+    }
+
+    // 2. Agar user mil gaya, toh OTP generate karo
+    const newOtp = Math.floor(100000 + Math.random() * 900000);
+    setGeneratedOtp(newOtp);
+
+    // 3. Backend ko request bhejo mail bhejne ke liye (Sahi URL use karein)
+    const mailRes = await fetch(`${BASE_URL}/api/auth/forgot-password/send-otp`, { // ✅ Sahi Path
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        contact, 
+        otp: newOtp, 
+        sent_for: 'forget_password' // ✅ Match with backend logic
+      })
+    });
+    
+    const mailData = await mailRes.json();
+    if (mailData.status === 'success') {
+      setOtpSent(true);
+      showAlert('Sent', 'OTP sent to your email!', true);
+    } else {
+      showAlert('Error', 'Failed to send OTP email', false);
+    }
+  } catch (err) { 
+    showAlert('Error', 'Server error', false); 
+  }
+}
 
   function verifyOtp() {
     if (Number(otp) === generatedOtp) { setView('reset'); } 
