@@ -425,18 +425,33 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
 }
 
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
+// Global open-section tracker so only one ChangeSectionModal is open at a time
+if (!window.__openSectionTaskId) window.__openSectionTaskId = { current: null };
+const sectionModalSetters = {};
+
 function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }) {
   const [expanded, setExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpward: false });
   const [editOpen, setEditOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
-  const [dateOpen, setDateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
   const menuBtnRef = useRef(null);
   const dateInputRef = useRef(null);
+
+  // Register this card's setSectionOpen so others can close it
+  useEffect(() => {
+    sectionModalSetters[task.id] = setSectionOpen;
+    return () => { delete sectionModalSetters[task.id]; };
+  }, [task.id]);
+
+  // Track modal/menu open state globally so drag is disabled
+  useEffect(() => {
+    const anyOpen = showMenu || editOpen || sectionOpen || deleteOpen;
+    window.__taskModalOpen = anyOpen;
+  }, [showMenu, editOpen, sectionOpen, deleteOpen]);
 
   const priority = (task.priority || 'LOW').toUpperCase();
   const color = PRIORITY_COLORS[priority] || '#3b82f6';
@@ -487,7 +502,6 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ id: task.id, due_date: date })
     });
-    setDateOpen(false);
     onRefresh();
   };
 
@@ -497,6 +511,34 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
     });
     setDeleteOpen(false);
     onRefresh();
+  };
+
+  const openSectionModal = () => {
+    // Close all other section modals first
+    Object.entries(sectionModalSetters).forEach(([id, setter]) => {
+      if (Number(id) !== task.id) setter(false);
+    });
+    setSectionOpen(true);
+  };
+
+const openMenu = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!menuBtnRef.current) return;
+    // Always recalculate position at click time — fresh getBoundingClientRect
+    const rect = menuBtnRef.current.getBoundingClientRect();
+    const menuHeight = 126; // 3 items × 42px
+    const menuWidth = 162;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    // Prefer opening below; open above only if not enough space below AND enough above
+    const openUpward = spaceBelow < menuHeight + 12 && spaceAbove > menuHeight + 12;
+    const top = openUpward
+      ? rect.top - menuHeight - 6
+      : rect.bottom + 6;
+    const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+    setMenuPos({ top, left, openUpward });
+    setShowMenu(v => !v);
   };
 
   if (!cardVisible) return (
@@ -513,9 +555,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
           transform: completing ? 'scale(0.97)' : 'scale(1)',
           transition: 'opacity 0.4s, transform 0.4s',
         }}
-        {...(dragHandleProps || {})}
       >
-
         {/* Row 1: Checkbox + Title */}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <AnimCheckbox checked={isCompleted} color={color} onChange={handleCheckbox}/>
@@ -524,10 +564,8 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
           </div>
         </div>
 
-        {/* Row 2: Name (left) | Info+Section+Date+3dot (right) */}
+        {/* Row 2 */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:6, paddingLeft:26 }}>
-
-          {/* Left side — name only */}
           <div style={{ display:'flex', alignItems:'center', minWidth:0 }}>
             {task.assigned_by_name && (
               <span style={{ fontSize:11, color:'#aaa', maxWidth:110, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
@@ -536,10 +574,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
             )}
           </div>
 
-          {/* Right side — info | section | date | 3dot */}
           <div style={{ display:'flex', alignItems:'center', gap:5, flexShrink:0 }}>
-
-            {/* Info icon */}
             <button
               onClick={() => hasDesc && setExpanded(v=>!v)}
               style={{ ...styles.iconBtn, opacity: hasDesc ? 1 : 0, cursor: hasDesc ? 'pointer' : 'default' }}
@@ -549,17 +584,15 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
               </svg>
             </button>
 
-            {/* Section badge — moved to right, before date */}
             {!isCompleted && (
               <span
-                onClick={() => setSectionOpen(true)}
+                onClick={openSectionModal}
                 style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'2px 6px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1.4, display:'inline-flex', alignItems:'center', gap:3 }}
               >
                 ↕ {SECTION_LABELS[task.section] || 'Task'}
               </span>
             )}
 
-            {/* Date */}
             {date ? (
               <span
                 onClick={() => { if (!isCompleted && dateInputRef.current) dateInputRef.current.showPicker?.(); }}
@@ -569,23 +602,8 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
               </span>
             ) : <span style={{ minWidth:56 }}/>}
 
-            {/* 3-dot menu */}
             {!isCompleted && (
-              <button
-                ref={menuBtnRef}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!showMenu && menuBtnRef.current) {
-                    const rect = menuBtnRef.current.getBoundingClientRect();
-                    const menuHeight = 164, menuWidth = 160;
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    const openUpward = spaceBelow < menuHeight + 8;
-                    setMenuPos({ top: openUpward ? rect.top - menuHeight : rect.bottom, left: rect.right - menuWidth, openUpward });
-                  }
-                  setShowMenu(v => !v);
-                }}
-                style={styles.iconBtn}
-              >
+              <button ref={menuBtnRef} onClick={openMenu} style={styles.iconBtn}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#aaa">
                   <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
                 </svg>
@@ -594,7 +612,6 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
           </div>
         </div>
 
-        {/* Description */}
         {expanded && hasDesc && (
           <div style={{ marginTop:10, borderTop:'1px solid #3C3A3A', paddingTop:10, paddingLeft:26, fontSize:12.5, color:'#aaa', lineHeight:1.6, textAlign:'left' }}>
             {task.description}
@@ -602,19 +619,21 @@ function TaskCard({ task, members, adminName, role, onRefresh, dragHandleProps }
         )}
       </div>
 
-      {showMenu && <div style={styles.menuBackdrop} onClick={()=>setShowMenu(false)}/>}
-
+      {/* Menu backdrop + menu rendered in fixed position (never behind cards) */}
+      {showMenu && <div style={{ position:'fixed', inset:0, zIndex:99990 }} onClick={()=>setShowMenu(false)}/>}
       {showMenu && (
         <div style={{
-          ...styles.contextMenu,
           position: 'fixed',
           top: menuPos.top,
           left: menuPos.left,
-          right: 'auto',
-          borderRadius: menuPos.openUpward ? '10px 10px 10px 4px' : '4px 10px 10px 10px',
-          transformOrigin: menuPos.openUpward ? 'bottom right' : 'top right',
-          animation: 'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
           zIndex: 99999,
+          background:'#2E2D2D',
+          border:'1px solid #0F8989',
+          borderRadius: menuPos.openUpward ? '10px 10px 4px 10px' : '4px 10px 10px 10px',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.7)',
+          overflow:'hidden',
+          minWidth:160,
+          animation:'menuPop 0.18s cubic-bezier(.34,1.56,.64,1)',
         }}>
           <button style={styles.menuItem} onClick={()=>{setEditOpen(true);setShowMenu(false);}}>
             ✏️ Edit
@@ -729,56 +748,68 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     return cards.length - 1;
   }
 
-  // Touch handlers (mobile)
-  const onTouchStart = (e, idx) => {
-    // Only start drag on long press — use a timer
-    const touch = e.touches[0];
-    touchStartYRef.current = touch.clientY;
-    touchCurrentYRef.current = touch.clientY;
-  };
-
-  const handleLongPressStart = (idx) => {
-    setDragIndex(idx);
-    setOverIndex(idx);
-    setIsDragging(true);
-  };
-
-  // We use pointer events for unified mouse+touch handling
-  const pointerDownTimerRef = useRef(null);
-  const pointerDownIdxRef = useRef(null);
+// ── Long-press drag via touch events only (pointer hover does NOT trigger) ──
+  const longPressTimerRef = useRef(null);
+  const longPressIdxRef = useRef(null);
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
   const isDraggingRef = useRef(false);
   const dragIndexRef = useRef(null);
   const overIndexRef = useRef(null);
+  // Track current touch Y for auto-scroll during drag
+  const activeTouchYRef = useRef(0);
 
-  const onPointerDown = (e, idx) => {
-    if (e.button && e.button !== 0) return;
-    pointerDownIdxRef.current = idx;
-    pointerDownTimerRef.current = setTimeout(() => {
+  const cancelLongPress = () => {
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  };
+
+  const onCardTouchStart = (e, idx) => {
+    if (window.__taskModalOpen) return;
+    const touch = e.touches[0];
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    activeTouchYRef.current = touch.clientY;
+    longPressIdxRef.current = idx;
+
+    longPressTimerRef.current = setTimeout(() => {
+      if (window.__taskModalOpen) return;
+      // Vibrate to give haptic feedback that drag started
+      try { navigator.vibrate?.(40); } catch {}
       isDraggingRef.current = true;
       dragIndexRef.current = idx;
       overIndexRef.current = idx;
       setDragIndex(idx);
       setOverIndex(idx);
       setIsDragging(true);
-      startAutoScroll(e.clientY);
-      // Prevent scroll while dragging
-      e.target.setPointerCapture?.(e.pointerId);
-    }, 300); // 300ms long press to initiate drag
+      startAutoScroll(activeTouchYRef.current);
+    }, 1400);
   };
 
-  const onPointerMove = (e) => {
-    if (!isDraggingRef.current) return;
-    touchCurrentYRef.current = e.clientY;
-    startAutoScroll(e.clientY);
-    const newOver = getIndexAtY(e.clientY);
+  const onCardTouchMove = (e, idx) => {
+    const touch = e.touches[0];
+    activeTouchYRef.current = touch.clientY;
+
+    // If moved more than 8px before long-press fires → cancel drag initiation
+    if (!isDraggingRef.current) {
+      const dx = Math.abs(touch.clientX - touchStartPosRef.current.x);
+      const dy = Math.abs(touch.clientY - touchStartPosRef.current.y);
+      if (dx > 8 || dy > 8) {
+        cancelLongPress();
+      }
+      return;
+    }
+
+    // Drag is active — prevent page scroll
+    e.preventDefault();
+    startAutoScroll(touch.clientY);
+    const newOver = getIndexAtY(touch.clientY);
     if (newOver !== null && newOver !== overIndexRef.current) {
       overIndexRef.current = newOver;
       setOverIndex(newOver);
     }
   };
 
-  const onPointerUp = async (e) => {
-    clearTimeout(pointerDownTimerRef.current);
+  const onCardTouchEnd = async (e) => {
+    cancelLongPress();
     stopAutoScroll();
 
     if (!isDraggingRef.current) {
@@ -798,45 +829,31 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
 
     if (fromIdx === null || fromIdx === toIdx) return;
 
-    // Reorder
     const newList = [...orderedTasks];
     const [moved] = newList.splice(fromIdx, 1);
     newList.splice(toIdx, 0, moved);
     setOrderedTasks(newList);
 
-    // Determine the date group the task landed in
-    const targetTask = newList[toIdx];
-    const neighborDate = targetTask?.due_date;
-    const movedDate = moved.due_date;
-
-    // Find surrounding tasks (prev and next) to determine date context
     const prevTask = toIdx > 0 ? newList[toIdx - 1] : null;
     const nextTask = toIdx < newList.length - 1 ? newList[toIdx + 1] : null;
+    const movedDate = moved.due_date;
+    let newDate = movedDate;
 
-    // Determine new date: use the date of the neighbor in direction of drop
-    let newDate = movedDate; // default: keep same date
-
-    // If dropped between tasks of the same date group, adopt that date
     const prevDate = prevTask ? normDateKey(prevTask.due_date) : null;
     const nextDate = nextTask ? normDateKey(nextTask.due_date) : null;
 
     if (prevDate && nextDate && prevDate === nextDate) {
-      // Dropped inside a date group
       newDate = prevTask.due_date;
     } else if (!prevTask && nextDate) {
-      // Dropped before everything — adopt next date
       newDate = nextTask.due_date;
     } else if (!nextTask && prevDate) {
-      // Dropped after everything — adopt prev date
       newDate = prevTask.due_date;
     } else if (prevDate) {
-      // Between two different date groups — use prev group's date
       newDate = prevTask.due_date;
     } else if (nextDate) {
       newDate = nextTask.due_date;
     }
 
-    // Only update date if it changed
     if (normDateKey(newDate) !== normDateKey(movedDate)) {
       await fetch(`${BASE_URL}/api/home/update-task-date`, {
         method: 'POST', credentials: 'include',
@@ -848,8 +865,8 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     onRefresh();
   };
 
-  const onPointerCancel = () => {
-    clearTimeout(pointerDownTimerRef.current);
+  const onCardTouchCancel = () => {
+    cancelLongPress();
     stopAutoScroll();
     isDraggingRef.current = false;
     dragIndexRef.current = null;
@@ -876,12 +893,9 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
   });
 
   return (
-    <div
+<div
       ref={scrollContainerRef}
       style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}
-      onPointerMove={isDragging ? onPointerMove : undefined}
-      onPointerUp={isDragging ? onPointerUp : undefined}
-      onPointerCancel={isDragging ? onPointerCancel : undefined}
     >
       {orderedTasks.length === 0 ? (
         <div style={{ color:'#aaa', textAlign:'center', marginTop:60, fontSize:13 }}>
@@ -904,7 +918,7 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
           const isBeingDragged = isDragging && dragIndex === idx;
           const isDropTarget = isDragging && overIndex === idx && dragIndex !== idx;
 
-          return (
+return (
             <div
               key={item.key}
               data-taskcard
@@ -913,10 +927,13 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
                 transform: isDropTarget ? 'scale(1.02)' : 'scale(1)',
                 transition: isDragging ? 'transform 0.15s, opacity 0.15s' : 'none',
                 position: 'relative',
-                touchAction: 'none',
-                cursor: isDragging ? 'grabbing' : 'grab',
+                touchAction: isDragging ? 'none' : 'pan-y',
+                cursor: isDragging ? 'grabbing' : 'default',
               }}
-              onPointerDown={(e) => onPointerDown(e, idx)}
+              onTouchStart={(e) => onCardTouchStart(e, idx)}
+              onTouchMove={(e) => onCardTouchMove(e, idx)}
+              onTouchEnd={onCardTouchEnd}
+              onTouchCancel={onCardTouchCancel}
             >
               {/* Drop indicator line above */}
               {isDropTarget && (
