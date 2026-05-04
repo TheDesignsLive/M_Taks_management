@@ -48,7 +48,7 @@ function toInputDate(dateStr) {
   return dateStr.split('T')[0];
 }
 
-// ─── CheckboxAnim ────────────────────────────────────────────────────────────
+// ─── CheckboxAnim ──────────────────────────────────────────────────────────
 function AnimCheckbox({ checked, color, onChange }) {
   const [anim, setAnim] = useState(false);
   const handleChange = () => {
@@ -103,7 +103,7 @@ function AnimCheckbox({ checked, color, onChange }) {
   );
 }
 
-// ─── EditTaskModal ────────────────────────────────────────────────────────────
+// ─── EditTaskModal ──────────────────────────────────────────────────────────
 function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [title, setTitle] = useState(task.title || '');
   const [desc, setDesc] = useState(task.description || '');
