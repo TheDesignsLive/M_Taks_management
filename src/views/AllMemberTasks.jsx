@@ -310,6 +310,7 @@ const AllMemberTask = () => {
   const [dragging, setDragging] = useState(false);
 
   const sliderRef = useRef(null);
+  const tabBarRef = useRef(null); // ✅ Added ref for header scroll
   const startXRef = useRef(null);
   const startScrollRef = useRef(null);
 
@@ -355,11 +356,18 @@ useEffect(() => {
 }, [selectedUser]);
 
   // Snap slider to active section
-  useEffect(() => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior: 'smooth' });
-    }
-  }, [activeSection]);
+useEffect(() => {
+  if (sliderRef.current) {
+   sliderRef.current.scrollTo({ left: sectionIndex * sliderRef.current.offsetWidth, behavior:'smooth' });
+  }
+  // ✅ Added Auto-scroll for Header (Tab Bar)
+  if (tabBarRef.current) {
+   const activeTab = tabBarRef.current.children[sectionIndex];
+   if (activeTab) {
+    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+   }
+  }
+ }, [activeSection, sectionIndex]); 
 
   // Touch swipe
   const onTouchStart = (e) => {
@@ -418,7 +426,7 @@ useEffect(() => {
       </div>
 
       {/* TAB BAR */}
-      <div style={styles.tabBar}>
+      <div ref={tabBarRef} style={styles.tabBar}>
         {SECTIONS.map((sec, i) => {
           const active = activeSection === sec;
           return (
