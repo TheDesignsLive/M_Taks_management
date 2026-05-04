@@ -2,6 +2,7 @@
 import express from 'express';
 import con from '../config/db.js';
 import multer from 'multer';
+import { notifyDesktop } from '../utils/notifyDesktop.js'; 
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -97,8 +98,10 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
             body: JSON.stringify({ announcement_id: result.insertId })
         }).catch(err => console.log('[Mobile] Signal failed:', err.message));
 
-        // ✅ Also emit to mobile clients directly
+// ✅ Also emit to mobile clients directly
         if (req.io) req.io.emit('new_announcement', { id: result.insertId, title, description, role_id, attachment: desktopFilename });
+
+        notifyDesktop('announcement_add'); // ✅ PUSH TO DESKTOP
 
         res.json({ success: true });
     } catch (err) {
@@ -108,7 +111,10 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
 });
 
 router.get('/delete-announcement/:id', async (req, res) => {
-    await con.query("DELETE FROM announcements WHERE id=?", [req.params.id]);
+    const id = req.params.id;
+    await con.query("DELETE FROM announcements WHERE id=?", [id]);
+    if (req.io) req.io.emit('delete_announcement', id); // ✅ mobile clients
+    notifyDesktop('announcement_delete', { id });        // ✅ PUSH TO DESKTOP
     res.json({ success: true });
 });
 
@@ -117,16 +123,40 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
     try {
         const { title, description, role_id } = req.body;
         const announcementId = req.params.id;
-        
+        const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
+        const MOBILE_SECRET = 'tms_mobile_bridge_2026';
+
+        // ✅ If new attachment, upload to desktop first (same as add pattern)
+        let desktopFilename = null;
+        if (req.file) {
+            try {
+                const formData = new FormData();
+                const fs = await import('fs');
+                const blob = new Blob([fs.readFileSync(req.file.path)], { type: req.file.mimetype });
+                formData.append('attachment', blob, req.file.filename);
+                const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
+                    method: 'POST',
+                    headers: { 'x-mobile-secret': MOBILE_SECRET },
+                    body: formData,
+                });
+                const uploadData = await uploadRes.json();
+                if (uploadData.success) desktopFilename = uploadData.filename;
+            } catch (uploadErr) {
+                console.error('[Mobile] Edit attachment upload to desktop failed:', uploadErr.message);
+            }
+        }
+
         let query = "UPDATE announcements SET title=?, description=?, role_id=? WHERE id=?";
         let params = [title, description, role_id, announcementId];
 
-        if (req.file) {
+        if (desktopFilename) {
             query = "UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=?";
-            params = [title, description, role_id, req.file.filename, announcementId];
+            params = [title, description, role_id, desktopFilename, announcementId];
         }
 
         await con.query(query, params);
+        if (req.io) req.io.emit('edit_announcement', { id: announcementId }); // ✅ mobile clients
+        notifyDesktop('announcement_edit', { id: announcementId });            // ✅ PUSH TO DESKTOP
         res.json({ success: true, message: "Announcement updated!" });
     } catch (err) {
         console.error(err);
