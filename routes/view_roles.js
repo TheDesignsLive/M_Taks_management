@@ -1,6 +1,7 @@
 // routes/view_roles.js
 import express from 'express';
 import con from '../config/db.js';
+import { notifyDesktop } from '../utils/notifyDesktop.js'; 
 
 const router = express.Router();
 
@@ -81,7 +82,7 @@ router.post('/add', requireAuth, async (req, res) => {
         );
 
         if (req.io) req.io.emit('update_roles');
-
+             notifyDesktop('roles');
         return res.json({ success: true, message: 'Role successfully created.' });
 
     } catch (err) {
@@ -122,7 +123,7 @@ router.post('/edit/:id', requireAuth, async (req, res) => {
         );
 
         if (req.io) req.io.emit('update_roles');
-
+                    notifyDesktop('roles');
         return res.json({ success: true, message: 'Role successfully updated.' });
 
     } catch (err) {
@@ -159,7 +160,7 @@ router.get('/delete/:id', requireAuth, async (req, res) => {
         await con.execute('DELETE FROM roles WHERE id=?', [id]);
 
         if (req.io) req.io.emit('update_roles');
-
+                    notifyDesktop('roles');
         return res.json({ success: true, message: 'Role successfully deleted.' });
 
     } catch (err) {

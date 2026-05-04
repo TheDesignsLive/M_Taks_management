@@ -135,6 +135,21 @@ app.post('/api/notify-members-update', (req, res) => {
     return res.json({ success: true });
 });
 
+// ✅ Desktop pings this when roles change → broadcast to mobile clients
+app.post('/api/notify-roles-update', (req, res) => {
+    const secret = req.headers['x-mobile-secret'];
+    if (secret !== 'tms_mobile_bridge_2026') {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    const source = req.headers['x-source'];
+    if (source !== 'desktop') {
+        return res.status(400).json({ success: false, message: 'Bad source' });
+    }
+    io.emit('update_roles');
+    console.log('[Mobile] 🛡️ roles update broadcast triggered by desktop');
+    return res.json({ success: true });
+});
+
 // ✅ CHANGE app.listen → httpServer.listen
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, "0.0.0.0", () => {

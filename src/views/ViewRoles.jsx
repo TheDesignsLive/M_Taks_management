@@ -1,6 +1,6 @@
 // ViewRoles.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-
+import { io } from 'socket.io-client';
 
 
 const BASE_URL =
@@ -243,7 +243,16 @@ export default function ViewRoles({ onBack, onChangeToDept }) {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+useEffect(() => { fetchData(); }, [fetchData]);
+
+  // ── SOCKET — real-time role updates ──────────────────────────────────────
+  useEffect(() => {
+    const socket = io(BASE_URL, { withCredentials: true });
+    socket.on('update_roles', () => {
+      fetchData();
+    });
+    return () => socket.disconnect();
+  }, [fetchData]);
 
   // ── FILTER ───────────────────────────────────────────────────────────────
   const filtered = data.roles.filter(r => {
