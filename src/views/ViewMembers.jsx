@@ -638,7 +638,7 @@ export default function ViewMember() {
             )}
             {/* Roles icon: always visible for everyone */}
             <button style={S.navPill} className="vm-nav-pill" onClick={() => setShowRoles(true)} title="Roles">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <i className="fa-regular fa-id-card"></i>
             </button>
           </div>
           <button style={S.addBtn} className="vm-add-btn" onClick={() => { resetAdd(); setAddOpen(true); }}>
