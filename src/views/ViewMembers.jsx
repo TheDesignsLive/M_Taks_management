@@ -697,7 +697,7 @@ export default function ViewMember() {
               <span style={S.modalTitle}>Add Member</span>
               <button style={S.closeBtn} className="vm-close" onClick={() => setAddOpen(false)}><CloseIcon /></button>
             </div>
-            <div style={{ overflowY: 'auto', maxHeight: 'calc(88dvh - 80px)', paddingBottom: 20 }}>
+<div style={{ overflowY: 'auto', flex: 1, paddingBottom: 20, paddingLeft: 18, paddingRight: 18 }}>
               {!hasRoles ? (
                 <div style={{ textAlign: 'center', padding: '30px 16px' }}>
                   <div style={{ marginBottom: 14 }}><AlertIcon /></div>
@@ -1168,29 +1168,33 @@ const S = {
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
     animation: 'vmFade 0.15s ease',
   },
-  modal: {
+modal: {
     width: '100%', maxWidth: 560,
     background: '#2E2D2D',
     borderRadius: '22px 22px 0 0',
-    padding: '0 18px 24px',
+    padding: '0 0 24px',
     maxHeight: '88dvh',
-    overflowY: 'auto',
+    overflowY: 'hidden',
     boxSizing: 'border-box',
     border: '1px solid rgba(15,137,137,0.2)',
     borderBottom: 'none',
     boxShadow: '0 -8px 48px rgba(0,0,0,0.5)',
     animation: 'vmSlide 0.24s cubic-bezier(.22,.68,0,1.18)',
+    display: 'flex',
+    flexDirection: 'column',
   },
-  modalPill: {
+modalPill: {
     width: 40, height: 4,
     background: 'rgba(15,137,137,0.4)',
     borderRadius: 4, margin: '12px auto 0',
+    flexShrink: 0,
   },
-  modalHead: {
+modalHead: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '16px 0 14px',
+    padding: '16px 18px 14px',
     borderBottom: '1px solid rgba(255,255,255,0.08)',
     marginBottom: 16,
+    flexShrink: 0,
   },
   modalTitle: {
     fontSize: 16, fontWeight: 800,
