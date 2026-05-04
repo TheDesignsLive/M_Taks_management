@@ -7,7 +7,8 @@ export function notifyDesktop(type = 'tasks') {
         tasks:   `${DESKTOP_BASE_URL}/api/notify-task-update`,
         profile: `${DESKTOP_BASE_URL}/api/notify-profile-update`,
         members: `${DESKTOP_BASE_URL}/api/notify-members-update`,
-        roles: `${DESKTOP_BASE_URL}/api/notify-roles-update`,
+    roles:  `${DESKTOP_BASE_URL}/api/notify-roles-update`,
+        teams:  `${DESKTOP_BASE_URL}/api/notify-teams-update`,
     };
     const endpoint = endpoints[type] || endpoints.tasks;
 

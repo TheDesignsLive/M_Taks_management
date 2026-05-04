@@ -1,5 +1,6 @@
 // view_teams.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { io } from 'socket.io-client'; // ✅ ADD
 import ViewRoles from './ViewRoles';
 
 const BASE_URL =
@@ -183,7 +184,16 @@ export default function ViewTeams({ onBack }) {
     }
   }, []);
 
-  useEffect(() => { fetchTeams(); }, [fetchTeams]);
+useEffect(() => { fetchTeams(); }, [fetchTeams]);
+
+  // ── SOCKET — real-time team updates ───────────────────────────────────────
+  useEffect(() => {
+    const socket = io(BASE_URL, { withCredentials: true });
+    socket.on('update_teams', () => {
+      fetchTeams();
+    });
+    return () => socket.disconnect();
+  }, [fetchTeams]);
 
   // ── FILTERED ──────────────────────────────────────────────────────────────
   const filtered = teams.filter(t =>
