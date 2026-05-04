@@ -781,7 +781,7 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
       setOverIndex(idx);
       setIsDragging(true);
       startAutoScroll(activeTouchYRef.current);
-    }, 1400);
+    }, 1200);
   };
 
   const onCardTouchMove = (e, idx) => {
