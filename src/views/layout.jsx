@@ -390,7 +390,7 @@ if (data.status === 'success') {
               { key: 'notifications', icon: 'fa-bell',           label: 'Notifications',    show: true, badge: notifCount },
               { key: 'assigned',      icon: 'fa-file-signature', label: 'Assigned By Me',   show: true },
               { key: 'allTasks',      icon: 'fa-clipboard',      label: 'All Member Tasks', show: canSeeAllTasks },
-              { key: 'members',       icon: 'fa-users',          label: 'View Members',     show: canSeeMembers },
+              { key: 'members',       icon: 'fa-users',          label: 'Members',     show: canSeeMembers },
               { key: 'settings',      icon: 'fa-gear',           label: 'Settings',         show: true },
               { key: 'profile',       icon: 'fa-circle-user',    label: 'Profile',          show: true },
             ].filter(item => item.show);
