@@ -679,7 +679,7 @@ const customCSS = `
 
   /* FIELDS */
   .atb-field { margin-bottom: 12px; }
-  .atb-label { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #0F8989; margin-bottom: 5px; }
+  .atb-label { display: block; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #0F8989; margin-bottom: 5px; }
   .atb-input { width: 100%; box-sizing: border-box; border: 1.5px solid rgba(15,137,137,0.3); border-radius: 10px; padding: 10px 13px; font-size: 14px; color: #eee; background: #3C3A3A; outline: none; font-family: Arial, sans-serif; transition: border-color 0.18s, box-shadow 0.18s; }
   .atb-input:focus { border-color: #0F8989; box-shadow: 0 0 0 3px rgba(15,137,137,0.12); }
   .atb-input.error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); animation: atbShake 0.35s; }
