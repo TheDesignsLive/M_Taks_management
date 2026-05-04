@@ -363,14 +363,55 @@ function DatePickerModal({ current, onSave, onClose }) {
 // ─── DeleteConfirmModal ───────────────────────────────────────────────────────
 function DeleteConfirmModal({ message, onConfirm, onClose }) {
   return (
-    <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{...styles.modal, maxWidth:280, textAlign:'center'}}>
-        <div style={{fontSize:32, marginBottom:8}}>🗑️</div>
-        <div style={{color:'#CDF4F4', fontWeight:700, fontSize:15, marginBottom:6}}>Delete Task?</div>
-        <div style={{color:'#aaa', fontSize:13, marginBottom:18}}>{message}</div>
-        <div style={styles.modalActions}>
-          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button onClick={onConfirm} style={{...styles.saveBtn, background:'#ef4444'}}>Delete</button>
+    <div style={{
+      position:'fixed', inset:0,
+      background:'rgba(0,0,0,0.75)',
+      zIndex:9000, display:'flex', alignItems:'flex-end', justifyContent:'center',
+      animation:'atbFade 0.15s ease',
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        width:'100%', maxWidth:400,
+        background:'#2E2D2D',
+        borderRadius:'22px 22px 0 0',
+        padding:'0 18px 28px',
+        boxSizing:'border-box',
+        border:'1px solid rgba(15,137,137,0.2)',
+        borderBottom:'none',
+        boxShadow:'0 -8px 48px rgba(0,0,0,0.5)',
+        animation:'atbSlide 0.24s cubic-bezier(.22,.68,0,1.18)',
+      }}>
+        <div style={{ width:40, height:4, background:'rgba(15,137,137,0.4)', borderRadius:4, margin:'12px auto 0' }} />
+        <div style={{ textAlign:'center', padding:'20px 16px 8px' }}>
+          <div style={{ fontSize:36, marginBottom:12 }}>🗑️</div>
+          <div style={{ fontSize:17, fontWeight:800, color:'#CDF4F4', marginBottom:8 }}>Delete Task?</div>
+          <div style={{ fontSize:13, color:'#aaa', marginBottom:22, lineHeight:1.6 }}>{message}</div>
+          <div style={{ display:'flex', gap:10 }}>
+            <button
+              style={{
+                flex:1, padding:'12px 20px',
+                background:'rgba(255,255,255,0.07)',
+                border:'1px solid rgba(255,255,255,0.12)',
+                borderRadius:12, color:'#aaa',
+                fontSize:13, fontWeight:700, cursor:'pointer',
+                fontFamily:'Arial, sans-serif', letterSpacing:0.3,
+              }}
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              style={{
+                flex:1, padding:'12px 20px',
+                background:'#e74c3c', border:'none',
+                borderRadius:12, color:'#fff',
+                fontSize:13, fontWeight:700, cursor:'pointer',
+                fontFamily:'Arial, sans-serif', letterSpacing:0.3,
+              }}
+              onClick={onConfirm}
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>
