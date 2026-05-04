@@ -379,7 +379,21 @@ export default function ViewMember() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+ useEffect(() => {
+    fetchData();
+
+    // Listen for real-time member updates via Socket.IO
+    if (window.io) {
+      const socket = window.io(
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? 'http://localhost:5000'
+          : 'https://m-tms.thedesigns.live',
+        { withCredentials: true }
+      );
+      socket.on('update_members', () => fetchData());
+      return () => socket.disconnect();
+    }
+  }, [fetchData]);
 
   // ── FILTERED USERS ───────────────────────────────────────────────────────
   const filtered = data.users.filter(u =>

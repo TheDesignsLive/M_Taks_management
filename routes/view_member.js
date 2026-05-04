@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import con from '../config/db.js';
+import { notifyDesktop } from '../utils/notifyDesktop.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -206,7 +207,8 @@ router.post('/add', requireAuth, (req, res) => {
                     [adminId, name.trim(), email.trim(), phone?.trim() || '', hashed, role_id, profilePic, 'ACTIVE']
                 );
 
-                if (req.io) req.io.emit('update_members');
+if (req.io) req.io.emit('update_members');
+                notifyDesktop('members');
 
                 return res.json({ success: true, message: 'Member added successfully.' });
 
@@ -227,7 +229,8 @@ router.post('/add', requireAuth, (req, res) => {
                     [adminId, role_id, requestedBy, name.trim(), email.trim(), hashed, profilePic || null, requestedBy, 'PENDING']
                 );
 
-                if (req.io) req.io.emit('update_member_requests');
+if (req.io) req.io.emit('update_member_requests');
+                notifyDesktop('members');
 
                 return res.json({ success: true, message: 'Member request submitted. Awaiting admin approval.', isRequest: true });
             }
@@ -293,7 +296,8 @@ router.post('/edit/:id', requireAuth, (req, res) => {
                 );
             }
 
-            if (req.io) req.io.emit('update_members');
+     if (req.io) req.io.emit('update_members');
+            notifyDesktop('members');
 
             return res.json({ success: true, message: 'Member updated successfully.' });
         } catch (err) {
@@ -318,7 +322,8 @@ router.get('/suspend/:id', requireAuth, async (req, res) => {
         const newStatus = rows[0].status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
         await con.query('UPDATE users SET status=? WHERE id=?', [newStatus, id]);
 
-        if (req.io) req.io.emit('update_members');
+if (req.io) req.io.emit('update_members');
+        notifyDesktop('members');
 
         const msg = newStatus === 'ACTIVE' ? 'Member activated successfully.' : 'Member suspended successfully.';
         return res.json({ success: true, message: msg, newStatus });
@@ -360,7 +365,8 @@ router.get('/delete/:id', requireAuth, async (req, res) => {
             safeDeleteFile(rows[0].profile_pic);
             await con.query('DELETE FROM users WHERE id=?', [id]);
 
-            if (req.io) req.io.emit('update_members');
+if (req.io) req.io.emit('update_members');
+            notifyDesktop('members');
 
             return res.json({ success: true, message: 'Member deleted successfully.' });
 } else {
