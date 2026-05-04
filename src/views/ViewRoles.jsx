@@ -637,51 +637,60 @@ useEffect(() => { fetchData(); }, [fetchData]);
 
 // ─── ROLE CARD ────────────────────────────────────────────────────────────────
 function RoleCard({ role, isAdminLike, onEdit, onDelete }) {
+  const [expanded, setExpanded] = React.useState(false); // 🟢 State add ki
   const cs = controlStyle(role.control_type);
   const hasDept = role.team_name && role.team_name !== 'No Department';
 
   return (
-    <div style={S.card} className="vr-card">
-      {/* Top row: shield icon + name + control badge */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-        <div style={S.roleIcon}>
-          <ShieldIcon />
-        </div>
+    <div 
+      style={S.card} 
+      className="vr-card" 
+      onClick={() => setExpanded(!expanded)} // 🟢 Toggle on click
+    >
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: expanded ? 10 : 0 }}>
+        <div style={S.roleIcon}><ShieldIcon /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={S.cardName}>{role.role_name}</div>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
             {hasDept ? role.team_name : 'No Department'}
           </div>
         </div>
-        <span style={{ ...S.controlBadge, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.color, flexShrink: 0 }}>
-          {role.control_type}
-        </span>
-      </div>
-
-      {/* Created date */}
-      <div style={S.cardMeta}>
-        <span style={S.metaChip}>
-          {hasDept ? role.team_name : 'No Department'}
-        </span>
-        <span style={{ fontSize: 11, color: '#666' }}>
-          {new Date(role.created_at).toLocaleDateString()}
-        </span>
-      </div>
-
-      {/* Actions — only for admin/owner */}
-      {isAdminLike && (
-        <div style={S.cardActions}>
-          <button style={{ ...S.iconBtn, color: '#FFD000', flex: 1, gap: 6, fontSize: 12, fontWeight: 700 }}
-            className="vr-icon-btn" onClick={onEdit}>
-            <PencilIcon size={13} />
-            <span>Edit</span>
-          </button>
-          <button style={{ ...S.iconBtn, color: '#e74c3c', flex: 1, gap: 6, fontSize: 12, fontWeight: 700 }}
-            className="vr-icon-btn" onClick={onDelete}>
-            <TrashIcon size={13} />
-            <span>Delete</span>
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ ...S.controlBadge, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.color, flexShrink: 0 }}>
+            {role.control_type}
+          </span>
+          {/* 🟢 Chevron icon rotate hoga */}
+          <span style={{ 
+            color: '#0F8989', 
+            transition: 'transform 0.22s', 
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            display: 'flex' 
+          }}>
+            <ChevronIcon />
+          </span>
         </div>
+      </div>
+
+      {/* Meta Row & Actions - Only visible when expanded */}
+      {expanded && (
+        <>
+          <div style={S.cardMeta}>
+            <span style={S.metaChip}>{hasDept ? role.team_name : 'No Department'}</span>
+            <span style={{ fontSize: 11, color: '#666' }}>{new Date(role.created_at).toLocaleDateString()}</span>
+          </div>
+
+          {isAdminLike && (
+            <div style={S.cardActions} onClick={e => e.stopPropagation()}>
+              <button style={{ ...S.actionBtn, background: 'rgba(255,208,0,0.15)', color: '#FFD000' }} onClick={onEdit}>
+                <PencilIcon size={13} /> <span>Edit</span>
+              </button>
+              <button style={{ ...S.actionBtn, background: 'rgba(231,76,60,0.15)', color: '#e74c3c' }} onClick={onDelete}>
+                <TrashIcon size={13} /> <span>Delete</span>
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -810,12 +819,12 @@ const S = {
 
   card: {
     background: '#444',
-    border: '1px solid rgba(255,255,255,0.06)',
     borderLeft: '4px solid rgba(15,137,137,0.5)',
     borderRadius: 8,
     padding: '14px 16px',
     transition: 'transform 0.15s, box-shadow 0.15s',
     textAlign: 'left',
+    cursor: 'pointer', // 👈 Cursor pointer kiya
   },
   roleIcon: {
     width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
@@ -847,9 +856,26 @@ const S = {
     maxWidth: '65%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
   cardActions: {
-    display: 'flex', alignItems: 'center', gap: 8,
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: 8,
     borderTop: '1px solid rgba(255,255,255,0.08)',
     paddingTop: 12,
+    marginTop: 12, // 👈 Space add ki
+  },
+  actionBtn: { // 👈 Naya style buttons ke liye (same as ViewTeams)
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: '8px 0',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: "Arial, sans-serif",
   },
   iconBtn: {
     height: 34,
