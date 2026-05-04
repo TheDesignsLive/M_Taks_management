@@ -61,8 +61,7 @@ function InfoRow({ icon, label, value, valueStyle }) {
   return (
     <div style={styles.infoRow}>
       <div style={styles.infoIcon}>{icon}</div>
-      <div style={styles.infoText}>
-        <div style={styles.infoLabel}>{label}</div>
+<div style={{ ...styles.infoText, textAlign: 'left' }}> {/* ✅ Added textAlign: 'left' */}        <div style={styles.infoLabel}>{label}</div>
         <div style={{ ...styles.infoValue, ...(valueStyle || {}) }}>{value || '—'}</div>
       </div>
     </div>
@@ -657,6 +656,7 @@ const styles = {
   infoValue: {
     fontSize: 14, color: '#e2e8f0', fontWeight: 500,
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    textAlign: 'left',
   },
 
   // ── Edit CTA ──
