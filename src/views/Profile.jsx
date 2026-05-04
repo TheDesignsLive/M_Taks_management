@@ -726,6 +726,7 @@ const styles = {
     padding: '10px 0 18px',
     borderBottom: `0.5px solid ${T.border}`,
     marginBottom: 18,
+    textAlign: 'left',
   },
   camBtn: {
     position: 'absolute', bottom: 0, right: 0,
