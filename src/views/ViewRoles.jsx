@@ -649,7 +649,9 @@ function RoleCard({ role, isAdminLike, onEdit, onDelete }) {
     >
       {/* Top row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: expanded ? 10 : 0 }}>
-        <div style={S.roleIcon}><ShieldIcon /></div>
+        <div style={S.roleIcon}>
+  <i className="fa-regular fa-id-card"></i>
+</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={S.cardName}>{role.role_name}</div>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>
