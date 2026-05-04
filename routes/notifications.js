@@ -1,6 +1,7 @@
 //notifications.js mobile
 import express from 'express';
 import fs from 'fs';
+import FormData from 'form-data';
 import con from '../config/db.js';
 import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
@@ -69,16 +70,20 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
 
         // 1. Upload attachment to desktop so both servers can serve it from /uploads/
         let desktopFilename = null;
-        if (req.file) {
+if (req.file) {
             try {
-                const fileBuffer = fs.readFileSync(req.file.path);
-                const blob = new Blob([fileBuffer], { type: req.file.mimetype });
                 const formData = new FormData();
-                formData.append('attachment', blob, req.file.filename);
+                formData.append('attachment', fs.createReadStream(req.file.path), {
+                    filename: req.file.filename,
+                    contentType: req.file.mimetype,
+                });
 
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
                     method: 'POST',
-                    headers: { 'x-mobile-secret': MOBILE_SECRET },
+                    headers: {
+                        'x-mobile-secret': MOBILE_SECRET,
+                        ...formData.getHeaders(),
+                    },
                     body: formData,
                 });
                 const uploadData = await uploadRes.json();
@@ -176,16 +181,20 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         if (!check.length) return res.status(403).json({ success: false, message: 'Not found' });
 
         let desktopFilename = null;
-        if (req.file) {
+if (req.file) {
             try {
-                const fileBuffer = fs.readFileSync(req.file.path);
-                const blob = new Blob([fileBuffer], { type: req.file.mimetype });
                 const formData = new FormData();
-                formData.append('attachment', blob, req.file.filename);
+                formData.append('attachment', fs.createReadStream(req.file.path), {
+                    filename: req.file.filename,
+                    contentType: req.file.mimetype,
+                });
 
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
                     method: 'POST',
-                    headers: { 'x-mobile-secret': MOBILE_SECRET },
+                    headers: {
+                        'x-mobile-secret': MOBILE_SECRET,
+                        ...formData.getHeaders(),
+                    },
                     body: formData,
                 });
                 const uploadData = await uploadRes.json();
