@@ -10,8 +10,13 @@ import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
 
 const router = express.Router();
+
+// ✅ Ensure temp upload dir exists on mobile server
+const TEMP_UPLOAD_DIR = 'public/uploads';
+if (!fs.existsSync(TEMP_UPLOAD_DIR)) fs.mkdirSync(TEMP_UPLOAD_DIR, { recursive: true });
+
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads'),
+    destination: (req, file, cb) => cb(null, TEMP_UPLOAD_DIR),
     filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname)
 });
 const upload = multer({ storage });
@@ -22,7 +27,6 @@ router.get('/', async (req, res) => {
     const sessionUserId = (role === "admin" || role === "owner") ? 0 : userId;
 
     try {
-        // EXACT PATTERN PERMISSIONS
         const canManageAnnounce = (role === 'admin' || control_type === 'ADMIN' || control_type === 'OWNER');
         const canManageMembers = (role === 'admin' || control_type === 'OWNER'); 
 
@@ -57,11 +61,7 @@ router.get('/', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-// ROUTERS FOR ACTIONS (You can create these in your auth or members router)
-// I am calling: /api/notifications/process-member-request
 router.get('/process-request/:action/:id', async (req, res) => {
-    // pattern: action can be 'approve-member', 'reject-member', 'confirm-deletion', 'reject-deletion'
-    // Logic will be your old app logic, just returning JSON here
     res.json({ success: true, message: "Request processed" });
 });
 
@@ -71,11 +71,9 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
         const MOBILE_SECRET = 'tms_mobile_bridge_2026';
 
-        // 1. Upload attachment to desktop so both servers can serve it from /uploads/
         let desktopFilename = null;
-if (req.file) {
+        if (req.file) {
             try {
-                // Read file into buffer BEFORE creating stream — avoids stream timing issues
                 const fileBuffer = fs.readFileSync(req.file.path);
                 
                 const formData = new FormData();
@@ -108,11 +106,9 @@ if (req.file) {
             } catch (uploadErr) {
                 console.error('[Mobile] ❌ Attachment upload failed:', uploadErr.message);
             }
-            // Clean up local temp file AFTER upload attempt
             try { fs.unlinkSync(req.file.path); } catch (_) {}
         }
 
-        // 2. Insert into DB — store desktopFilename so the path works from desktop's /uploads/
         const addedBy = req.session.role === 'admin' ? req.session.adminId : req.session.userId;
         const whoAdded = req.session.role.toUpperCase();
         const [result] = await con.query(
@@ -120,7 +116,6 @@ if (req.file) {
             [req.session.adminId, addedBy, whoAdded, role_id, title, description, desktopFilename]
         );
 
-        // 3. Fetch full row with joins — same payload format for both desktop and mobile sockets
         const [rows] = await con.query(`
             SELECT a.*, 
             IF(a.role_id=0,'All Members',t.name) AS target_team_name,
@@ -137,10 +132,8 @@ if (req.file) {
         const ann = rows[0];
         if (!ann) return res.status(500).json({ success: false });
 
-        // 4. Emit to mobile clients immediately
         if (req.io) req.io.emit('new_announcement', ann);
 
-        // 5. Ping desktop → desktop fetches from DB and emits to its own socket clients
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
@@ -157,7 +150,6 @@ if (req.file) {
 router.get('/delete-announcement/:id', async (req, res) => {
     try {
         const id = req.params.id;
-        // Verify this announcement belongs to this admin before deleting
         const [check] = await con.query(
             "SELECT id FROM announcements WHERE id=? AND admin_id=?", [id, req.session.adminId]);
         if (!check.length) return res.status(403).json({ success: false, message: 'Not found' });
@@ -179,8 +171,6 @@ router.get('/delete-announcement/:id', async (req, res) => {
     }
 });
 
-
-// EDIT ANNOUNCEMENT ROUTE (Bhai isse add kar le tabhi save hoga)
 router.post('/edit-announcement/:id', upload.single('attachment'), async (req, res) => {
     try {
         const { title, description, role_id } = req.body;
@@ -188,13 +178,12 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
         const MOBILE_SECRET = 'tms_mobile_bridge_2026';
 
-        // Verify this announcement belongs to this admin
         const [check] = await con.query(
             "SELECT id FROM announcements WHERE id=? AND admin_id=?", [announcementId, req.session.adminId]);
         if (!check.length) return res.status(403).json({ success: false, message: 'Not found' });
 
         let desktopFilename = null;
-if (req.file) {
+        if (req.file) {
             try {
                 const fileBuffer = fs.readFileSync(req.file.path);
 
@@ -241,7 +230,6 @@ if (req.file) {
                 [title, description, role_id, announcementId, req.session.adminId]);
         }
 
-        // Fetch fresh row with all joins for consistent socket payload
         const [rows] = await con.query(`
             SELECT a.*, 
             IF(a.role_id=0,'All Members',t.name) AS target_team_name,
@@ -272,6 +260,5 @@ if (req.file) {
         res.status(500).json({ success: false });
     }
 });
-
 
 export default router;
