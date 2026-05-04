@@ -162,4 +162,61 @@ router.post("/logout", (req, res) => {
     });
 });
 
+// ================= FORGOT PASSWORD - CHECK USER ====================
+// Ye route check karega ki email/phone exist karta hai ya nahi
+router.post("/forgot-password/check", async (req, res) => {
+    const { contact } = req.body;
+    if (!contact) return res.status(400).json({ status: 'error', message: "Contact is required" });
+
+    try {
+        // 1. Check in Admins table
+        const [admin] = await con.query("SELECT id FROM admins WHERE email=? OR phone=?", [contact, contact]);
+        if (admin.length > 0) {
+            return res.json({ status: 'success', message: "User found" });
+        }
+
+        // 2. Check in Users table
+        const [user] = await con.query("SELECT id FROM users WHERE email=? OR phone=?", [contact, contact]);
+        if (user.length > 0) {
+            return res.json({ status: 'success', message: "User found" });
+        }
+
+        // Agar dono mein nahi mila
+        return res.json({ status: 'not_found', message: "Email or Phone not found" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', message: "Database error" });
+    }
+});
+
+// ================= RESET PASSWORD ====================
+// Ye route naya password update karega
+router.post("/forgot-password/reset", async (req, res) => {
+    const { contact, new_password } = req.body;
+    if (!contact || !new_password) return res.status(400).json({ status: 'error', message: "Missing fields" });
+
+    try {
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // 1. Check and Update in Admins
+        const [admin] = await con.query("SELECT id FROM admins WHERE email=? OR phone=?", [contact, contact]);
+        if (admin.length > 0) {
+            await con.query("UPDATE admins SET password=? WHERE id=?", [hashedPassword, admin[0].id]);
+            return res.json({ status: 'success', message: "Password updated!" });
+        }
+
+        // 2. Check and Update in Users
+        const [user] = await con.query("SELECT id FROM users WHERE email=? OR phone=?", [contact, contact]);
+        if (user.length > 0) {
+            await con.query("UPDATE users SET password=? WHERE id=?", [hashedPassword, user[0].id]);
+            return res.json({ status: 'success', message: "Password updated!" });
+        }
+
+        return res.status(404).json({ status: 'error', message: "User not found" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', message: "Failed to reset password" });
+    }
+});
+
 export default router;

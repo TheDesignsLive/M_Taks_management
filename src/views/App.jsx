@@ -239,7 +239,7 @@ export default function App() {
   async function sendOtp() {
     if (!contact) { showAlert('Error', 'Please enter email or phone', false); return; }
     try {
-      const res = await fetch(`${BASE_URL}/api/forgot-password/check`, {
+      const res = await fetch(`${BASE_URL}/api/auth/forgot-password/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -276,7 +276,7 @@ export default function App() {
     if (!newPass || !confPass) { showAlert('Error', 'Please fill all fields', false); return; }
     if (hasError) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/forgot-password/reset`, {
+      const res = await fetch(`${BASE_URL}/api/auth/forgot-password/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
