@@ -261,17 +261,11 @@ useEffect(() => {
                 <span style={{ color: "#14b8a6" }}>{a.target_team_name}</span>
               </div>
               <p style={styles.descText}>{a.description}</p>
-              <div style={styles.footer}>
+<div style={styles.footer}>
                 <span>{new Date(a.created_at).toLocaleDateString()}</span>
-         {a.attachment && (
-  
-    href={`https://tms.thedesigns.live/uploads/${a.attachment}`}
-    target="_blank"
-    style={styles.attachLink}
-  >
-    View File
-  </a>
-)}
+                {a.attachment && (
+                  <a href={"https://tms.thedesigns.live/uploads/" + a.attachment} target="_blank" style={styles.attachLink}>View File</a>
+                )}
               </div>
             </div>
           ))}
