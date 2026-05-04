@@ -478,33 +478,50 @@ if (showRoles) {
 
 // ─── DEPARTMENT CARD ──────────────────────────────────────────────────────────
 function DepartmentCard({ team, index, onEdit, onDelete }) {
+  const [expanded, setExpanded] = React.useState(false); // 🟢 State for expand
+
   const createdDate = team.created_at
     ? new Date(team.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
 
   return (
-    <div style={S.card} className="vt-card">
+    <div 
+      style={S.card} 
+      className="vt-card" 
+      onClick={() => setExpanded(!expanded)} // 🟢 Toggle on click
+    >
       {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={S.deptIcon}>
-          <BuildingIcon />
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: expanded ? 12 : 0 }}>
+        <div style={S.deptIcon}><BuildingIcon /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={S.cardName}>{team.name}</div>
-          <div style={S.cardSub}>Created {createdDate}</div>
+          {expanded && <div style={S.cardSub}>Created {createdDate}</div>}
         </div>
-        <div style={S.indexBadge}>#{index + 1}</div>
+        
+        {/* 🟢 Chevron icon like ViewMember */}
+        <span style={{ 
+          color: '#0F8989', 
+          transition: 'transform 0.22s', 
+          transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          display: 'flex' 
+        }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </span>
       </div>
 
-      {/* Actions */}
-      <div style={S.cardActions}>
-        <button style={{ ...S.iconBtn, color: '#FFD000' }} className="vt-icon-btn" onClick={onEdit} title="Edit">
-          <PencilIcon size={15} />
-        </button>
-        <button style={{ ...S.iconBtn, color: '#e74c3c' }} className="vt-icon-btn" onClick={onDelete} title="Delete">
-          <TrashIcon size={15} />
-        </button>
-      </div>
+      {/* Actions - Only visible when expanded */}
+      {expanded && (
+        <div style={S.cardActions} onClick={e => e.stopPropagation()}>
+          <button style={{ ...S.actionBtn, background: 'rgba(255,208,0,0.15)', color: '#FFD000' }} onClick={onEdit}>
+             <PencilIcon size={14} /> <span style={{marginLeft:6}}>Edit</span>
+          </button>
+          <button style={{ ...S.actionBtn, background: 'rgba(231,76,60,0.15)', color: '#e74c3c' }} onClick={onDelete}>
+             <TrashIcon size={14} /> <span style={{marginLeft:6}}>Delete</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -613,13 +630,13 @@ const S = {
     gap: 12,
   },
 
-  card: {
+card: {
     background: '#444',
-    border: '1px solid rgba(255,255,255,0.06)',
     borderLeft: '4px solid rgba(15,137,137,0.5)',
     borderRadius: 8,
     padding: '14px 16px',
     transition: 'transform 0.15s, box-shadow 0.15s',
+    cursor: 'pointer', // 👈 Pointer cursor
   },
   deptIcon: {
     width: 44, height: 44, borderRadius: 10, flexShrink: 0,
@@ -642,10 +659,26 @@ const S = {
     borderRadius: 20, padding: '3px 10px',
     fontSize: 11, fontWeight: 700, flexShrink: 0,
   },
-  cardActions: {
-    display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8,
+ cardActions: {
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: 8,
     borderTop: '1px solid rgba(255,255,255,0.08)',
     paddingTop: 12,
+    marginTop: 12, // 👈 Space from content
+  },
+  actionBtn: { // 👈 Naya style buttons ke liye
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '8px 0',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: "Arial, sans-serif",
   },
   iconBtn: {
     width: 34, height: 34,
