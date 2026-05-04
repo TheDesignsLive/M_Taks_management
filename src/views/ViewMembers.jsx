@@ -796,7 +796,7 @@ export default function ViewMember() {
               <span style={S.modalTitle}>Edit Member</span>
               <button style={S.closeBtn} className="vm-close" onClick={() => setEditOpen(false)}><CloseIcon /></button>
             </div>
-            <div style={{ overflowY: 'auto', maxHeight: 'calc(88dvh - 80px)', paddingBottom: 20 }}>
+            <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 20, paddingLeft: 18, paddingRight: 18 }}>
               {/* Avatar picker */}
               <div style={S.avatarEditRow}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
