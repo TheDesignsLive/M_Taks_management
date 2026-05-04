@@ -959,6 +959,7 @@ const S = {
     fontSize: 11, fontWeight: 800, color: '#14b8a6',
     textTransform: 'uppercase', letterSpacing: 0.7,
     marginBottom: 12,
+    textAlign: 'left', // ✅ Added
   },
 
   // Spinner
