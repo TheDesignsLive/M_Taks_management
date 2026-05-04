@@ -1,8 +1,9 @@
 //notifications.js mobile
 import express from 'express';
+import fs from 'fs';
 import con from '../config/db.js';
 import multer from 'multer';
-import { notifyDesktop } from '../utils/notifyDesktop.js'; 
+import { notifyDesktop } from '../utils/notifyDesktop.js';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -65,30 +66,36 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         const { title, description, role_id } = req.body;
         const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
         const MOBILE_SECRET = 'tms_mobile_bridge_2026';
-        const fs = await import('fs');
 
-        // 1. Upload attachment to desktop (so one shared copy lives there)
+        // 1. Upload attachment to desktop so both servers can serve it from /uploads/
         let desktopFilename = null;
         if (req.file) {
             try {
-                const { FormData: FD, Blob: BL } = await import('node-fetch').catch(() => ({ FormData, Blob }));
+                const fileBuffer = fs.readFileSync(req.file.path);
+                const blob = new Blob([fileBuffer], { type: req.file.mimetype });
                 const formData = new FormData();
-                const buf = fs.readFileSync(req.file.path);
-                const blob = new Blob([buf], { type: req.file.mimetype });
                 formData.append('attachment', blob, req.file.filename);
+
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
                     method: 'POST',
                     headers: { 'x-mobile-secret': MOBILE_SECRET },
                     body: formData,
                 });
                 const uploadData = await uploadRes.json();
-                if (uploadData.success) desktopFilename = uploadData.filename;
+                if (uploadData.success) {
+                    desktopFilename = uploadData.filename;
+                    console.log('[Mobile] ✅ Attachment uploaded to desktop:', desktopFilename);
+                } else {
+                    console.error('[Mobile] ❌ Desktop rejected attachment upload:', uploadData);
+                }
             } catch (uploadErr) {
-                console.error('[Mobile] Attachment upload to desktop failed:', uploadErr.message);
+                console.error('[Mobile] ❌ Attachment upload to desktop failed:', uploadErr.message);
             }
+            // Clean up local temp file regardless
+            try { fs.unlinkSync(req.file.path); } catch (_) {}
         }
 
-        // 2. Insert into DB (use desktopFilename so both servers serve from same path)
+        // 2. Insert into DB — store desktopFilename so the path works from desktop's /uploads/
         const addedBy = req.session.role === 'admin' ? req.session.adminId : req.session.userId;
         const whoAdded = req.session.role.toUpperCase();
         const [result] = await con.query(
@@ -96,9 +103,10 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
             [req.session.adminId, addedBy, whoAdded, role_id, title, description, desktopFilename]
         );
 
-        // 3. Fetch the full row with joins so socket payload is identical on both servers
+        // 3. Fetch full row with joins — same payload format for both desktop and mobile sockets
         const [rows] = await con.query(`
-            SELECT a.*, IF(a.role_id=0,'All Members',t.name) AS target_team_name,
+            SELECT a.*, 
+            IF(a.role_id=0,'All Members',t.name) AS target_team_name,
             IF(a.role_id=0,'All Members',t.name) AS target_role,
             CASE WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
                  WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')
@@ -112,10 +120,10 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         const ann = rows[0];
         if (!ann) return res.status(500).json({ success: false });
 
-        // 4. Emit to own (mobile) socket clients
+        // 4. Emit to mobile clients immediately
         if (req.io) req.io.emit('new_announcement', ann);
 
-        // 5. Ping desktop → desktop emits to its own socket clients
+        // 5. Ping desktop → desktop fetches from DB and emits to its own socket clients
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
@@ -162,7 +170,7 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
         const MOBILE_SECRET = 'tms_mobile_bridge_2026';
 
-        // Verify ownership
+        // Verify this announcement belongs to this admin
         const [check] = await con.query(
             "SELECT id FROM announcements WHERE id=? AND admin_id=?", [announcementId, req.session.adminId]);
         if (!check.length) return res.status(403).json({ success: false, message: 'Not found' });
@@ -170,20 +178,26 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         let desktopFilename = null;
         if (req.file) {
             try {
-                const fs = await import('fs');
+                const fileBuffer = fs.readFileSync(req.file.path);
+                const blob = new Blob([fileBuffer], { type: req.file.mimetype });
                 const formData = new FormData();
-                const blob = new Blob([fs.readFileSync(req.file.path)], { type: req.file.mimetype });
                 formData.append('attachment', blob, req.file.filename);
+
                 const uploadRes = await fetch(`${DESKTOP_BASE_URL}/upload-attachment`, {
                     method: 'POST',
                     headers: { 'x-mobile-secret': MOBILE_SECRET },
                     body: formData,
                 });
                 const uploadData = await uploadRes.json();
-                if (uploadData.success) desktopFilename = uploadData.filename;
+                if (uploadData.success) {
+                    desktopFilename = uploadData.filename;
+                    console.log('[Mobile] ✅ Edit attachment uploaded to desktop:', desktopFilename);
+                }
             } catch (uploadErr) {
-                console.error('[Mobile] Edit attachment upload failed:', uploadErr.message);
+                console.error('[Mobile] ❌ Edit attachment upload failed:', uploadErr.message);
             }
+            // Clean up local temp file
+            try { fs.unlinkSync(req.file.path); } catch (_) {}
         }
 
         if (desktopFilename) {
@@ -198,7 +212,8 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
 
         // Fetch fresh row with all joins for consistent socket payload
         const [rows] = await con.query(`
-            SELECT a.*, IF(a.role_id=0,'All Members',t.name) AS target_team_name,
+            SELECT a.*, 
+            IF(a.role_id=0,'All Members',t.name) AS target_team_name,
             IF(a.role_id=0,'All Members',t.name) AS target_role,
             CASE WHEN a.who_added='ADMIN' THEN CONCAT(adm.name,' (Admin)')
                  WHEN a.who_added='OWNER' THEN CONCAT(usr.name,' (Admin)')

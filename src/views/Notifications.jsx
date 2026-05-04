@@ -263,15 +263,15 @@ useEffect(() => {
               <p style={styles.descText}>{a.description}</p>
               <div style={styles.footer}>
                 <span>{new Date(a.created_at).toLocaleDateString()}</span>
-                {a.attachment && (
-                  <a
-                    href={`${BASE_URL}/uploads/${a.attachment}`}
-                    target="_blank"
-                    style={styles.attachLink}
-                  >
-                    View File
-                  </a>
-                )}
+         {a.attachment && (
+  
+    href={`https://tms.thedesigns.live/uploads/${a.attachment}`}
+    target="_blank"
+    style={styles.attachLink}
+  >
+    View File
+  </a>
+)}
               </div>
             </div>
           ))}
