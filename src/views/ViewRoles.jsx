@@ -183,9 +183,9 @@ function PermissionsGuide() {
       ].map(({ type, desc }) => {
         const cs = controlStyle(type);
         return (
-        <div key={type} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12, textAlign: 'center' }}>
-  <span style={{ ...S.controlBadge, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.color, marginBottom: 4 }}>{type}</span>
-  <span style={{ fontSize: 11, color: '#888', lineHeight: 1.5, maxWidth: '280px' }}>{desc}</span>
+         <div key={type} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start', textAlign: 'left' }}>
+  <span style={{ ...S.controlBadge, background: cs.bg, border: `1px solid ${cs.border}`, color: cs.color, flexShrink: 0, marginTop: 1, minWidth: '60px', textAlign: 'center' }}>{type}</span>
+  <span style={{ fontSize: 11, color: '#888', lineHeight: 1.4 }}>{desc}</span>
 </div>
         );
       })}
@@ -951,13 +951,10 @@ const S = {
   },
 
   // Permissions guide
- permGuide: {
-  marginTop: 20, paddingTop: 16,
-  borderTop: '1px dashed rgba(15,137,137,0.25)',
-    display: 'flex',           // ✅ Added
-    flexDirection: 'column',   // ✅ Added
-    alignItems: 'center',       // ✅ Added
- },
+  permGuide: {
+    marginTop: 20, paddingTop: 16,
+    borderTop: '1px dashed rgba(15,137,137,0.25)',
+  },
   permTitle: {
     fontSize: 11, fontWeight: 800, color: '#14b8a6',
     textTransform: 'uppercase', letterSpacing: 0.7,
