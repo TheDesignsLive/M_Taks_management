@@ -1,4 +1,3 @@
-//Notifications.jsx mobile
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
@@ -99,16 +98,20 @@ useEffect(() => {
         }));
     });
 
-socket.on('delete_announcement', (deletedId) => {
+    socket.on('delete_announcement', (deletedId) => {
         setData(prev => ({
             ...prev,
-            announcements: prev.announcements.filter(a => String(a.id) !== String(deletedId))
+            announcements: prev.announcements.filter(a => a.id != deletedId)
         }));
     });
 
     socket.on('edit_announcement', (updatedData) => {
-        // Full refetch so attachment file is also updated correctly
-        fetchNotifications();
+        setData(prev => ({
+            ...prev,
+            announcements: prev.announcements.map(a => 
+                a.id == updatedData.id ? { ...a, ...updatedData } : a
+            )
+        }));
     });
 
     return () => {
@@ -280,9 +283,9 @@ socket.on('delete_announcement', (deletedId) => {
               <div style={styles.reqFlex}>
                 <div style={styles.avatar}>{r.name.charAt(0)}</div>
                 <div style={{ flex: 1, marginLeft: 10, textAlign: "left" }}>
-                  <h4 style={{ margin: 0, color: "#fff" }}>{r.name}</h4>
-                  <p style={styles.metaRow}>{r.email} | {r.role_name}</p>
-                  <p style={{ ...styles.metaRow, fontSize: 10 }}>Requested on {new Date(r.created_at).toLocaleDateString()}</p>
+                  <h4 style={styles.reqName}>{r.name}</h4>
+                  <p style={styles.reqDetail}>{r.email} | {r.role_name}</p>
+                  <p style={styles.reqSubDetail}>By {r.requested_by_name} on {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
                 <div style={styles.btnStack}>
                   <button onClick={() => handleAction("approve-member", r.id)} style={styles.btnSmlGreen}>Accept</button>
@@ -298,9 +301,9 @@ socket.on('delete_announcement', (deletedId) => {
               <div style={styles.reqFlex}>
                 <div style={{ ...styles.avatar, background: "#ff4d4d" }}>{r.name.charAt(0)}</div>
                 <div style={{ flex: 1, marginLeft: 10, textAlign: "left" }}>
-                  <h4 style={{ margin: 0, color: "#ff4d4d" }}>{r.name}</h4>
-                  <p style={styles.metaRow}>{r.email} | {r.role_name}</p>
-                  <p style={{ ...styles.metaRow, fontSize: 10 }}>By {r.requested_by_name}</p>
+                  <h4 style={{ ...styles.reqName, color: "#ff4d4d" }}>{r.name}</h4>
+                  <p style={styles.reqDetail}>{r.email} | {r.role_name}</p>
+                  <p style={styles.reqSubDetail}>By {r.requested_by_name} on {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
                 <div style={styles.btnStack}>
                   <button onClick={() => handleAction("confirm-deletion", r.id)} style={styles.btnSmlRed}>Approve</button>
@@ -585,11 +588,27 @@ const styles = {
   attachLink: { color: "#0F8989", textDecoration: "none", fontWeight: "bold" },
   reqCard: {
     background: "#2E2D2D",
-    padding: 12,
+    padding: "10px 12px",
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  reqFlex: { display: "flex", alignItems: "stretch", gap: "10px"},
+  reqFlex: { display: "flex", alignItems: "stretch", gap: "8px"},
+  reqName: { 
+    margin: "0 0 2px 0", // Space reduce kiya name ke niche
+    color: "#fff", 
+    fontSize: 14, 
+    fontWeight: "bold" 
+},
+reqDetail: { 
+    margin: "0 0 2px 0", // Email/Role line ka gap kam kiya
+    fontSize: 11, 
+    color: "#aaa" 
+},
+reqSubDetail: { 
+    margin: 0, 
+    fontSize: 10, 
+    color: "#777" 
+},
   avatar: {
     width: 40,
     height: 40,
@@ -601,26 +620,28 @@ const styles = {
     justifyContent: "center",
     fontWeight: "bold",
   },
-  btnStack: { display: "flex", flexDirection: "column",justifyContent: "space-between", gap: 5, minWidth: "70px" },
+  btnStack: { display: "flex", flexDirection: "column",justifyContent: "space-between", gap: 4, minWidth: "65px" },
   btnSmlGreen: {
     background: "#2ecc71",
     color: "white",
     border: "none",
-    padding: "8px 10px",
+    padding: "4px 8px",
     borderRadius: 4,
     fontSize: 10,
     cursor: "pointer",
     flex: 1,
+    fontWeight: "600",
   },
   btnSmlRed: {
     background: "#e74c3c",
     color: "white",
     border: "none",
-    padding: "8px 10px",
+    padding: "4px 8px",
     borderRadius: 4,
     fontSize: 10,
     cursor: "pointer",
     flex: 1,
+    fontWeight: "600",
   },
 };
 
