@@ -815,6 +815,7 @@ const S = {
     borderRadius: 8,
     padding: '14px 16px',
     transition: 'transform 0.15s, box-shadow 0.15s',
+    textAlign: 'left',
   },
   roleIcon: {
     width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
@@ -825,6 +826,7 @@ const S = {
   cardName: {
     fontSize: 14, fontWeight: 700, color: '#fff',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    textAlign: 'left',
   },
   controlBadge: {
     borderRadius: 20, padding: '3px 10px',
@@ -914,6 +916,7 @@ const S = {
     textTransform: 'uppercase',
     letterSpacing: 0.7,
     marginBottom: 5, marginTop: 14,
+    textAlign: 'left', // ✅ Added
   },
   input: {
     width: '100%', boxSizing: 'border-box',
