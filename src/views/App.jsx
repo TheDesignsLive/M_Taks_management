@@ -393,7 +393,7 @@ export default function App() {
 
             {view === 'forgot' && (
               <div>
-                <h2 style={{fontSize:'20px', marginBottom:'15px'}}>Forgot Password</h2>
+       <h2 style={{fontSize:'20px', marginBottom:'15px', color:'#1e293b'}}>Forgot Password</h2>
                 <div className="input-group">
                   <input type="text" placeholder="Enter Email or Phone" value={contact} onChange={e => setContact(e.target.value)} />
                 </div>
@@ -412,7 +412,7 @@ export default function App() {
 
             {view === 'reset' && (
               <div>
-                <h2 style={{fontSize:'20px', marginBottom:'15px'}}>Reset Password</h2>
+               <h2 style={{fontSize:'20px', marginBottom:'15px', color:'#1e293b'}}>Reset Password</h2>
                 <PasswordInput id="newpass" placeholder="New Password" value={newPass} onChange={e => setNewPass(e.target.value)} />
                 <PasswordInput id="confpass" placeholder="Confirm Password" value={confPass} onChange={e => setConfPass(e.target.value)} />
                 <button type="button" onClick={resetPassword}>Reset Password</button>
