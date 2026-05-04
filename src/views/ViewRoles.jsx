@@ -72,16 +72,9 @@ const BackIcon = () => (
     <polyline points="15 18 9 12 15 6" />
   </svg>
 );
-const IDCardIcon = ({ size = 16 }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width={size} height={size} strokeLinecap="round" strokeLinejoin="round">
-    {/* Card Boundary */}
-    <rect x="2" y="5" width="20" height="14" rx="2" />
-    {/* Photo Part */}
-    <path d="M6 9h4v4H6z" />
-    {/* Text Lines */}
-    <line x1="13" y1="9" x2="18" y2="9" />
-    <line x1="13" y1="13" x2="18" y2="13" />
-    <line x1="13" y1="16" x2="15" y2="16" />
+const ShieldIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
 const DotOk = () => (
