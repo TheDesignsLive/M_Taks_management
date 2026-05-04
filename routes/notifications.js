@@ -1,19 +1,19 @@
 import express from 'express';
 import con from '../config/db.js';
 import multer from 'multer';
-
-const router = express.Router();
-// ✅ NEW
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 
+const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
 const TEMP_DIR = path.join(__dirname, '..', 'public', 'notif_temp');
 
+// Temp storage — file lands here, then forwarded to desktop
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -23,7 +23,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ── Helper: forward attachment to desktop ──────────────────────────────────
+function deleteTempFile(filename) {
+    if (!filename) return;
+    try {
+        const p = path.join(TEMP_DIR, filename);
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+    } catch (e) {}
+}
+
 async function forwardAttachmentToDesktop(localFilename) {
     try {
         const filePath = path.join(TEMP_DIR, localFilename);
@@ -39,24 +46,19 @@ async function forwardAttachmentToDesktop(localFilename) {
         });
 
         const contentType = response.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) { deleteTempFile(localFilename); return null; }
+        if (!contentType.includes('application/json')) {
+            deleteTempFile(localFilename);
+            return null;
+        }
 
         const data = await response.json();
         deleteTempFile(localFilename);
         return data.success ? data.filename : null;
     } catch (err) {
-        console.error('[Notif] forwardAttachmentToDesktop error:', err.message);
+        console.error('[Notif] forward error:', err.message);
         deleteTempFile(localFilename);
         return null;
     }
-}
-
-function deleteTempFile(filename) {
-    if (!filename) return;
-    try {
-        const p = path.join(TEMP_DIR, filename);
-        if (fs.existsSync(p)) fs.unlinkSync(p);
-    } catch (e) {}
 }
 
 router.get('/', async (req, res) => {
@@ -108,7 +110,6 @@ router.get('/process-request/:action/:id', async (req, res) => {
     res.json({ success: true, message: "Request processed" });
 });
 
-// ✅ NEW add-announcement
 router.post('/add-announcement', upload.single('attachment'), async (req, res) => {
     try {
         const { title, description, role_id } = req.body;
@@ -117,9 +118,7 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         let savedFilename = null;
         if (tempFilename) {
             savedFilename = await forwardAttachmentToDesktop(tempFilename);
-            if (!savedFilename) {
-                return res.status(500).json({ success: false, message: 'Attachment upload failed.' });
-            }
+            if (!savedFilename) return res.status(500).json({ success: false, message: 'Attachment upload failed.' });
         }
 
         const [result] = await con.query(
@@ -137,13 +136,13 @@ router.post('/add-announcement', upload.single('attachment'), async (req, res) =
         res.json({ success: true });
     } catch (err) { res.status(500).json({ success: false }); }
 });
+
 router.get('/delete-announcement/:id', async (req, res) => {
     await con.query("DELETE FROM announcements WHERE id=?", [req.params.id]);
     res.json({ success: true });
 });
 
 // EDIT ANNOUNCEMENT ROUTE (Bhai isse add kar le tabhi save hoga)
-// ✅ NEW edit-announcement
 router.post('/edit-announcement/:id', upload.single('attachment'), async (req, res) => {
     try {
         const { title, description, role_id } = req.body;
@@ -153,28 +152,19 @@ router.post('/edit-announcement/:id', upload.single('attachment'), async (req, r
         let savedFilename = null;
         if (tempFilename) {
             savedFilename = await forwardAttachmentToDesktop(tempFilename);
-            if (!savedFilename) {
-                return res.status(500).json({ success: false, message: 'Attachment upload failed.' });
-            }
+            if (!savedFilename) return res.status(500).json({ success: false, message: 'Attachment upload failed.' });
         }
 
         if (savedFilename) {
-            await con.query(
-                "UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=?",
-                [title, description, role_id, savedFilename, announcementId]
-            );
+            await con.query("UPDATE announcements SET title=?, description=?, role_id=?, attachment=? WHERE id=?",
+                [title, description, role_id, savedFilename, announcementId]);
         } else {
-            await con.query(
-                "UPDATE announcements SET title=?, description=?, role_id=? WHERE id=?",
-                [title, description, role_id, announcementId]
-            );
+            await con.query("UPDATE announcements SET title=?, description=?, role_id=? WHERE id=?",
+                [title, description, role_id, announcementId]);
         }
 
         res.json({ success: true, message: "Announcement updated!" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false });
-    }
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 export default router;
