@@ -1,3 +1,4 @@
+//notifications.js mobile
 import express from 'express';
 import con from '../config/db.js';
 import multer from 'multer';
