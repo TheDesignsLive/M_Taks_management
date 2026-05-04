@@ -643,35 +643,231 @@ function TaskCard({ task, members, adminName, role, onRefresh }) {
   );
 }
 
-// ─── SectionColumn ────────────────────────────────────────────────────────────
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+const LS_KEY = 'tms_drag_order';
+function lsGetAll() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+}
+function lsSaveSection(section, ids) {
+  try {
+    const all = lsGetAll();
+    all[section] = ids;
+    localStorage.setItem(LS_KEY, JSON.stringify(all));
+  } catch {}
+}
+function lsGetSection(section) {
+  return lsGetAll()[section] || null;
+}
+function applyOrder(tasks, savedIds) {
+  const map = {};
+  savedIds.forEach((id, i) => { map[String(id)] = i; });
+  return [...tasks].sort((a, b) => {
+    const ia = map[String(a.id)] ?? 99999;
+    const ib = map[String(b.id)] ?? 99999;
+    return ia - ib;
+  });
+}
+
+// ─── SectionColumn — drag-and-drop added, everything else identical ───────────
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
   const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
-  const filtered = tasks
-    .filter(t => {
-      if (section === 'COMPLETED') return t.status === 'COMPLETED';
-      return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
-    })
-    .sort((a, b) => {
-      const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
-      const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
-      if (dateA - dateB !== 0) return dateA - dateB;
-      const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
-      const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
-      return pa - pb;
+  const defaultSort = (arr) => [...arr].sort((a, b) => {
+    const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
+    const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
+    if (dateA - dateB !== 0) return dateA - dateB;
+    const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
+    const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
+    return pa - pb;
+  });
+
+  const rawFiltered = tasks.filter(t => {
+    if (section === 'COMPLETED') return t.status === 'COMPLETED';
+    return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
+  });
+
+  const [ordered, setOrdered] = useState(() => {
+    const sorted = defaultSort(rawFiltered);
+    if (section === 'COMPLETED') return sorted;
+    const saved = lsGetSection(section);
+    return saved ? applyOrder(sorted, saved) : sorted;
+  });
+
+  // Re-sync on server refresh — merge keeping drag order, new tasks at end
+  useEffect(() => {
+    const sorted = defaultSort(rawFiltered);
+    if (section === 'COMPLETED') { setOrdered(sorted); return; }
+    const saved = lsGetSection(section);
+    setOrdered(saved ? applyOrder(sorted, saved) : sorted);
+  }, [tasks, section]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── drag refs (avoid re-renders mid-drag) ──────────────────────────────────
+  const dragIdxRef = useRef(null);
+  const overIdxRef = useRef(null);
+  const [dragIdx, setDragIdx]   = useState(null);
+  const [overIdx, setOverIdx]   = useState(null);
+  const colRef = useRef(null);
+
+  const commitReorder = useCallback((from, to) => {
+    if (from === null || to === null || from === to) return;
+    setOrdered(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      lsSaveSection(section, next.map(t => t.id));
+      return next;
+    });
+  }, [section]);
+
+  // ── Mouse / HTML5 drag ─────────────────────────────────────────────────────
+  const onDragStart = (e, idx) => {
+    dragIdxRef.current = idx;
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+  const onDragEnter = (e, idx) => {
+    e.preventDefault();
+    overIdxRef.current = idx;
+    setOverIdx(idx);
+  };
+  const onDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
+  const onDrop = (e, idx) => { e.preventDefault(); commitReorder(dragIdxRef.current, idx); };
+  const onDragEnd = () => {
+    setDragIdx(null); setOverIdx(null);
+    dragIdxRef.current = null; overIdxRef.current = null;
+  };
+
+  // ── Touch drag (long-press 300 ms activates, then drag freely) ────────────
+  const ts = useRef({ active:false, startIdx:null, timer:null, startY:0, startX:0 });
+
+  const onTouchStart = (e, idx) => {
+    ts.current.startY  = e.touches[0].clientY;
+    ts.current.startX  = e.touches[0].clientX;
+    ts.current.startIdx = idx;
+    ts.current.active  = false;
+    clearTimeout(ts.current.timer);
+    ts.current.timer = setTimeout(() => {
+      ts.current.active = true;
+      dragIdxRef.current = idx;
+      overIdxRef.current = idx;
+      setDragIdx(idx);
+      setOverIdx(idx);
+    }, 300);
+  };
+
+  const onTouchMove = useCallback((e) => {
+    const touch = e.touches[0];
+    if (!ts.current.active) {
+      // Cancel long-press if finger moved too much before activation
+      if (Math.abs(touch.clientX - ts.current.startX) > 8 ||
+          Math.abs(touch.clientY - ts.current.startY) > 8) {
+        clearTimeout(ts.current.timer);
+      }
+      return;
+    }
+    e.preventDefault(); // block page scroll while dragging
+
+    const col = colRef.current;
+    if (!col) return;
+
+    // Auto-scroll near edges
+    const colRect = col.getBoundingClientRect();
+    if (touch.clientY < colRect.top + 60)   col.scrollTop -= 8;
+    if (touch.clientY > colRect.bottom - 60) col.scrollTop += 8;
+
+    // Find which card the finger is over
+    const cards = col.querySelectorAll('[data-dc]');
+    let target = ordered.length - 1;
+    cards.forEach((card, i) => {
+      const r = card.getBoundingClientRect();
+      if (touch.clientY < r.top + r.height / 2 && i < target) target = i;
     });
 
+    if (overIdxRef.current !== target) {
+      overIdxRef.current = target;
+      setOverIdx(target);
+    }
+  }, [ordered]);
+
+  const onTouchEnd = useCallback(() => {
+    clearTimeout(ts.current.timer);
+    if (ts.current.active) {
+      commitReorder(dragIdxRef.current, overIdxRef.current);
+      ts.current.active = false;
+    }
+    setDragIdx(null); setOverIdx(null);
+    dragIdxRef.current = null; overIdxRef.current = null;
+  }, [commitReorder]);
+
+  // Attach touch listeners as non-passive (needed for preventDefault)
+  useEffect(() => {
+    const col = colRef.current;
+    if (!col) return;
+    col.addEventListener('touchmove', onTouchMove, { passive: false });
+    col.addEventListener('touchend',  onTouchEnd);
+    return () => {
+      col.removeEventListener('touchmove', onTouchMove);
+      col.removeEventListener('touchend',  onTouchEnd);
+    };
+  }, [onTouchMove, onTouchEnd]);
+
+  const isDraggable = section !== 'COMPLETED';
+
   return (
-    <div style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}>
-      {filtered.length === 0 ? (
+    <div
+      ref={colRef}
+      style={{ flex:'0 0 100%', width:'100%', overflowY:'auto', padding:'12px 14px 80px', boxSizing:'border-box' }}
+    >
+      {/* Minimal CSS for drop indicator lines only */}
+      <style>{`
+        .tms-drag-over-above { border-top:    2px solid #0F8989 !important; }
+        .tms-drag-over-below { border-bottom: 2px solid #0F8989 !important; }
+      `}</style>
+
+      {ordered.length === 0 ? (
         <div style={{ color:'#aaa', textAlign:'center', marginTop:60, fontSize:13 }}>
           <div style={{fontSize:32, marginBottom:8}}>📭</div>
           No tasks in {SECTION_LABELS[section]}
         </div>
       ) : (
-        filtered.map(task => (
-          <TaskCard key={task.id} task={task} members={members} adminName={adminName} role={role} onRefresh={onRefresh}/>
-        ))
+        ordered.map((task, idx) => {
+          const isDragging = isDraggable && dragIdx === idx;
+          const isAbove    = isDraggable && overIdx === idx && dragIdx !== null && dragIdx > idx;
+          const isBelow    = isDraggable && overIdx === idx && dragIdx !== null && dragIdx < idx;
+
+          return (
+            <div
+              key={task.id}
+              data-dc                          // marker for touch hit-test
+              draggable={isDraggable}
+              onDragStart={isDraggable ? e => onDragStart(e, idx) : undefined}
+              onDragEnter={isDraggable ? e => onDragEnter(e, idx) : undefined}
+              onDragOver={isDraggable  ? onDragOver                : undefined}
+              onDrop={isDraggable      ? e => onDrop(e, idx)       : undefined}
+              onDragEnd={isDraggable   ? onDragEnd                 : undefined}
+              onTouchStart={isDraggable ? e => onTouchStart(e, idx) : undefined}
+              className={[
+                isAbove ? 'tms-drag-over-above' : '',
+                isBelow ? 'tms-drag-over-below' : '',
+              ].join(' ').trim()}
+              style={{
+                opacity:      isDragging ? 0.35 : 1,
+                transition:   'opacity 0.15s',
+                borderTop:    '2px solid transparent',
+                borderBottom: '2px solid transparent',
+              }}
+            >
+              <TaskCard
+                task={task}
+                members={members}
+                adminName={adminName}
+                role={role}
+                onRefresh={onRefresh}
+              />
+            </div>
+          );
+        })
       )}
     </div>
   );
