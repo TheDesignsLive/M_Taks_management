@@ -112,7 +112,7 @@ export default function App() {
     const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
     link.type = 'image/jpeg';
     link.rel = 'icon';
-    link.href = '/images/tms_logo.jpeg'; // Aapka logo path
+    link.href = '/public/images/tms.svg'; // Aapka logo path
     document.getElementsByTagName('head')[0].appendChild(link);
 
     // Baki aapka purana session check
