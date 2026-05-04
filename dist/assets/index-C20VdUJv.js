@@ -429,8 +429,10 @@ body { background:#0f172a; overflow:hidden; }
 .underline { position:absolute; bottom:-2px; left:0; width:50%; height:3px; background:#14b8a6; transition:.3s; }
 
 .input-group { margin-bottom:18px; position:relative; }
-.input-group input, .input-group select { width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:14px; background:#f8fafc; }
-.input-group input:focus { border-color:#14b8a6; background:#fff; }
+.input-group input, .input-group select { width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:14px; background:#f8fafc; color:#1e293b; -webkit-text-fill-color:#1e293b; }
+.input-group input:focus { border-color:#14b8a6; background:#fff; color:#1e293b; -webkit-text-fill-color:#1e293b; }
+.input-group input::placeholder { color:#94a3b8; -webkit-text-fill-color:#94a3b8; }
+.input-group input:-webkit-autofill, .input-group input:-webkit-autofill:focus { -webkit-box-shadow:0 0 0 1000px #f8fafc inset; -webkit-text-fill-color:#1e293b; }
 
 button { width:100%; padding:12px; border:none; border-radius:8px; background:#14b8a6; color:#fff; font-size:15px; font-weight:600; cursor:pointer; transition:.3s; }
 button:hover { background:#0f766e; transform:translateY(-1px); }
