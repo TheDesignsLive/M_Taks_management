@@ -150,9 +150,9 @@ const Layout = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 const [activePage, setActivePage] = useState(() => {
   // Read saved page immediately on first render — before any fetch
-  return localStorage.getItem('activePage') || 'home';
+  const saved = localStorage.getItem('activePage');
+  return saved || 'home';
 });
-
 const [notifCount, setNotifCount] = useState(0);
 const [showLogoutModal, setShowLogoutModal] = useState(false);
 const [sessionRole, setSessionRole] = useState('');
@@ -163,17 +163,18 @@ useEffect(() => {
   fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
-      if (d.loggedIn) {
+if (d.loggedIn) {
         setSessionRole(d.role || '');
         setSessionControlType(d.control_type || '');
         if (d.role !== 'admin' && d.adminName) {
           setAdminInfo({ name: d.adminName });
         }
-        // Do NOT call setActivePage here — useState already read localStorage
+        // Restore last visited page — already set by useState initializer
       } else {
-        // Logged out — clear saved page and go home
+        // Not logged in — clear saved page and stay on home
         localStorage.removeItem('activePage');
         setActivePage('home');
+        window.location.href = '/';
       }
     })
     .catch(() => {});
@@ -334,9 +335,9 @@ useEffect(() => {
         credentials: 'include',
       });
       const data = await res.json();
-  if (data.status === 'success') {
-  localStorage.removeItem('activePage');
-  window.location.href = '/';
+if (data.status === 'success') {
+    localStorage.removeItem('activePage'); // ✅ clear so next login starts at home
+    window.location.href = '/';
       } else {
         alert('Logout failed. Please try again.');
       }
@@ -594,7 +595,7 @@ useEffect(() => {
 const s = {
   layoutContainer: { height: '100vh', width: '100vw', background: '#f8fafc', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' },
   topBar: { height: '50px', background: '#095959', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', color: 'white', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', zIndex: 100, flexShrink: 0 },
-  menuIcon: { cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px' },
+menuIcon: { cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0px', padding: '8px', margin: '-8px', borderRadius: '8px' },
   brandName: { fontSize: '18px', fontWeight: '700', letterSpacing: '1px', fontFamily: 'Segoe UI, sans-serif' },
   mainContent: { flex: 1, overflowY: 'auto', position: 'relative', background: '#f1f5f9' },
   drawerHeader: { padding: '20px', background: '#095959', color: 'white', textAlign: 'center' },
@@ -651,7 +652,7 @@ const s = {
 const customCSS = `
   .drawer { position: fixed; top: 0; left: -240px; width: 240px; height: 100%; background: white; z-index: 1000; transition: 0.3s ease-in-out; box-shadow: 10px 0 30px rgba(0,0,0,0.1); }
   .drawer.open { left: 0; }
-  .bar { width: 18px; height: 2px; background-color: white; margin: 3.5px 0; border-radius: 2px; }
+.bar { width: 22px; height: 2.5px; background-color: white; margin: 2.5px 0; border-radius: 3px; transition: 0.2s; }
   .nav-icon { width: 20px; text-align: center; font-size: 16px; }
   .atb-fab-btn:hover { transform: scale(1.08) !important; box-shadow: 0 8px 28px rgba(9,89,89,0.55) !important; }
 
