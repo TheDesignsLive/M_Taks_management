@@ -6,6 +6,7 @@ import multer from 'multer';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
+import { sendMailLogic } from './sendmail.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -216,6 +217,19 @@ router.post("/forgot-password/reset", async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', message: "Failed to reset password" });
+    }
+});
+
+// ================= SEND OTP ROUTE ====================
+router.post("/forgot-password/send-otp", async (req, res) => {
+    const { contact, otp, sent_for } = req.body;
+    try {
+        // Seedha mail logic ko call karo
+        await sendMailLogic(contact, otp, sent_for);
+        return res.json({ status: 'success', message: "OTP sent successfully" });
+    } catch (err) {
+        console.error("Mailer Error:", err);
+        return res.status(500).json({ status: 'error', message: "Failed to send email" });
     }
 });
 

@@ -178,7 +178,7 @@ export default function App() {
       const newOtp = Math.floor(100000 + Math.random() * 900000);
       setSignupOtp(newOtp);
       setSignupStep(2);
-      await fetch(`${BASE_URL}/api/forgot-password/send-otp`, {
+      await fetch(`${BASE_URL}/api/auth/forgot-password/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contact: signupEmail, otp: newOtp, sent_for: 'signup' })
