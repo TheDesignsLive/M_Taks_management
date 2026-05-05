@@ -758,6 +758,8 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
       // If user has started scrolling, don't start drag
       if (isScrollingRef.current) return;
 
+// Cancel any pending background sync so drag doesn't get interrupted
+      if (window.__syncTimer) { clearTimeout(window.__syncTimer); window.__syncTimer = null; }
       try { navigator.vibrate?.(40); } catch {}
       isDraggingRef.current = true;
       dragIndexRef.current = idx;
@@ -820,11 +822,15 @@ isDraggingRef.current = false;
       return;
     }
 
-    // Update local state immediately — NO full refresh
+    // Build new list first, then clear drag visuals in same flush
     const newList = [...orderedTasks];
     const [moved] = newList.splice(fromIdx, 1);
     newList.splice(toIdx, 0, moved);
+    // Set new order AND clear drag state together so React batches them
     setOrderedTasks(newList);
+    setDragIndex(null);
+    setOverIndex(null);
+    setIsDragging(false);
 
     // Calculate new date based on neighbors
     const prevTask = toIdx > 0 ? newList[toIdx - 1] : null;
@@ -855,10 +861,15 @@ isDraggingRef.current = false;
         body: JSON.stringify({ id: moved.id, due_date: normDateKey(newDate) === 'nodate' ? null : normDateKey(newDate) })
       }).catch(() => {}); // fire-and-forget
     }
-// Silently sync in background after a delay — list stays as user dragged it
-    setTimeout(() => {
-      if (!isDraggingRef.current) onRefresh();
-    }, 2000);
+// Silently sync in background — skip if another drag started
+    const syncTimer = setTimeout(() => {
+      if (!isDraggingRef.current) {
+        onRefresh();
+      }
+    }, 3000);
+    // Store timer so a new drag can cancel it
+    if (window.__syncTimer) clearTimeout(window.__syncTimer);
+    window.__syncTimer = syncTimer;
   };
 
   const onCardTouchCancel = () => {
