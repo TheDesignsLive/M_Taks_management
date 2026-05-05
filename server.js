@@ -66,6 +66,25 @@ app.use(session({
     }
 }));
 
+// redirect desctop to desctop web
+
+app.use((req, res, next) => {
+    const userAgent = req.headers['user-agent'] || '';
+    
+    // Check if it's a mobile device
+    const isMobile = /android|iphone|ipad|ipod|mobile/i.test(userAgent);
+    const host = req.headers.host;
+
+    // KEY: Agar mobile browser NAHI hai aur host mobile wala hai
+    // Toh use Laptop/Desktop version par bhej do
+    if (!isMobile && host && host.includes('m-tms.thedesigns.live')) {
+        console.log("[Mobile Server] 💻 Laptop detected, redirecting to desktop site...");
+        return res.redirect(302, 'https://tms.thedesigns.live' + req.url);
+    }
+
+    next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
