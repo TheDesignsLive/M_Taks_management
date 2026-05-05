@@ -808,15 +808,17 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
     const fromIdx = dragIndexRef.current;
     const toIdx = overIndexRef.current ?? fromIdx;
 
-    isDraggingRef.current = false;
+isDraggingRef.current = false;
     dragIndexRef.current = null;
     overIndexRef.current = null;
     isScrollingRef.current = false;
-    setDragIndex(null);
-    setOverIndex(null);
-    setIsDragging(false);
 
-    if (fromIdx === null || fromIdx === toIdx) return;
+    if (fromIdx === null || fromIdx === toIdx) {
+      setDragIndex(null);
+      setOverIndex(null);
+      setIsDragging(false);
+      return;
+    }
 
     // Update local state immediately — NO full refresh
     const newList = [...orderedTasks];
@@ -853,7 +855,10 @@ function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) 
         body: JSON.stringify({ id: moved.id, due_date: normDateKey(newDate) === 'nodate' ? null : normDateKey(newDate) })
       }).catch(() => {}); // fire-and-forget
     }
-    // No onRefresh() call — list stays as user dragged it
+// Silently sync in background after a delay — list stays as user dragged it
+    setTimeout(() => {
+      if (!isDraggingRef.current) onRefresh();
+    }, 2000);
   };
 
   const onCardTouchCancel = () => {
