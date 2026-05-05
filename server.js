@@ -65,7 +65,6 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
-
 // redirect desctop to desctop web
 
 app.use((req, res, next) => {
