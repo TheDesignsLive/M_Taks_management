@@ -720,9 +720,10 @@ headerTitle: {
   margin: 0, fontSize: 20, fontWeight: 800,
   color: '#CDF4F4',
   letterSpacing: -0.3,
+  paddingLeft:-2,
 },
   headerSub: {
-    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,paddingLeft:11,
+    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,paddingLeft:9,
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
   statPill: {
