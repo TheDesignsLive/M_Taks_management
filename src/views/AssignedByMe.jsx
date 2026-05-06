@@ -765,9 +765,14 @@ const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, 
       {/* ── HEADER ── */}
       <div style={S.header}>
         <div style={S.headerInner}>
-          <div>
+     <div style={{ minWidth: 0, flex: 1 }}>
             <h1 style={S.headerTitle}>Assigned by Me</h1>
-            <p style={S.headerSub}>Track tasks you've delegated</p>
+            <p style={S.headerSub}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ color: '#0F8989', fontSize: 12 }}>⚡</span>
+                Delegated tasks, tracked
+              </span>
+            </p>
           </div>
           <div style={S.statsRow}>
             <div style={S.statPill}>
@@ -913,20 +918,24 @@ const S = {
     padding: '20px 18px 16px',
     borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
-  headerInner: {
+headerInner: {
     maxWidth: 640, margin: '0 auto',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
   },
 headerTitle: {
     margin: 0, fontSize: 20, fontWeight: 800,
-    color: '#CDF4F4',                // ← Notification annTitle color
+    color: '#CDF4F4',
     letterSpacing: -0.3,
     marginTop: 5,
     paddingLeft: 1,
   },
 headerSub: {
-    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
+    margin: '3px 0 0', fontSize: 11, color: '#aaa', fontWeight: 400,
     paddingLeft: 1,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: '100%',
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
   statPill: {
