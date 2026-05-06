@@ -1,4 +1,4 @@
-//auth.js
+//auth.js mobile
 import express from 'express';
 const router = express.Router();
 import con from '../config/db.js';
