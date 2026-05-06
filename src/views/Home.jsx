@@ -125,8 +125,10 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
   const [teams, setTeams] = useState([]);
   const [teamMembers, setTeamMembers] = useState({});
   const [openTeam, setOpenTeam] = useState(null);
-  const [showAssignDrop, setShowAssignDrop] = useState(false);
+const [showAssignDrop, setShowAssignDrop] = useState(false);
+  const [showPriDrop, setShowPriDrop] = useState(false);
   const assignTriggerRef = useRef(null);
+  const priRef = useRef(null);
 
   useEffect(() => {
     fetch(`${BASE_URL}/api/tasks/get-teams`, { credentials: 'include' })
@@ -163,10 +165,9 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
     setSaving(false);
   };
 
-  const dropStyle = {
+const dropStyle = {
     background: '#2E2D2D', border: '1px solid #0F8989', borderRadius: 10,
     overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-    marginTop: 4,
   };
   const dropItemStyle = {
     padding: '10px 14px', fontSize: 13, cursor: 'pointer',
@@ -177,9 +178,36 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
     ...dropItemStyle, paddingLeft: 28, background: '#3C3A3A', color: '#aaa',
   };
 
+  function DropPortal({ anchorRef, width, children }) {
+    const [pos, setPos] = React.useState(null);
+    React.useEffect(() => {
+      if (!anchorRef.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      const menuH = 220;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < menuH + 16;
+      setPos({
+        position: 'fixed',
+        left: Math.min(rect.left, window.innerWidth - width - 8),
+        width,
+        zIndex: 99999,
+        ...(openUpward
+          ? { bottom: window.innerHeight - rect.top + 6 }
+          : { top: rect.bottom + 6 }),
+      });
+    }, [anchorRef]);
+    if (!pos) return null;
+    return createPortal(
+      <div style={{ ...dropStyle, ...pos, maxHeight: 220 }} onClick={e => e.stopPropagation()}>
+        {children}
+      </div>,
+      document.body
+    );
+  }
+
   return createPortal(
     <div style={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={styles.modal} onClick={() => { setShowAssignDrop(false); setOpenTeam(null); }}>
+<div style={styles.modal} onClick={() => { setShowAssignDrop(false); setShowPriDrop(false); setOpenTeam(null); }}>
         <div style={styles.modalHeader}>
           <span style={styles.modalTitle}>Edit Task</span>
           <button onClick={onClose} style={styles.closeBtn}>✕</button>
@@ -195,12 +223,28 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           <textarea value={desc} onChange={e=>setDesc(e.target.value)} style={{...styles.input, minHeight:70, resize:'vertical'}} placeholder="Description"/>
         </div>
 
-        <div style={{display:'flex', gap:8}}>
-          <div style={{...styles.field, flex:1}}>
+<div style={{display:'flex', gap:8}}>
+          <div style={{...styles.field, flex:1, position:'relative'}} onClick={e => e.stopPropagation()}>
             <label style={styles.label}>Priority</label>
-            <select value={priority} onChange={e=>setPriority(e.target.value)} style={styles.input}>
-              {PRIORITY_OPTIONS.map(p=><option key={p} value={p}>{p}</option>)}
-            </select>
+            <div
+              ref={priRef}
+              onClick={() => { setShowPriDrop(v => !v); setShowAssignDrop(false); }}
+              style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
+            >
+              <span style={{color: PRIORITY_COLORS[priority] || '#eee', fontWeight:600}}>{priority}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" width="12" height="12"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            {showPriDrop && (
+              <DropPortal anchorRef={priRef} width={160}>
+                {PRIORITY_OPTIONS.map(p => (
+                  <div key={p} style={{...dropItemStyle}} onClick={() => { setPriority(p); setShowPriDrop(false); }}>
+                    <span style={{width:8, height:8, borderRadius:'50%', background: PRIORITY_COLORS[p], display:'inline-block', flexShrink:0}}/>
+                    <span style={{flex:1, color: PRIORITY_COLORS[p], fontWeight:600}}>{p}</span>
+                    {priority === p && <span style={{color:'#0F8989'}}>✓</span>}
+                  </div>
+                ))}
+              </DropPortal>
+            )}
           </div>
           <div style={{...styles.field, flex:1}}>
             <label style={styles.label}>Due Date</label>
@@ -208,12 +252,12 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Assign To — inline dropdown */}
+    {/* Assign To — portal dropdown */}
         <div style={{...styles.field, position:'relative'}} onClick={e => e.stopPropagation()}>
           <label style={styles.label}>Assign To</label>
           <div
             ref={assignTriggerRef}
-            onClick={() => setShowAssignDrop(v => !v)}
+            onClick={() => { setShowAssignDrop(v => !v); setShowPriDrop(false); }}
             style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
           >
             <span style={{color:'#eee'}}>{assignLabel}</span>
@@ -221,7 +265,7 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
           </div>
 
           {showAssignDrop && (
-            <div style={{...dropStyle, position:'absolute', top:'100%', left:0, right:0, zIndex:200, maxHeight:200}}>
+            <DropPortal anchorRef={assignTriggerRef} width={220}>
               <div style={dropItemStyle} onClick={() => selectAssign('self', 'Myself')}>
                 <span>👤</span><span style={{flex:1}}>Myself</span>
                 {assignTo === 'self' && <span style={{color:'#0F8989'}}>✓</span>}
@@ -260,7 +304,7 @@ function EditTaskModal({ task, members, adminName, role, onSave, onClose }) {
                   )}
                 </div>
               ))}
-            </div>
+</DropPortal>
           )}
         </div>
 
