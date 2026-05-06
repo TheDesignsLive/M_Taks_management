@@ -1236,7 +1236,7 @@ const styles = {
   },
   dotRow: {
     display:'flex', justifyContent:'center', alignItems:'center',
-    gap:5, padding:'7px 0', background:'#2E2D2D', flexShrink:0,
+    gap:5, padding:'4px 0', background:'#2E2D2D', flexShrink:0,
   },
   slider: {
     flex:1, display:'flex', overflowX:'hidden', overflowY:'hidden',
