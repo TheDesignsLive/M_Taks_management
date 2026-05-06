@@ -188,7 +188,7 @@ const dropStyle = {
       const openUpward = spaceBelow < menuH + 16;
       setPos({
         position: 'fixed',
-        left: Math.min(rect.left, window.innerWidth - width - 8),
+   left: Math.min(rect.right - width, window.innerWidth - width - 8),
         width,
         zIndex: 99999,
         ...(openUpward
@@ -229,9 +229,16 @@ const dropStyle = {
             <div
               ref={priRef}
               onClick={() => { setShowPriDrop(v => !v); setShowAssignDrop(false); }}
-              style={{...styles.input, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', userSelect:'none'}}
+              style={{
+                ...styles.input,
+                display:'flex', alignItems:'center', justifyContent:'space-between',
+                cursor:'pointer', userSelect:'none',
+                padding:'9px 12px',
+                height: 'auto',
+                boxSizing: 'border-box',
+              }}
             >
-              <span style={{color: PRIORITY_COLORS[priority] || '#eee', fontWeight:600}}>{priority}</span>
+              <span style={{color: PRIORITY_COLORS[priority] || '#eee', fontWeight:600, fontSize:13}}>{priority}</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5" width="12" height="12"><path d="M6 9l6 6 6-6"/></svg>
             </div>
             {showPriDrop && (
