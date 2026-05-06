@@ -910,7 +910,7 @@ const S = {
   // Header
   header: {
     background: '#2E2D2D',           // ← Notification darker panel
-    padding: '32px 18px 16px',
+    padding: '20px 18px 16px',
     borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
   headerInner: {
@@ -921,6 +921,7 @@ const S = {
     margin: 0, fontSize: 20, fontWeight: 800,
     color: '#CDF4F4',                // ← Notification annTitle color
     letterSpacing: -0.3,
+      marginTop: 1,
   },
   headerSub: {
     margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
