@@ -921,7 +921,7 @@ const S = {
     margin: 0, fontSize: 20, fontWeight: 800,
     color: '#CDF4F4',                // ← Notification annTitle color
     letterSpacing: -0.3,
-      marginTop: 1,
+     marginTop: 5,
   },
   headerSub: {
     margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,

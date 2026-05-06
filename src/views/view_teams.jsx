@@ -549,7 +549,7 @@ const S = {
     margin: 0, fontSize: 20, fontWeight: 800,
     color: '#CDF4F4',
     letterSpacing: -0.3,
-        marginTop: 1,
+        marginTop: 5,
 
   },
   headerSub: {
