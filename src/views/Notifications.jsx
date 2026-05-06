@@ -92,16 +92,12 @@ useEffect(() => {
     fetchNotifications();
 
     // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
-socket.on('new_announcement', (newAnn) => {
-    setData(prev => {
-        // Prevent duplicate if already exists
-        if (prev.announcements.some(a => a.id == newAnn.id)) return prev;
-        return {
+    socket.on('new_announcement', (newAnn) => {
+        setData(prev => ({
             ...prev,
             announcements: [newAnn, ...prev.announcements]
-        };
+        }));
     });
-});
 
     socket.on('delete_announcement', (deletedId) => {
         setData(prev => ({
