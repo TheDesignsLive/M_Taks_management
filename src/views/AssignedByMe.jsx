@@ -774,7 +774,7 @@ const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, 
               <span style={S.statNum}>{openTasks.length}</span>
               <span style={S.statLbl}>Pending</span>
             </div>
-            <div style={{ ...S.statPill, background: 'rgba(15,137,137,0.2)', border: '1px solid rgba(15,137,137,0.4)' }}>
+<div style={{ ...S.statPill, background: 'rgba(15,137,137,0.2)', border: '1px solid rgba(15,137,137,0.4)', width: 64 }}>
               <span style={{ ...S.statNum, color: '#14b8a6' }}>{completedTasks.length}</span>
               <span style={S.statLbl}>Done</span>
             </div>
@@ -908,9 +908,9 @@ const S = {
   },
 
   // Header
-  header: {
+header: {
     background: '#2E2D2D',           // ← Notification darker panel
-    padding: '20px 18px 16px',
+    padding: '14px 18px 14px',
     borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
   headerInner: {
@@ -926,12 +926,12 @@ const S = {
     margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
-  statPill: {
+statPill: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     background: 'rgba(255,255,255,0.08)',
     border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 12, padding: '6px 14px',
-    minWidth: 54,
+    borderRadius: 12, padding: '6px 0',
+    width: 64,
   },
   statNum: { fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1 },
   statLbl: { fontSize: 9.5, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
