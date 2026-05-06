@@ -910,7 +910,7 @@ const S = {
   // Header
   header: {
     background: '#2E2D2D',           // ← Notification darker panel
-    padding: '20px 18px 16px',
+    padding: '24px 18px 16px',
     borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
   headerInner: {
