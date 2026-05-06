@@ -1,3 +1,4 @@
+//App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
@@ -73,6 +74,7 @@ export default function App() {
   // ── Login ──
   const [loginType, setLoginType] = useState('user');
   const [loginEmail, setLoginEmail] = useState('');
+
   const [loginPassword, setLoginPassword] = useState('');
 
   // ── Signup ──

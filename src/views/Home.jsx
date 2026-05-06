@@ -566,7 +566,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
                 onClick={(e) => { e.stopPropagation(); setSectionOpen(true); }}
                 style={{ fontSize:9, color:'#0F8989', cursor:'pointer', padding:'2px 6px', borderRadius:3, background:'rgba(15,137,137,0.1)', border:'1px solid rgba(15,137,137,0.4)', whiteSpace:'nowrap', flexShrink:0, fontWeight:700, letterSpacing:0.4, textTransform:'uppercase', lineHeight:1.4, display:'inline-flex', alignItems:'center', gap:3 }}
               >
-                ↕ {SECTION_LABELS[task.section] || 'Task'}
+           ↕ Section
               </span>
             )}
 
