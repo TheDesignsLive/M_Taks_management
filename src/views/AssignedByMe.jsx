@@ -917,14 +917,16 @@ const S = {
     maxWidth: 640, margin: '0 auto',
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
   },
-  headerTitle: {
+headerTitle: {
     margin: 0, fontSize: 20, fontWeight: 800,
     color: '#CDF4F4',                // ← Notification annTitle color
     letterSpacing: -0.3,
-     marginTop: 5,
+    marginTop: 5,
+    paddingLeft: 1,
   },
-  headerSub: {
+headerSub: {
     margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
+    paddingLeft: 1,
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
   statPill: {
