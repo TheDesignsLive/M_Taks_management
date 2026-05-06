@@ -927,7 +927,7 @@ headerTitle: {
     color: '#CDF4F4',
     letterSpacing: -0.3,
     marginTop: 0,
-    paddingLeft: 0,
+    paddingLeft: -7,
   },
 headerSub: {
     margin: '2px 0 0', fontSize: 11, color: '#aaa', fontWeight: 400,
@@ -936,6 +936,7 @@ headerSub: {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     maxWidth: '100%',
+        paddingLeft: -7,
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
   statPill: {
