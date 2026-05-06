@@ -1007,21 +1007,22 @@ const S = {
     padding: '20px 18px 16px',
     borderBottom: '1px solid rgba(15,137,137,0.3)',
   },
-  headerInner: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-headerTitle: {
-  margin: 0, fontSize: 20, fontWeight: 800,
-  color: '#CDF4F4',
-  letterSpacing: -0.3,
+headerInner: {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: 14,
 },
+    headerTitle: {
+      margin: 0, fontSize: 20, fontWeight: 800,
+      color: '#CDF4F4',
+      letterSpacing: -0.3,
+      
+    },
   headerSub: {
     margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
   },
-  statsRow: { display: 'flex', gap: 8, marginTop: 4 },
+statsRow: { display: 'flex', gap: 8 },
   statPill: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     background: 'rgba(255,255,255,0.08)',
