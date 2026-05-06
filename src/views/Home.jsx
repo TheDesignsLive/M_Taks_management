@@ -1158,7 +1158,7 @@ const Home = () => {
         </div>
 
         {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
-        <div style={{ display:'flex', justifyContent:'flex-end', padding:'2px 14px' }}>
+        <div style={{ display:'flex', justifyContent:'flex-end', padding:'6px 14px' }}>
             <button
               onClick={()=>setDeleteCompleteOpen(true)}
               style={{
