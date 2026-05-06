@@ -606,10 +606,10 @@ export default function ViewMember() {
       {/* ── HEADER ── */}
       <div style={S.header}>
         <div style={S.headerInner}>
-          <div>
-            <div style={S.headerTitle}>Members</div>
-            <div style={S.headerSub}>{data.users.length} total members</div>
-          </div>
+<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+  <div style={S.headerTitle}>Members</div>
+  <div style={S.headerSub}>{data.users.length} total members</div>
+</div>
           <div style={S.statsRow}>
             <div style={S.statPill}>
               <span style={S.statNum}>{data.users.length}</span>

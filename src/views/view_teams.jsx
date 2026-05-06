@@ -303,10 +303,10 @@ if (showRoles) {
                 <BackIcon />
               </button>
             )} */}
-            <div>
-              <div style={S.headerTitle}>Departments</div>
-              <div style={S.headerSub}>{teams.length} total departments</div>
-            </div>
+       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+  <div style={S.headerTitle}>Departments</div>
+  <div style={S.headerSub}>{teams.length} total departments</div>
+</div>
           </div>
           <div style={S.statsRow}>
             <div style={S.statPill}>

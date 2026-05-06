@@ -394,11 +394,10 @@ useEffect(() => { fetchData(); }, [fetchData]);
                 <BackIcon />
               </button>
             )} */}
-            <div>
-              <div style={S.headerTitle}>Roles</div>
-              <div style={S.headerSub}>{data.roles.length} total roles</div>
-            </div>
-          </div>
+<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+  <div style={S.headerTitle}>Roles</div>
+  <div style={S.headerSub}>{data.roles.length} total roles</div>
+</div>          </div>
           <div style={S.statsRow}>
             <div style={S.statPill}>
               <span style={S.statNum}>{data.roles.length}</span>
