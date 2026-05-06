@@ -1158,7 +1158,7 @@ const Home = () => {
         </div>
 
         {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
-        <div style={{ display:'flex', justifyContent:'flex-end', padding:'6px 14px' }}>
+<div style={{ display:'flex', justifyContent:'flex-end', padding:'0px 14px 6px' }}>
             <button
               onClick={()=>setDeleteCompleteOpen(true)}
               style={{
@@ -1234,9 +1234,9 @@ const styles = {
   badge: {
     borderRadius:10, padding:'1px 6px', fontSize:10, fontWeight:700, transition:'all 0.2s',
   },
-  dotRow: {
+dotRow: {
     display:'flex', justifyContent:'center', alignItems:'center',
-    gap:5, padding:'4px 0', background:'#2E2D2D', flexShrink:0,
+    gap:5, padding:'7px 0', background:'#2E2D2D', flexShrink:0,
   },
   slider: {
     flex:1, display:'flex', overflowX:'hidden', overflowY:'hidden',
