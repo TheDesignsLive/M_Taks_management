@@ -722,7 +722,7 @@ headerTitle: {
   letterSpacing: -0.3,
 },
   headerSub: {
-    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,paddingLeft:9,
+    margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,paddingLeft:11,
   },
   statsRow: { display: 'flex', gap: 8, marginTop: 4 },
   statPill: {
