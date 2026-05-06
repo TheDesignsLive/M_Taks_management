@@ -224,17 +224,17 @@ const dropStyle = {
         </div>
 
 <div style={{display:'flex', gap:8}}>
-          <div style={{...styles.field, flex:1, position:'relative'}} onClick={e => e.stopPropagation()}>
+          <div style={{...styles.field, flex:'1 1 50%', position:'relative'}} onClick={e => e.stopPropagation()}>
             <label style={styles.label}>Priority</label>
             <div
               ref={priRef}
               onClick={() => { setShowPriDrop(v => !v); setShowAssignDrop(false); }}
-              style={{
+     style={{
                 ...styles.input,
                 display:'flex', alignItems:'center', justifyContent:'space-between',
                 cursor:'pointer', userSelect:'none',
                 padding:'9px 12px',
-                height: 'auto',
+                height: 38,
                 boxSizing: 'border-box',
               }}
             >
@@ -253,9 +253,9 @@ const dropStyle = {
               </DropPortal>
             )}
           </div>
-          <div style={{...styles.field, flex:1}}>
+<div style={{...styles.field, flex:'1 1 50%'}}>
             <label style={styles.label}>Due Date</label>
-            <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={styles.input}/>
+<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={{...styles.input, height:38, padding:'9px 12px'}}/>
           </div>
         </div>
 
