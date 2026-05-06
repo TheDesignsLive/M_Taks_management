@@ -606,7 +606,7 @@ export default function ViewMember() {
       {/* ── HEADER ── */}
       <div style={S.header}>
         <div style={S.headerInner}>
-<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+<div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 5 }}>
   <div style={S.headerTitle}>Members</div>
   <div style={S.headerSub}>{data.users.length} total members</div>
 </div>
@@ -1013,12 +1013,11 @@ const S = {
     justifyContent: 'space-between',
     marginBottom: 14,
   },
-  headerTitle: {
-    margin: 0, fontSize: 20, fontWeight: 800,
-    color: '#CDF4F4',
-    letterSpacing: -0.3,
-    marginTop: 5,
-  },
+headerTitle: {
+  margin: 0, fontSize: 20, fontWeight: 800,
+  color: '#CDF4F4',
+  letterSpacing: -0.3,
+},
   headerSub: {
     margin: '3px 0 0', fontSize: 12, color: '#aaa', fontWeight: 400,
   },
