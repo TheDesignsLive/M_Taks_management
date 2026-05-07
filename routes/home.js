@@ -121,13 +121,79 @@ if (sessionRole === 'admin') {
 /* ───────────────────────────────────────────────
    UPDATE TASK STATUS  (checkbox → complete)
 ─────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────
+   UPDATE TASK STATUS  (checkbox → complete)
+─────────────────────────────────────────────── */
 router.post('/update-task-status', async (req, res) => {
     const { id, status } = req.body;
     try {
         // Only update status — section stays unchanged so unchecking restores naturally
         await con.query("UPDATE tasks SET status=? WHERE id=?", [status, id]);
+
+        // ── Repeat logic: spawn next task when completing a repeating task ──
+        if (status === 'COMPLETED') {
+            const [rows] = await con.query(
+                "SELECT * FROM tasks WHERE id=?", [id]
+            );
+            if (rows.length > 0) {
+                const task = rows[0];
+                const repeatType = task.repeat_type;
+
+                if (repeatType && repeatType !== 'none') {
+                    // Calculate next due date
+                    let baseDate = task.due_date
+                        ? new Date(task.due_date)
+                        : new Date();
+
+                    // If base date is in the past, start from today
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (baseDate < today) baseDate = today;
+
+                    let nextDate = new Date(baseDate);
+
+                    if (repeatType === 'daily') {
+                        nextDate.setDate(nextDate.getDate() + 1);
+                    } else if (repeatType === 'weekly') {
+                        nextDate.setDate(nextDate.getDate() + 7);
+                    } else if (repeatType === 'monthly') {
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                    }
+
+                    const nextDateStr = nextDate.toISOString().split('T')[0];
+
+                    // Insert new task with same details, status OPEN, repeat_type carried over
+                    await con.query(
+                        `INSERT INTO tasks 
+                         (admin_id, title, description, priority, due_date, status, section,
+                          assigned_by, assigned_to, who_assigned, repeat_type)
+                         VALUES (?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, ?)`,
+                        [
+                            task.admin_id,
+                            task.title,
+                            task.description,
+                            task.priority,
+                            nextDateStr,
+                            task.section || 'TASK',
+                            task.assigned_by,
+                            task.assigned_to,
+                            task.who_assigned,
+                            repeatType,
+                        ]
+                    );
+
+                    // Update the template's last_spawned date
+                    await con.query(
+                        "UPDATE task_templates SET last_spawned=? WHERE id=?",
+                        [nextDateStr, id]
+                    ).catch(() => {}); // non-critical, don't fail if template missing
+                }
+            }
+        }
+        // ── End repeat logic ──
+
         req.io.emit('update_tasks');
-           notifyDesktop(); 
+        notifyDesktop();
         return res.json({ success: true });
     } catch (err) {
         console.error('update-task-status error:', err);
