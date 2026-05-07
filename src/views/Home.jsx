@@ -330,7 +330,7 @@ const dropStyle = {
 }
 
 // ─── ChangeSectionModal — sticky bottom sheet via portal ──────────────────────
-function ChangeSectionModal({ task, role, onMove, onClose }) {
+function ChangeSectionModal({ task, role, onMove, onClose, sectionLabels }) {
   const currentSection = task.section || 'TASK';
   const isSelfTask = task.is_self_task === true;
 
@@ -372,7 +372,7 @@ function ChangeSectionModal({ task, role, onMove, onClose }) {
           {available.map(sec => (
             <button key={sec} onClick={() => onMove(sec)} style={styles.sectionOption}>
               <span style={styles.sectionDot(sec)}/>
-              {SECTION_LABELS[sec]}
+              {sectionLabels[sec]}
             </button>
           ))}
         </div>
@@ -532,7 +532,7 @@ function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onRepeat, onClose }
 }
 
 
-function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }) {
+function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange, sectionLabels }) {
   const [expanded, setExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpward: false });
@@ -792,6 +792,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
         <ChangeSectionModal
           task={task} role={role}
           onMove={handleMove} onClose={() => setSectionOpen(false)}
+          sectionLabels={sectionLabels}
         />
       )}
 
@@ -817,7 +818,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
 }
 
 // ─── SectionColumn ────────────────────────────────────────────────────────────
-function SectionColumn({ section, tasks, members, adminName, role, onRefresh }) {
+function SectionColumn({ section, tasks, members, adminName, role, onRefresh, sectionLabels }) {
   const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
   const buildSorted = useCallback(() =>
@@ -1072,7 +1073,7 @@ isDraggingRef.current = false;
       {orderedTasks.length === 0 ? (
         <div style={{ color:'#aaa', textAlign:'center', marginTop:60, fontSize:13 }}>
           <div style={{fontSize:32, marginBottom:8}}>📭</div>
-          No tasks in {SECTION_LABELS[section]}
+          No tasks in {sectionLabels[section]}
         </div>
       ) : (
         renderItems.map(item => {
@@ -1119,6 +1120,7 @@ isDraggingRef.current = false;
                 adminName={adminName}
                 role={role}
                 onRefresh={onRefresh}
+                sectionLabels={sectionLabels || SECTION_LABELS}
               />
             </div>
           );
@@ -1137,6 +1139,8 @@ const Home = () => {
   const [activeSection, setActiveSection] = useState('TASK');
   const [loading, setLoading] = useState(true);
   const [deleteCompleteOpen, setDeleteCompleteOpen] = useState(false);
+  const [customLabels, setCustomLabels] = useState({ CHANGES: 'Change', UPDATE: 'Update' });
+
 
   const sliderRef = useRef(null);
   const tabBarRef = useRef(null);
@@ -1150,12 +1154,13 @@ const Home = () => {
         headers:{'X-Requested-With':'XMLHttpRequest'}
       });
       const data = await res.json();
-      if (data.success) {
-        setTasks(data.tasks || []);
-        setMembers(data.members || []);
-        setAdminName(data.adminName || 'Admin');
-        setRole(data.role || 'user');
-      }
+     if (data.success) {
+  setTasks(data.tasks || []);
+  setMembers(data.members || []);
+  setAdminName(data.adminName || 'Admin');
+  setRole(data.role || 'user');
+  setCustomLabels(data.customLabels || { CHANGES: 'Change', UPDATE: 'Update' });
+}
     } catch(e){ console.error(e); }
     finally { setLoading(false); }
   }, []);
@@ -1215,7 +1220,11 @@ const Home = () => {
     setDeleteCompleteOpen(false);
     fetchTasks();
   };
-
+  const sectionLabels = {
+  ...SECTION_LABELS,
+  CHANGES: customLabels.CHANGES || 'Change',
+  UPDATE: customLabels.UPDATE || 'Update',
+};
   return (
     <div style={styles.container}>
       <style>{`
@@ -1245,7 +1254,7 @@ const Home = () => {
               color: active ? '#0F8989' : '#aaa',
               borderBottom: active ? '2.5px solid #0F8989' : '2.5px solid transparent',
             }}>
-              {SECTION_LABELS[sec]}
+              {sectionLabels[sec]}
               {taskCounts[sec] > 0 && (
                 <span style={{ ...styles.badge, background: active ? '#095959' : '#3C3A3A', color: active ? '#CDF4F4' : '#aaa' }}>
                   {taskCounts[sec]}
@@ -1308,6 +1317,7 @@ const Home = () => {
               key={sec} section={sec} tasks={tasks}
               members={members} adminName={adminName}
               role={role} onRefresh={fetchTasks}
+               sectionLabels={sectionLabels}
             />
           ))}
         </div>

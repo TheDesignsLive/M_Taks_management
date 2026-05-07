@@ -22,9 +22,19 @@ router.get('/get-all-tasks', async (req, res) => {
 
         // ── Admin name ──────────────────────────────
         const [adminRows] = await con.query(
-            "SELECT name FROM admins WHERE id=?", [adminId]
+        "SELECT name, label_changes, label_update FROM admins WHERE id=?", 
+        [adminId]
         );
+
         if (adminRows.length > 0) adminName = adminRows[0].name;
+        let customLabels = { CHANGES: 'Change', UPDATE: 'Update' }; // Default values
+
+        if (adminRows.length > 0) {
+            adminName = adminRows[0].name;
+            // Database se naye labels uthao
+            customLabels.CHANGES = adminRows[0].label_changes || 'Change';
+            customLabels.UPDATE = adminRows[0].label_update || 'Update';
+        }
 
         // ── Members list ────────────────────────────
         if (sessionRole === 'admin') {
@@ -110,7 +120,7 @@ if (sessionRole === 'admin') {
             tasks = [...userOwnTasksRows, ...adminTasksRows, ...userToOthersTasksRows];
         }
 
-        return res.json({ success: true, tasks, members, adminName, role: sessionRole });
+        return res.json({ success: true, tasks, members, adminName, role: sessionRole ,customLabels});
 
     } catch (err) {
         console.error('get-all-tasks error:', err);
