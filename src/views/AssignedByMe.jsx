@@ -440,8 +440,8 @@ function AnimCheckbox({ checked, color, onChange, disabled }) {
 //
 
 // ─── TASK CARD ────────────────────────────────────────────────────────────────
-function TaskCard({ task, members, teams, session, adminName, onRefresh, showToast, isCompleted }) {
-const [menuOpen, setMenuOpen] = useState(false);
+function TaskCard({ task, members, teams, session, adminName, onRefresh, showToast, isCompleted, customLabels }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, openUpward: false });
   const [expanded, setExpanded] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -514,11 +514,11 @@ const hasDesc = !!(task.description && task.description.trim() && task.descripti
 
           {/* Left: section + assignee */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flexWrap: 'wrap' }}>
-            {task.section && !isCompleted && (
-<span style={{ fontSize: 9, color: '#0F8989', padding: '1px 5px', borderRadius: 3, background: 'rgba(15,137,137,0.1)', border: '1px solid rgba(15,137,137,0.4)', whiteSpace: 'nowrap', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
-                {task.section}
-              </span>
-            )}
+           {task.section && !isCompleted && (
+  <span style={{ fontSize: 9, color: '#0F8989', padding: '1px 5px', borderRadius: 3, background: 'rgba(15,137,137,0.1)', border: '1px solid rgba(15,137,137,0.4)', whiteSpace: 'nowrap', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
+    {customLabels?.[task.section] || task.section}
+  </span>
+)}
             {isCompleted ? (
               <span style={{ ...S.badge, color: '#14b8a6', background: 'rgba(15,137,137,0.18)', border: '1px solid rgba(15,137,137,0.3)' }}>
                 👤 {task.assigned_to}
@@ -670,6 +670,7 @@ export default function AssignByMe() {
   const [teams, setTeams] = useState([]);
   const [session, setSession] = useState({});
   const [adminName, setAdminName] = useState('');
+  const [customLabels, setCustomLabels] = useState({ CHANGES: 'Change', UPDATE: 'Update' });
   const [loading, setLoading] = useState(true);
  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'completed'
   const sliderRef = useRef(null);
@@ -685,14 +686,15 @@ export default function AssignByMe() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data.success) {
-        setOpenTasks(data.openTasks || []);
-        setCompletedTasks(data.completedTasks || []);
-        setMembers(data.members || []);
-        setTeams(data.teams || []);
-        setSession(data.session || {});
-        setAdminName(data.adminName || '');
-      } else {
+    if (data.success) {
+  setOpenTasks(data.openTasks || []);
+  setCompletedTasks(data.completedTasks || []);
+  setMembers(data.members || []);
+  setTeams(data.teams || []);
+  setSession(data.session || {});
+  setAdminName(data.adminName || '');
+  setCustomLabels(data.customLabels || { CHANGES: 'Change', UPDATE: 'Update' });
+} else {
         showToast(data.message || 'Failed to load tasks', 'error');
       }
     } catch (e) {
@@ -734,8 +736,7 @@ useEffect(() => {
     setDeleteAllOpen(false);
   }
 
-const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, showToast };
-
+const sharedProps = { members, teams, session, adminName, onRefresh: fetchData, showToast, customLabels };
   function onTouchStart(e) { swipeStartX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
     if (swipeStartX.current === null) return;

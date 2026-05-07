@@ -21,8 +21,8 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     // Admin name
-    const [aRows] = await db.query('SELECT name FROM admins WHERE id=?', [adminId]);
-    if (aRows.length > 0) adminName = aRows[0].name;
+    const [aRows] = await db.query('SELECT name, label_changes, label_update FROM admins WHERE id=?', [adminId]);
+if (aRows.length > 0) adminName = aRows[0].name;
 
     // Teams
     const [tRows] = await db.query(
@@ -85,19 +85,25 @@ router.get('/', requireAuth, async (req, res) => {
       else openTasks.push(task);
     });
 
-    return res.json({
-      success: true,
-      openTasks,
-      completedTasks,
-      members,
-      teams,
-      adminName,
-      session: {
-        role: sessionRole,
-        userId: sessionUserId,
-        adminId,
-      },
-    });
+    const customLabels = {
+  CHANGES: aRows[0]?.label_changes || 'Change',
+  UPDATE: aRows[0]?.label_update || 'Update',
+};
+
+return res.json({
+  success: true,
+  openTasks,
+  completedTasks,
+  members,
+  teams,
+  adminName,
+  customLabels,
+  session: {
+    role: sessionRole,
+    userId: sessionUserId,
+    adminId,
+  },
+});
   } catch (err) {
     console.error('[assign_by_me GET]', err);
     res.status(500).json({ success: false, message: 'Server error' });
