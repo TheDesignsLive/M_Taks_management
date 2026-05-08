@@ -42,21 +42,20 @@ router.get('/get-all-tasks', async (req, res) => {
         }
 
 // ── Tasks ────────────────────────────────────
-        if (sessionRole === 'admin') {
+if (sessionRole === 'admin') {
             const [taskRows] = await con.query(
                 `SELECT id, title, description, priority, due_date, status, section,
-                        assigned_by, assigned_to, who_assigned
+                        assigned_by, assigned_to, who_assigned, repeat_type
                  FROM tasks
                  WHERE admin_id=? AND assigned_to=0 AND who_assigned='admin'
                  ORDER BY due_date ASC`,
                 [adminId]
             );
-            // Admin self tasks: is_self_task = true
             taskRows.forEach(t => { t.is_self_task = true; });
 
             const [otherTaskRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
-                        t.assigned_by, t.assigned_to, t.who_assigned,
+                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type,
                         u.name AS assigned_by_name
                  FROM tasks t
                  JOIN users u ON t.assigned_by = u.id
@@ -65,16 +64,14 @@ router.get('/get-all-tasks', async (req, res) => {
                  ORDER BY t.due_date ASC`,
                 [adminId]
             );
-            // Tasks assigned TO admin by users: is_self_task = false
             otherTaskRows.forEach(t => { t.is_self_task = false; });
 
             tasks = [...taskRows, ...otherTaskRows];
 
         } else {
-            // Tasks assigned to this user by admin: is_self_task = false
             const [adminTasksRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
-                        t.assigned_by, t.assigned_to, t.who_assigned,
+                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type,
                         a.name AS assigned_by_name
                  FROM tasks t
                  JOIN admins a ON t.assigned_by = a.id
@@ -84,10 +81,9 @@ router.get('/get-all-tasks', async (req, res) => {
             );
             adminTasksRows.forEach(t => { t.is_self_task = false; });
 
-            // Tasks created by this user for themselves: is_self_task = true
             const [userOwnTasksRows] = await con.query(
                 `SELECT id, title, description, priority, due_date, status, section,
-                        assigned_by, assigned_to, who_assigned
+                        assigned_by, assigned_to, who_assigned, repeat_type
                  FROM tasks
                  WHERE admin_id=? AND assigned_to=?
                    AND (who_assigned='user' OR who_assigned='owner')
@@ -97,10 +93,9 @@ router.get('/get-all-tasks', async (req, res) => {
             );
             userOwnTasksRows.forEach(t => { t.is_self_task = true; });
 
-            // Tasks assigned to this user by other users: is_self_task = false
             const [userToOthersTasksRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
-                        t.assigned_by, t.assigned_to, t.who_assigned,
+                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type,
                         u.name AS assigned_by_name
                  FROM tasks t
                  JOIN users u ON t.assigned_by = u.id

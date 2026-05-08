@@ -21,6 +21,8 @@ import Home from './routes/home.js';
 import AllMemberTask from './routes/all_member_task.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import repeatRoutes from './routes/repeat.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -99,6 +101,8 @@ app.use('/api/teams', teams);
 app.use('/api/roles', roles);
 app.use('/api/home', Home);
 app.use('/api/all-member-tasks', AllMemberTask);
+
+app.use('/api/repeat', repeatRoutes);
 
 app.use(express.static('dist'));
 

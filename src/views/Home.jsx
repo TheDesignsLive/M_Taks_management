@@ -130,6 +130,8 @@ const [showAssignDrop, setShowAssignDrop] = useState(false);
   const assignTriggerRef = useRef(null);
   const priRef = useRef(null);
 
+
+
   useEffect(() => {
     fetch(`${BASE_URL}/api/tasks/get-teams`, { credentials: 'include' })
       .then(r => r.json())
@@ -423,11 +425,76 @@ function DeleteConfirmModal({ message, onConfirm, onClose }) {
   );
 }
 
+function RepeatModal({ currentRepeat, onSelect, onClose }) {
+  const options = [
+    { value: 'none',    label: 'Off',          icon: '🚫', desc: 'Does not repeat' },
+    { value: 'daily',   label: 'Every day',    icon: '📆', desc: 'Repeats daily' },
+    { value: 'weekly',  label: 'Every week',   icon: '🗓️', desc: 'Same day each week' },
+    { value: 'monthly', label: 'Every month',  icon: '📅', desc: 'Same date each month' },
+  ];
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+        zIndex: 99000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{
+        width: '100%', maxWidth: 500,
+        background: '#2E2D2D',
+        borderRadius: '22px 22px 0 0',
+        borderTop: '2px solid #0F8989',
+        boxShadow: '0 -8px 48px rgba(0,0,0,0.6)',
+        overflow: 'hidden',
+        animation: 'slideUp 0.25s cubic-bezier(.22,.68,0,1.1)',
+      }}>
+        <div style={{ width: 40, height: 4, background: 'rgba(15,137,137,0.5)', borderRadius: 4, margin: '12px auto 0' }} />
+        <div style={{ padding: '12px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#CDF4F4', fontWeight: 700, fontSize: 15 }}>🔁 Repeat Task</span>
+          <button onClick={onClose} style={styles.closeBtn}>✕</button>
+        </div>
+        <div style={{ paddingBottom: 28 }}>
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => onSelect(opt.value)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                width: '100%', background: 'none', border: 'none',
+                borderBottom: '1px solid #3C3A3A',
+                padding: '14px 18px', cursor: 'pointer',
+                fontFamily: 'Arial, sans-serif', textAlign: 'left',
+                WebkitTapHighlightColor: 'transparent',
+                background: currentRepeat === opt.value ? 'rgba(15,137,137,0.12)' : 'none',
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{opt.icon}</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', color: '#eee', fontSize: 14, fontWeight: currentRepeat === opt.value ? 700 : 400 }}>
+                  {opt.label}
+                </span>
+                <span style={{ display: 'block', color: '#aaa', fontSize: 11, marginTop: 2 }}>
+                  {opt.desc}
+                </span>
+              </span>
+              {currentRepeat === opt.value && (
+                <span style={{ color: '#0F8989', fontSize: 18 }}>✓</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ─── 3-dot Menu Portal ────────────────────────────────────────────────────────
-function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onClose }) {
+function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onRepeat, onClose }) {
   return createPortal(
     <>
-      {/* Backdrop — catches taps outside */}
       <div
         style={{ position:'fixed', inset:0, zIndex:99990 }}
         onClick={onClose}
@@ -452,6 +519,9 @@ function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onClose }) {
         <button style={styles.menuItem} onClick={e=>{e.stopPropagation(); onChangeDate();}}>
           📅 Change Date
         </button>
+        <button style={styles.menuItem} onClick={e=>{e.stopPropagation(); onRepeat();}}>
+          🔁 Repeat
+        </button>
         <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={e=>{e.stopPropagation(); onDelete();}}>
           🗑️ Delete
         </button>
@@ -461,7 +531,7 @@ function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onClose }) {
   );
 }
 
-// ─── TaskCard ─────────────────────────────────────────────────────────────────
+
 function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }) {
   const [expanded, setExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -469,6 +539,8 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
   const [editOpen, setEditOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [repeatOpen, setRepeatOpen] = useState(false);
+  const [currentRepeat, setCurrentRepeat] = useState(task.repeat_type || 'none');
   const [completing, setCompleting] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
   const menuBtnRef = useRef(null);
@@ -476,9 +548,9 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
 
   // Track any open modal/menu globally so drag knows to stay off
   useEffect(() => {
-    const anyOpen = showMenu || editOpen || sectionOpen || deleteOpen;
+    const anyOpen = showMenu || editOpen || sectionOpen || deleteOpen || repeatOpen;
     window.__taskModalOpen = anyOpen;
-  }, [showMenu, editOpen, sectionOpen, deleteOpen]);
+  }, [showMenu, editOpen, sectionOpen, deleteOpen, repeatOpen]);
 
   // Cleanup on unmount
   useEffect(() => () => { window.__taskModalOpen = false; }, []);
@@ -535,6 +607,18 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
     });
     onRefresh();
   };
+
+    // Add this handler inside TaskCard:
+  const handleSetRepeat = async (repeat_type) => {
+    setCurrentRepeat(repeat_type);
+    setRepeatOpen(false);
+    await fetch(`${BASE_URL}/api/repeat/set-repeat`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_id: task.id, repeat_type })
+    });
+    onRefresh();
+};
 
   const handleDelete = async () => {
     await fetch(`${BASE_URL}/api/home/delete-task/${task.id}`, {
@@ -621,6 +705,24 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
               </span>
             )}
 
+  {/* Repeat badge — shows above the 3-dot row, right aligned */}
+            {currentRepeat && currentRepeat !== 'none' && (
+              <span
+                onClick={(e) => { e.stopPropagation(); setRepeatOpen(true); }}
+                style={{
+                  fontSize: 9, color: '#a78bfa', cursor: 'pointer',
+                  padding: '2px 5px', borderRadius: 3,
+                  background: 'rgba(167,139,250,0.1)',
+                  border: '1px solid rgba(167,139,250,0.35)',
+                  fontWeight: 700, letterSpacing: 0.3,
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                  lineHeight: 1.4,
+                }}
+              >
+                🔁 {currentRepeat}
+              </span>
+            )}
+
             {/* Due date */}
             {date ? (
               <span
@@ -659,14 +761,23 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
         )}
       </div>
 
-      {/* 3-dot menu via portal — always above everything */}
+{/* 3-dot menu via portal — always above everything */}
       {showMenu && (
         <TaskMenu
           menuPos={menuPos}
           onEdit={() => { setEditOpen(true); setShowMenu(false); }}
           onChangeDate={() => { setShowMenu(false); setTimeout(() => dateInputRef.current?.showPicker?.(), 50); }}
+          onRepeat={() => { setRepeatOpen(true); setShowMenu(false); }}
           onDelete={() => { setDeleteOpen(true); setShowMenu(false); }}
           onClose={() => setShowMenu(false)}
+        />
+      )}
+
+      {repeatOpen && (
+        <RepeatModal
+          currentRepeat={currentRepeat}
+          onSelect={handleSetRepeat}
+          onClose={() => setRepeatOpen(false)}
         />
       )}
 
@@ -699,6 +810,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange }
           onConfirm={handleDelete}
           onClose={() => setDeleteOpen(false)}
         />
+
       )}
     </>
   );
