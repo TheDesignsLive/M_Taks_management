@@ -19,8 +19,15 @@ router.get('/data', async (req, res) => {
             const [mRows] = await con.query("SELECT id, name FROM users WHERE admin_id=? AND status='ACTIVE' AND id != ?", [adminId, userId]);
             members = mRows;
         }
-        res.json({ success: true, name, email, role, members, isAdmin: role === 'admin' });
-    } catch (err) { res.status(500).json({ success: false }); }
+let label_changes = 'Change', label_update = 'Update';
+if (role === 'admin') {
+    const [lRows] = await con.query("SELECT label_changes, label_update FROM admins WHERE id=?", [adminId]);
+    if (lRows.length > 0) {
+        label_changes = lRows[0].label_changes || 'Change';
+        label_update = lRows[0].label_update || 'Update';
+    }
+}
+res.json({ success: true, name, email, role, members, isAdmin: role === 'admin', label_changes, label_update });    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // GENERATE & REQUEST OTP
@@ -87,6 +94,25 @@ router.get('/delete-profile', async (req, res) => {
         req.session.destroy();
         res.json({ success: true, message: 'Profile deleted.' });
     } catch (err) { res.json({ success: false }); }
+});
+
+
+// UPDATE SECTION LABELS (admin/owner only)
+router.post('/update-labels', async (req, res) => {
+    if (!req.session.role) return res.status(401).json({ success: false });
+    if (req.session.role !== 'admin' && req.session.role !== 'owner') {
+        return res.status(403).json({ success: false, message: 'Not allowed' });
+    }
+    const { label_changes, label_update } = req.body;
+    try {
+        await con.query(
+            "UPDATE admins SET label_changes=?, label_update=? WHERE id=?",
+            [label_changes || 'Change', label_update || 'Update', req.session.adminId]
+        );
+        res.json({ success: true, message: 'Labels updated successfully!' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 });
 
 export default router;

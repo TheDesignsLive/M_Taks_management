@@ -83,6 +83,8 @@ const Settings = () => {
   const [modal, setModal] = useState({ show: false, type: "", step: 1 });
   const [form, setForm] = useState({ otp: "", generatedOtp: "", newPass: "", confPass: "", newEmail: "" });
   const [alertBox, setAlertBox] = useState({ show: false, title: "", msg: "", isSuccess: true });
+const [labelForm, setLabelForm] = useState({ changes: '', update: '' });
+const [labelSaving, setLabelSaving] = useState(false);
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -90,7 +92,10 @@ const Settings = () => {
     try {
       const res = await fetch(`${BASE_URL}/api/settings/data`, { credentials: "include" });
       const result = await res.json();
-      if (result.success) setData(result);
+      if (result.success) {
+    setData(result);
+    setLabelForm({ changes: result.label_changes || 'Change', update: result.label_update || 'Update' });
+}
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -165,8 +170,22 @@ const Settings = () => {
   };
 
   const closeModal = () => setModal({ show: false, type: "", step: 1 });
+  const handleSaveLabels = async () => {
+    setLabelSaving(true);
+    try {
+        const res = await fetch(`${BASE_URL}/api/settings/update-labels`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ label_changes: labelForm.changes, label_update: labelForm.update }),
+            credentials: 'include',
+        });
+        const result = await res.json();
+        showAlert(result.success ? 'Success' : 'Error', result.message, result.success);
+    } catch { showAlert('Error', 'Network error', false); }
+    setLabelSaving(false);
+};
 
-  const modalTitle = modal.type === "pass" ? "Change Password" : modal.type === "email" ? "Change Email" : "Delete Profile";
+  const modalTitle = modal.type === "pass" ? "Change Password" : modal.type === "email" ? "Change Email" : modal.type === "labels" ? "Section Labels" : "Delete Profile";
 
   // step label
   const stepLabels = {
@@ -229,8 +248,31 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Account Section */}
-        <div style={{ ...S.sectionLabel, marginTop: 24 }}>ACCOUNT</div>
+       {/* Label Customization — Admin/Owner only */}
+{data && (data.role === 'admin' || data.role === 'owner') && (
+    <>
+        <div style={{ ...S.sectionLabel, marginTop: 24 }}>CUSTOMIZATION</div>
+        <div style={S.card}>
+            <div style={S.menuItem} onClick={() => setModal({ show: true, type: 'labels', step: 1 })}>
+                <div style={S.menuLeft}>
+                    <div style={{ ...S.menuIcon, background: 'rgba(15,137,137,0.15)', color: '#0F8989' }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style={S.menuTitle}>Section Labels</div>
+                        <div style={S.menuSub}>{labelForm.changes} &amp; {labelForm.update}</div>
+                    </div>
+                </div>
+                <span style={S.chevron}><ChevronRight /></span>
+            </div>
+        </div>
+    </>
+)}
+
+{/* Account Section */}
+<div style={{ ...S.sectionLabel, marginTop: 24 }}>ACCOUNT</div>
         <div style={S.card}>
           <div
             style={S.menuItem}
@@ -293,7 +335,7 @@ const Settings = () => {
             </div>
 
             {/* Step 1 */}
-            {modal.step === 1 && (
+            {modal.step === 1 && modal.type !== "labels" && (
               <div style={{ textAlign: "center", padding: "8px 0 12px" }}>
                 <div style={S.stepIcon}>
                   {modal.type === "delete" ? <TrashIcon /> : <LockIcon />}
@@ -374,6 +416,34 @@ const Settings = () => {
                 <label style={S.label}>Confirm Password</label>
                 <PasswordInput placeholder="Repeat new password" onChange={e => setForm({ ...form, confPass: e.target.value })} />
                 <button style={S.primaryBtn} onClick={handleFinalSubmit}>Update Password</button>
+              </div>
+            )}
+
+            {/* Labels — Step 1 */}
+            {modal.type === "labels" && modal.step === 1 && (
+              <div>
+                <p style={S.infoText}>Edit the display names shown for the <span style={{ color: '#CDF4F4', fontWeight: 700 }}>Change</span> and <span style={{ color: '#CDF4F4', fontWeight: 700 }}>Update</span> sections across the app.</p>
+                <label style={S.label}>Change Section Name</label>
+                <input
+                  style={S.input}
+                  value={labelForm.changes}
+                  placeholder="e.g. Change"
+                  onChange={e => setLabelForm(v => ({ ...v, changes: e.target.value }))}
+                />
+                <label style={S.label}>Update Section Name</label>
+                <input
+                  style={S.input}
+                  value={labelForm.update}
+                  placeholder="e.g. Update"
+                  onChange={e => setLabelForm(v => ({ ...v, update: e.target.value }))}
+                />
+                <button
+                  style={{ ...S.primaryBtn, opacity: labelSaving ? 0.7 : 1 }}
+                  onClick={async () => { await handleSaveLabels(); if (!labelSaving) closeModal(); }}
+                  disabled={labelSaving}
+                >
+                  {labelSaving ? 'Saving…' : 'Save Labels'}
+                </button>
               </div>
             )}
 
