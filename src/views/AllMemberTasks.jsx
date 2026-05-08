@@ -306,8 +306,9 @@ const AllMemberTask = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('all');
   const [activeSection, setActiveSection] = useState('TASK');
-  const [loading, setLoading] = useState(true);
-  const [dragging, setDragging] = useState(false);
+const [loading, setLoading] = useState(true);
+const [dragging, setDragging] = useState(false);
+const [customLabels, setCustomLabels] = useState({ CHANGES: 'Change', UPDATE: 'Update' });
 
   const sliderRef = useRef(null);
   const tabBarRef = useRef(null); // ✅ Added ref for header scroll
@@ -326,9 +327,10 @@ const AllMemberTask = () => {
       });
       const data = await res.json();
       if (data.success) {
-        setTasks(data.tasks || []);
-        setUsers(data.users || []);
-      }
+  setTasks(data.tasks || []);
+  setUsers(data.users || []);
+  setCustomLabels(data.customLabels || { CHANGES: 'Change', UPDATE: 'Update' });
+}
     } catch (err) {
       console.error('Fetch error:', err);
     } finally {
@@ -439,7 +441,7 @@ useEffect(() => {
                 borderBottom: active ? '2.5px solid #0F8989' : '2.5px solid transparent',
               }}
             >
-              {SECTION_LABELS[sec]}
+              {sec === 'CHANGES' ? customLabels.CHANGES : sec === 'UPDATE' ? customLabels.UPDATE : SECTION_LABELS[sec]}
               {taskCounts[sec] > 0 && (
                 <span style={{
                   ...styles.badge,

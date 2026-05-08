@@ -22,10 +22,14 @@ router.get('/data', async (req, res) => {
 
         // ================= ADMIN NAME =================
         const [adminRows] = await con.query(
-            "SELECT name FROM admins WHERE id=?",
-            [adminId]
-        );
-        const adminName = adminRows.length > 0 ? adminRows[0].name : 'Admin';
+    "SELECT name, label_changes, label_update FROM admins WHERE id=?",
+    [adminId]
+);
+const adminName = adminRows.length > 0 ? adminRows[0].name : 'Admin';
+const customLabels = {
+    CHANGES: adminRows[0]?.label_changes || 'Change',
+    UPDATE: adminRows[0]?.label_update || 'Update',
+};
 
         // ================= ROLE & TEAM FETCH =================
         if (sessionRole === "admin") {
@@ -178,14 +182,14 @@ let taskQuery = `
         const [taskRows] = await con.query(taskQuery, params);
         tasks = taskRows;
 
-        return res.json({
-            success: true,
-            tasks,
-            users,
-            adminName,
-            selected_user: selectedUser,
-        });
-
+       return res.json({
+    success: true,
+    tasks,
+    users,
+    adminName,
+    customLabels,
+    selected_user: selectedUser,
+});
     } catch (err) {
         console.error(err);
         return res.status(500).json({ success: false, message: 'Database Error' });
