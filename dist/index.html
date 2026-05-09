@@ -3,24 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- ✅ 1. Standard Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/assets/hero-CLDdwZDr.png">
+    <!-- ✅ 1. Standard Favicon (Path se /public hata diya) -->
+    <link rel="icon" type="image/png" href="/images/hero.png">
     
     <!-- ✅ 2. iPhone Apple Touch Icon (Isse Logo aayega) -->
-    <!-- Note: href path check kar lena ki file images folder mein hai ya nahi -->
-<link rel="apple-touch-icon" href="/assets/hero-CLDdwZDr.png">
-    <!-- ✅ 3. iOS App Mode (Isse URL bar gayab ho jayega) -->
+    <!-- CRITICAL: Path me /public mat likho, direct /images se shuru karo -->
+    <link rel="apple-touch-icon" href="/images/hero.png">
+
+    <!-- ✅ 3. iOS App Mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     
     <!-- ✅ 4. iOS Status Bar Style -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <!-- ✅ 5. iOS App Title -->
     <meta name="apple-mobile-web-app-title" content="M-TMS">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
-    <!-- ✅ viewport mein user-scalable=no optional hai lekin app feel ke liye accha hai -->
+    <!-- ✅ Viewport fix -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
     <title>m-task-management</title>
@@ -29,6 +30,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Socket logic (Keep as is) -->
     <script src="https://m-tms.thedesigns.live/socket.io/socket.io.js"></script>
   </body>
 </html>
