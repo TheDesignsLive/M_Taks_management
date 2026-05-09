@@ -5,19 +5,24 @@ import path from 'path';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import FormData from 'form-data';
+import fetch from 'node-fetch';
 import con from '../config/db.js';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
+
+const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ─── MULTER CONFIG ────────────────────────────────────────────────────────────
+// ─── MULTER CONFIG (temp folder — image forwarded to desktop like profile.js) ─
+const TEMP_DIR = path.join(__dirname, '..', 'public', 'images');
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '..', 'public', 'images');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
+        if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
+        cb(null, TEMP_DIR);
     },
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
@@ -36,6 +41,50 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ─── HELPER: forward member image to desktop server (same as profile.js) ──────
+async function forwardMemberImageToDesktop(localFilename) {
+    try {
+        const filePath = path.join(TEMP_DIR, localFilename);
+        if (!fs.existsSync(filePath)) {
+            console.error('[view_member] Temp file not found:', filePath);
+            return null;
+        }
+        const form = new FormData();
+        form.append('profile_pic', fs.createReadStream(filePath), localFilename);
+
+        const response = await fetch(`${DESKTOP_BASE_URL}/profile/upload-image`, {
+            method: 'POST',
+            headers: {
+                ...form.getHeaders(),
+                'x-mobile-secret': 'tms_mobile_bridge_2026',
+            },
+            body: form,
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('[view_member] Desktop returned non-JSON:', text.substring(0, 200));
+            safeDeleteFile(localFilename);
+            return null;
+        }
+
+        const data = await response.json();
+        safeDeleteFile(localFilename); // delete temp file after forwarding
+        if (data.success) {
+            console.log('[view_member] Image forwarded to desktop:', data.filename);
+            return data.filename;
+        } else {
+            console.error('[view_member] Desktop upload failed:', data.message);
+            return null;
+        }
+    } catch (err) {
+        console.error('[view_member] forwardMemberImageToDesktop error:', err.message);
+        safeDeleteFile(localFilename);
+        return null;
+    }
+}
 
 // ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
@@ -159,19 +208,28 @@ router.post('/add', requireAuth, (req, res) => {
     upload.single('profile_pic')(req, res, async (uploadErr) => {
         if (uploadErr) return res.status(400).json({ success: false, message: uploadErr.message });
 
-        const { name, email, phone, password, role_id, team_id } = req.body;
-        const profilePic = req.file ? req.file.filename : null;
+const { name, email, phone, password, role_id, team_id } = req.body;
+        const tempPic = req.file ? req.file.filename : null;
 
         if (!name || !email || !password || !role_id) {
-            if (profilePic) safeDeleteFile(profilePic);
+            if (tempPic) safeDeleteFile(tempPic);
             return res.status(400).json({ success: false, message: 'Name, email, password, and role are required.' });
         }
 
         try {
             const adminId = await getAdminId(req.session);
             if (!adminId) {
-                if (profilePic) safeDeleteFile(profilePic);
+                if (tempPic) safeDeleteFile(tempPic);
                 return res.status(403).json({ success: false, message: 'Admin not found.' });
+            }
+
+            // ── Forward image to desktop server (same as profile.js) ──────
+            let profilePic = null;
+            if (tempPic) {
+                profilePic = await forwardMemberImageToDesktop(tempPic);
+                if (!profilePic) {
+                    return res.status(500).json({ success: false, message: 'Image upload failed. Please try again.' });
+                }
             }
 // ── CHECK: admin or owner → insert into users
             //           any other user  → insert into member_requests
@@ -235,9 +293,8 @@ if (req.io) req.io.emit('update_member_requests');
                 return res.json({ success: true, message: 'Member request submitted. Awaiting admin approval.', isRequest: true });
             }
 
-        } catch (err) {
+} catch (err) {
             console.error('[view_member ADD]', err);
-            if (profilePic) safeDeleteFile(profilePic);
             if (err.code === 'ER_DUP_ENTRY') {
                 return res.status(400).json({ success: false, message: 'Email already exists.' });
             }
@@ -253,34 +310,48 @@ router.post('/edit/:id', requireAuth, (req, res) => {
     upload.single('profile_pic')(req, res, async (uploadErr) => {
         if (uploadErr) return res.status(400).json({ success: false, message: uploadErr.message });
 
-        const { id } = req.params;
+const { id } = req.params;
         const { name, email, phone, password, role_id } = req.body;
-        const newPic = req.file ? req.file.filename : null;
+        const tempPic = req.file ? req.file.filename : null;
 
         if (!name || !email || !role_id) {
-            if (newPic) safeDeleteFile(newPic);
+            if (tempPic) safeDeleteFile(tempPic);
             return res.status(400).json({ success: false, message: 'Name, email, and role are required.' });
         }
 
         try {
             const adminId = await getAdminId(req.session);
             if (!adminId) {
-                if (newPic) safeDeleteFile(newPic);
+                if (tempPic) safeDeleteFile(tempPic);
                 return res.status(403).json({ success: false, message: 'Admin not found.' });
             }
 
             const [userRows] = await con.query('SELECT * FROM users WHERE id=? AND admin_id=?', [id, adminId]);
             if (!userRows.length) {
-                if (newPic) safeDeleteFile(newPic);
+                if (tempPic) safeDeleteFile(tempPic);
                 return res.status(404).json({ success: false, message: 'Member not found.' });
             }
 
             const user = userRows[0];
             let finalPic = user.profile_pic;
 
-            if (newPic) {
-                safeDeleteFile(user.profile_pic);
-                finalPic = newPic;
+            if (tempPic) {
+                // Forward new image to desktop server
+                const forwardedPic = await forwardMemberImageToDesktop(tempPic);
+                if (!forwardedPic) {
+                    return res.status(500).json({ success: false, message: 'Image upload failed. Please try again.' });
+                }
+                // Tell desktop to delete old image
+                if (user.profile_pic) {
+                    try {
+                        await fetch(`${DESKTOP_BASE_URL}/profile/delete-image`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'x-mobile-secret': 'tms_mobile_bridge_2026' },
+                            body: JSON.stringify({ filename: user.profile_pic }),
+                        });
+                    } catch (e) { console.error('[view_member] delete old image error:', e.message); }
+                }
+                finalPic = forwardedPic;
             }
 
             if (password && password.trim()) {
@@ -300,9 +371,9 @@ router.post('/edit/:id', requireAuth, (req, res) => {
             notifyDesktop('members');
 
             return res.json({ success: true, message: 'Member updated successfully.' });
-        } catch (err) {
+} catch (err) {
             console.error('[view_member EDIT]', err);
-            if (newPic) safeDeleteFile(newPic);
+            if (tempPic) safeDeleteFile(tempPic);
             return res.status(500).json({ success: false, message: 'Failed to update member.' });
         }
     });
@@ -319,8 +390,15 @@ router.post('/remove-pic/:id', requireAuth, async (req, res) => {
         const [rows] = await con.query('SELECT profile_pic FROM users WHERE id=? AND admin_id=?', [id, adminId]);
         if (!rows.length) return res.status(404).json({ success: false, message: 'Member not found.' });
 
-        if (rows[0].profile_pic) {
-            safeDeleteFile(rows[0].profile_pic);
+if (rows[0].profile_pic) {
+            // Tell desktop to delete the file (it lives on desktop server)
+            try {
+                await fetch(`${DESKTOP_BASE_URL}/profile/delete-image`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-mobile-secret': 'tms_mobile_bridge_2026' },
+                    body: JSON.stringify({ filename: rows[0].profile_pic }),
+                });
+            } catch (e) { console.error('[view_member] Desktop delete-image failed:', e.message); }
             await con.query('UPDATE users SET profile_pic=NULL WHERE id=?', [id]);
         }
 

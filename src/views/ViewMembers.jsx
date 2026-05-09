@@ -20,13 +20,15 @@ function useToast() {
 }
 
 // ─── AVATAR ──────────────────────────────────────────────────────────────────
+const DESKTOP_IMAGE_URL = 'https://tms.thedesigns.live/images';
+
 function Avatar({ profilePic, name, size = 40 }) {
   const [err, setErr] = useState(false);
   const letter = name ? name.charAt(0).toUpperCase() : '?';
   if (profilePic && !err) {
     return (
       <img
-        src={`${BASE_URL}/public/images/${profilePic}`}
+        src={`${DESKTOP_IMAGE_URL}/${profilePic}`}
         alt={name}
         onError={() => setErr(true)}
         style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block', flexShrink: 0 }}
