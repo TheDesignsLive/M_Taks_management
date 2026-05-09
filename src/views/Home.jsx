@@ -263,7 +263,7 @@ const dropStyle = {
           </div>
 <div style={{...styles.field, flex:'1 1 50%'}}>
             <label style={styles.label}>Due Date</label>
-<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={{...styles.input, height:38, padding:'9px 12px'}}/>
+<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)} style={{...styles.input, height:38, padding:'9px 12px', WebkitAppearance:'none', appearance:'none', lineHeight:'normal'}}/>
           </div>
         </div>
 
