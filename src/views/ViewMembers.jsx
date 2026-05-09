@@ -841,7 +841,7 @@ function openEdit(user) {
                 <div style={{ marginLeft: 14 }}>
                   <div style={{ fontSize: 13, color: '#aaa' }}>Tap to change profile picture</div>
                   <div style={{ fontSize: 11, color: '#666', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
-                  {(editCurrentPic || editPreview) && (
+                  {/* {(editCurrentPic || editPreview) && (
                     <button
                       type="button"
                       style={{ marginTop: 7, background: 'none', border: 'none', color: '#e74c3c', fontSize: 11.5, cursor: 'pointer', padding: 0, fontWeight: 700, textDecoration: 'underline', fontFamily: 'Arial, sans-serif', display: 'block' }}
@@ -849,7 +849,7 @@ function openEdit(user) {
                     >
                       Remove photo
                     </button>
-                  )}
+                  )} */}
                 </div>
               </div>
               <input ref={editFileRef} type="file" accept="image/*" style={{ display: 'none' }}
@@ -941,18 +941,7 @@ function openEdit(user) {
         onCancel={() => setDeleteModal(m => ({ ...m, open: false }))}
       />
 
-  {/* ── REMOVE PROFILE PIC CONFIRM ── */}
-      <ConfirmModal
-        open={removePicOpen}
-        icon={<DangerIcon />}
-        title="Remove Photo"
-        message="Remove this member's profile picture? It cannot be undone."
-        confirmLabel="Remove"
-        confirmClass="danger"
-        loading={removePicLoading}
-        onConfirm={confirmRemovePic}
-        onCancel={() => { setRemovePicOpen(false); setEditOpen(true); }}
-      />
+
 
       {/* ── ALERT ── */}
       <AlertModal
