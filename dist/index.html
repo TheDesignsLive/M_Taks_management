@@ -2,16 +2,39 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/assets/tms-DZ5Jk4Sd.svg">
+    
+    <!-- ✅ 1. Standard Favicon (Path se /public hata diya) -->
+    <link rel="icon" type="image/png" href="/images/hero.png">
+    
+    <!-- ✅ 2. iPhone Apple Touch Icon (Isse Logo aayega) -->
+    <!-- CRITICAL: Path me /public mat likho, direct /images se shuru karo -->
+    <link rel="apple-touch-icon" href="/images/hero.png">
+
+    <!-- ✅ 3. iOS App Mode -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <!-- ✅ 4. iOS Status Bar Style -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- ✅ 5. iOS App Title -->
+    <meta name="apple-mobile-web-app-title" content="M-TMS">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- ✅ Viewport fix -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
     <title>m-task-management</title>
     <script type="module" crossorigin src="/assets/index-CcAfn7LA.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-nqMpL4T3.css">
   </head>
   <body>
     <div id="root"></div>
+
       <!-- ✅ ADD THIS LINE — loads socket.io client from your mobile backend -->
+
+    <!-- Socket logic (Keep as is) -->
+
     <script src="https://m-tms.thedesigns.live/socket.io/socket.io.js"></script>
   </body>
 </html>
