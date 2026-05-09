@@ -158,7 +158,7 @@ app.post('/api/notify-members-update', (req, res) => {
     return res.json({ success: true });
 });
 
-// ✅ Desktop pings this when roles change → broadcast to mobile clients
+//  Desktop pings this when roles change → broadcast to mobile clients
 app.post('/api/notify-roles-update', (req, res) => {
     const secret = req.headers['x-mobile-secret'];
     if (secret !== 'tms_mobile_bridge_2026') {
