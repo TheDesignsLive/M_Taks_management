@@ -343,6 +343,7 @@ export default function ViewMember() {
   const addFileRef = useRef(null);
 
   // Edit dialog
+// Edit dialog
   const [editOpen, setEditOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
@@ -351,6 +352,9 @@ export default function ViewMember() {
   const [editErrors, setEditErrors] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const editFileRef = useRef(null);
+  const [editCurrentPic, setEditCurrentPic] = useState(null);
+  const [removePicOpen, setRemovePicOpen] = useState(false);
+  const [removePicLoading, setRemovePicLoading] = useState(false);
 
   // Confirm modals
   const [suspendModal, setSuspendModal] = useState({ open: false, userId: null, name: '', status: '', loading: false });
@@ -515,6 +519,29 @@ export default function ViewMember() {
     }
   }
 
+// ── REMOVE PROFILE PIC ───────────────────────────────────────────────────
+  async function confirmRemovePic() {
+    setRemovePicLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/view_member/remove-pic/${editId}`, { method: 'POST', credentials: 'include' });
+      const json = await res.json();
+      setRemovePicLoading(false);
+      setRemovePicOpen(false);
+      if (json.success) {
+        setEditCurrentPic(null);
+        setEditPreview(null);
+        setEditFile(null);
+        fetchData();
+        showToast('Profile picture removed.');
+      } else {
+        showToast(json.message || 'Failed to remove picture.', 'error');
+      }
+    } catch {
+      setRemovePicLoading(false);
+      showToast('Server error.', 'error');
+    }
+  }
+
   // ── DELETE ────────────────────────────────────────────────────────────────
   async function confirmDelete() {
     setDeleteModal(m => ({ ...m, loading: true }));
@@ -543,13 +570,13 @@ export default function ViewMember() {
     setAddForm({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
     setAddFile(null); setAddPreview(null); setAddErrors({});
   }
-  function resetEdit() {
+function resetEdit() {
     setEditForm({ name: '', email: '', phone: '', password: '', confirmPassword: '', role_id: '', team_id: '' });
-    setEditFile(null); setEditPreview(null); setEditErrors({});
+    setEditFile(null); setEditPreview(null); setEditErrors({}); setEditCurrentPic(null);
   }
 
   // ── OPEN EDIT ──────────────────────────────────────────────────────────
-  function openEdit(user) {
+function openEdit(user) {
     setEditId(user.id);
     setEditForm({
       name: user.name || '',
@@ -563,6 +590,7 @@ export default function ViewMember() {
     setEditFile(null);
     setEditPreview(null);
     setEditErrors({});
+    setEditCurrentPic(user.profile_pic || null);
     setEditOpen(true);
   }
 
@@ -797,18 +825,29 @@ export default function ViewMember() {
               <button style={S.closeBtn} className="vm-close" onClick={() => setEditOpen(false)}><CloseIcon /></button>
             </div>
             <div style={{ overflowY: 'auto', flex: 1, paddingBottom: 20, paddingLeft: 18, paddingRight: 18 }}>
-              {/* Avatar picker */}
+     {/* Avatar picker */}
               <div style={S.avatarEditRow}>
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   {editPreview
                     ? <img src={editPreview} alt="preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid #0F8989' }} />
-                    : <Avatar name={editForm.name || 'M'} size={64} />
+                    : editCurrentPic
+                      ? <Avatar profilePic={editCurrentPic} name={editForm.name || 'M'} size={64} />
+                      : <Avatar name={editForm.name || 'M'} size={64} />
                   }
                   <button style={S.camBtn} onClick={() => editFileRef.current?.click()} type="button"><CamIcon /></button>
                 </div>
                 <div style={{ marginLeft: 14 }}>
                   <div style={{ fontSize: 13, color: '#aaa' }}>Tap to change profile picture</div>
                   <div style={{ fontSize: 11, color: '#666', marginTop: 3 }}>JPG, PNG, GIF, WEBP · Max 5MB</div>
+                  {(editCurrentPic || editPreview) && (
+                    <button
+                      type="button"
+                      style={{ marginTop: 7, background: 'none', border: 'none', color: '#e74c3c', fontSize: 11.5, cursor: 'pointer', padding: 0, fontWeight: 700, textDecoration: 'underline', fontFamily: 'Arial, sans-serif', display: 'block' }}
+                      onClick={() => { setEditOpen(false); setRemovePicOpen(true); }}
+                    >
+                      Remove photo
+                    </button>
+                  )}
                 </div>
               </div>
               <input ref={editFileRef} type="file" accept="image/*" style={{ display: 'none' }}
@@ -898,6 +937,19 @@ export default function ViewMember() {
         loading={deleteModal.loading}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModal(m => ({ ...m, open: false }))}
+      />
+
+  {/* ── REMOVE PROFILE PIC CONFIRM ── */}
+      <ConfirmModal
+        open={removePicOpen}
+        icon={<DangerIcon />}
+        title="Remove Photo"
+        message="Remove this member's profile picture? It cannot be undone."
+        confirmLabel="Remove"
+        confirmClass="danger"
+        loading={removePicLoading}
+        onConfirm={confirmRemovePic}
+        onCancel={() => { setRemovePicOpen(false); setEditOpen(true); }}
       />
 
       {/* ── ALERT ── */}

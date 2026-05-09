@@ -309,6 +309,32 @@ router.post('/edit/:id', requireAuth, (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
+// POST /api/view_member/remove-pic/:id  — remove profile picture
+// ════════════════════════════════════════════════════════════
+router.post('/remove-pic/:id', requireAuth, async (req, res) => {
+    try {
+        const adminId = await getAdminId(req.session);
+        const { id } = req.params;
+
+        const [rows] = await con.query('SELECT profile_pic FROM users WHERE id=? AND admin_id=?', [id, adminId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Member not found.' });
+
+        if (rows[0].profile_pic) {
+            safeDeleteFile(rows[0].profile_pic);
+            await con.query('UPDATE users SET profile_pic=NULL WHERE id=?', [id]);
+        }
+
+        if (req.io) req.io.emit('update_members');
+        notifyDesktop('members');
+
+        return res.json({ success: true, message: 'Profile picture removed.' });
+    } catch (err) {
+        console.error('[view_member REMOVE-PIC]', err);
+        return res.status(500).json({ success: false, message: 'Failed to remove picture.' });
+    }
+});
+
+// ════════════════════════════════════════════════════════════
 // GET /api/view_member/suspend/:id  — toggle suspend/activate
 // ════════════════════════════════════════════════════════════
 router.get('/suspend/:id', requireAuth, async (req, res) => {
