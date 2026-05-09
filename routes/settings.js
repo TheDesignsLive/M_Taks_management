@@ -20,12 +20,10 @@ router.get('/data', async (req, res) => {
             members = mRows;
         }
 let label_changes = 'Change', label_update = 'Update';
-if (role === 'admin') {
-    const [lRows] = await con.query("SELECT label_changes, label_update FROM admins WHERE id=?", [adminId]);
-    if (lRows.length > 0) {
-        label_changes = lRows[0].label_changes || 'Change';
-        label_update = lRows[0].label_update || 'Update';
-    }
+const [lRows] = await con.query("SELECT label_changes, label_update FROM admins WHERE id=?", [adminId]);
+if (lRows.length > 0) {
+    label_changes = lRows[0].label_changes || 'Change';
+    label_update = lRows[0].label_update || 'Update';
 }
 res.json({ success: true, name, email, role, members, isAdmin: role === 'admin', label_changes, label_update });    } catch (err) { res.status(500).json({ success: false }); }
 });
