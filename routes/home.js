@@ -173,7 +173,7 @@ router.post('/update-task-status', async (req, res) => {
                     const nextDateStr = nextDate.toISOString().split('T')[0];
 
                     // Insert new task with same details, status OPEN, repeat_type carried over
-                    await con.query(
+       await con.query(
                         `INSERT INTO tasks 
                          (admin_id, title, description, priority, due_date, status, section,
                           assigned_by, assigned_to, who_assigned, repeat_type)
@@ -184,7 +184,7 @@ router.post('/update-task-status', async (req, res) => {
                             task.description,
                             task.priority,
                             nextDateStr,
-                            task.section || 'TASK',
+                            'TASK',
                             task.assigned_by,
                             task.assigned_to,
                             task.who_assigned,
