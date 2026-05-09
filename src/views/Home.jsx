@@ -3,12 +3,18 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { io } from 'socket.io-client';
 
-const socket = io(
+const SOCKET_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000'
-    : 'https://m-tms.thedesigns.live',
-  { withCredentials: true }
-);
+    : 'https://m-tms.thedesigns.live';
+
+const socket = io(SOCKET_URL, {
+  withCredentials: true,
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+});
 
 const BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000'
@@ -1173,9 +1179,16 @@ const Home = () => {
   }, []);
 
   // Socket — connect once
-  useEffect(() => {
-    socket.on('update_tasks', () => { fetchTasksRef.current(); });
-    return () => { socket.off('update_tasks'); };
+useEffect(() => {
+    const handler = () => { fetchTasksRef.current(); };
+    socket.on('update_tasks', handler);
+    socket.on('connect', () => console.log('[Socket] connected:', socket.id));
+    socket.on('disconnect', (reason) => console.warn('[Socket] disconnected:', reason));
+    return () => {
+      socket.off('update_tasks', handler);
+      socket.off('connect');
+      socket.off('disconnect');
+    };
   }, []);
 
   useEffect(() => {
