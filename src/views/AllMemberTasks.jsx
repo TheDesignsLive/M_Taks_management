@@ -135,8 +135,19 @@ return (
 }
 
 // ---- Section Column ----
+const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+
 function SectionColumn({ section, tasks }) {
-  const filtered = tasks.filter(t => getSection(t) === section);
+  const filtered = tasks
+    .filter(t => getSection(t) === section)
+    .sort((a, b) => {
+      const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
+      const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
+      if (dateA - dateB !== 0) return dateA - dateB;
+      const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
+      const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
+      return pa - pb;
+    });
   return (
     <div style={{ flex: '0 0 100%', width: '100%', overflowY: 'auto', padding: '0 12px 80px 12px', boxSizing: 'border-box' }}>
       {filtered.length === 0 ? (
