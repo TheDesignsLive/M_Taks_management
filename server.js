@@ -33,11 +33,7 @@ const httpServer = createServer(app);          // ✅ ADD
 // ✅ ADD — Socket.IO setup
 const io = new Server(httpServer, {
     cors: {
-        origin: [
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "https://m-tms.thedesigns.live"
-        ],
+        origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
         credentials: true
     }
 });
@@ -52,11 +48,7 @@ const MySQLStore = MySQLStoreFactory(session);
 const sessionStore = new MySQLStore({}, con);
 
 app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://m-tms.thedesigns.live"
-    ],
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true
 }));
 
