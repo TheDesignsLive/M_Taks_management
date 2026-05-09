@@ -513,7 +513,7 @@ function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onRepeat, onClose }
         zIndex: 99999,
         background:'#2E2D2D',
         border:'1px solid #0F8989',
-        borderRadius: menuPos.openUpward ? '10px 10px 4px 10px' : '4px 10px 10px 10px',
+borderRadius: menuPos.openUpward ? '12px 12px 2px 12px' : '12px 2px 12px 12px',
         boxShadow:'0 8px 32px rgba(0,0,0,0.8)',
         overflow:'hidden',
         minWidth:160,
@@ -648,12 +648,12 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange, 
     const spaceAbove = rect.top;
     const openUpward = spaceBelow < menuHeight + 16 && spaceAbove > menuHeight + 16;
 
-    const top = openUpward
-      ? rect.top - menuHeight - 6
-      : rect.bottom + 6;
+   const top = openUpward
+  ? rect.top - menuHeight + 10 
+  : rect.top - 10;
 
     // Align right edge of menu to right edge of button, but clamp to screen
-    const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8));
+    const left = Math.max(8, rect.right - menuWidth + 10);
 
     setMenuPos({ top, left, openUpward });
     setShowMenu(true);
