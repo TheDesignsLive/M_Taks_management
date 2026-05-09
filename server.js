@@ -76,9 +76,13 @@ app.use((req, res, next) => {
     const isMobile = /android|iphone|ipad|ipod|mobile/i.test(userAgent);
     const host = req.headers.host;
 
+    // ✅ KEY FIX: If request has our secret header, it's from desktop SERVER (not browser)
+    // Never redirect these — they are server-to-server API calls
+    const isInternalCall = req.headers['x-mobile-secret'] === 'tms_mobile_bridge_2026';
+
     // KEY: Agar mobile browser NAHI hai aur host mobile wala hai
     // Toh use Laptop/Desktop version par bhej do
-    if (!isMobile && host && host.includes('m-tms.thedesigns.live')) {
+    if (!isMobile && !isInternalCall && host && host.includes('m-tms.thedesigns.live')) {
         console.log("[Mobile Server] 💻 Laptop detected, redirecting to desktop site...");
         return res.redirect(302, 'https://tms.thedesigns.live' + req.url);
     }
