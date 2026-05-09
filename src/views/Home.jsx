@@ -551,6 +551,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange, 
   const [cardVisible, setCardVisible] = useState(true);
   const menuBtnRef = useRef(null);
 const dateInputRef = useRef(null);
+const dateLabelRef = useRef(null);
 
   // Track any open modal/menu globally so drag knows to stay off
   useEffect(() => {
@@ -732,7 +733,7 @@ const dateInputRef = useRef(null);
             {/* Due date */}
             {date ? (
               <span
-         onClick={() => { if (!isCompleted) dateInputRef.current?.click(); }}
+          onClick={() => { if (!isCompleted) dateLabelRef.current?.click(); }}
                 style={{ fontSize:11, fontWeight:600, color: past && !isCompleted ? '#ef4444' : '#0F8989', cursor: isCompleted ? 'default' : 'pointer', padding:'2px 6px', borderRadius:4, background: past && !isCompleted ? '#ef444415' : '#095959', minWidth:56, textAlign:'center', lineHeight:1.4 }}
               >
                 📅 {date}
@@ -772,7 +773,7 @@ const dateInputRef = useRef(null);
         <TaskMenu
           menuPos={menuPos}
           onEdit={() => { setEditOpen(true); setShowMenu(false); }}
-onChangeDate={() => { setShowMenu(false); setTimeout(() => dateInputRef.current?.click(), 50); }}
+onChangeDate={() => { setShowMenu(false); setTimeout(() => dateLabelRef.current?.click(), 50); }}
           onRepeat={() => { setRepeatOpen(true); setShowMenu(false); }}
           onDelete={() => { setDeleteOpen(true); setShowMenu(false); }}
           onClose={() => setShowMenu(false)}
@@ -802,17 +803,16 @@ onChangeDate={() => { setShowMenu(false); setTimeout(() => dateInputRef.current?
         />
       )}
 
-{/* Hidden native date picker */}
-      <input
-        ref={dateInputRef}
-        type="date"
-        defaultValue={toInputDate(task.due_date)}
-        onChange={e => { if (e.target.value) handleDateSave(e.target.value); }}
-        style={{
-          position: 'fixed', opacity: 0, pointerEvents: 'none',
-          top: 0, left: 0, width: '100%', height: '100%', zIndex: -1,
-        }}
-      />
+      {/* Hidden native date picker */}
+<label ref={dateLabelRef} style={{ position:'fixed', opacity:0, top:0, left:0, width:0, height:0, overflow:'hidden' }}>
+        <input
+          ref={dateInputRef}
+          type="date"
+          defaultValue={toInputDate(task.due_date)}
+          onChange={e => { if (e.target.value) handleDateSave(e.target.value); }}
+          style={{ position:'absolute', opacity:0, width:1, height:1 }}
+        />
+      </label>
 
       {deleteOpen && (
         <DeleteConfirmModal
