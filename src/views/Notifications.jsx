@@ -229,7 +229,14 @@ useEffect(() => {
             )}
           </div>
 
-          {data.announcements.map((a) => (
+          {data.announcements.length === 0 && (
+  <div style={{ textAlign: 'center', padding: '50px 20px', color: '#aaa' }}>
+    <div style={{ fontSize: 36, marginBottom: 10 }}>📢</div>
+    <div style={{ fontSize: 15, fontWeight: 700, color: '#CDF4F4', marginBottom: 6 }}>No Announcements</div>
+    <div style={{ fontSize: 12 }}>Nothing posted yet.</div>
+  </div>
+)}
+{data.announcements.map((a) => (
             <div key={a.id} style={styles.annCard}>
               {data.canManageAnnounce && (
                 <div style={styles.cardActions}>
@@ -273,7 +280,10 @@ useEffect(() => {
       ) : (
         <div id="req-section">
           <h4 style={{ color: "#2ecc71", marginBottom: 15, textAlign: "left" }}>Add Requests</h4>
-          {data.memberRequests.map((r) => (
+          {data.memberRequests.length === 0 && (
+  <div style={{ textAlign: 'center', padding: '20px', color: '#aaa', fontSize: 12 }}>No pending add requests.</div>
+)}
+{data.memberRequests.map((r) => (
             <div key={r.id} style={{ ...styles.reqCard, borderLeft: "4px solid #2ecc71" }}>
               <div style={styles.reqFlex}>
                 <div style={styles.avatar}>{r.name.charAt(0)}</div>
@@ -291,7 +301,10 @@ useEffect(() => {
           ))}
 
           <h4 style={{ color: "#ff4d4d", marginTop: 20, marginBottom: 10, textAlign: "left" }}>Deletion Requests</h4>
-          {data.deletionRequests.map((r) => (
+          {data.deletionRequests.length === 0 && (
+  <div style={{ textAlign: 'center', padding: '20px', color: '#aaa', fontSize: 12 }}>No pending deletion requests.</div>
+)}
+{data.deletionRequests.map((r) => (
             <div key={r.id} style={{ ...styles.reqCard, borderLeft: "4px solid #ff4d4d", background: "#352525" }}>
               <div style={styles.reqFlex}>
                 <div style={{ ...styles.avatar, background: "#ff4d4d" }}>{r.name.charAt(0)}</div>
