@@ -505,6 +505,12 @@ if (data.status === 'success') {
               />
             </div>
 
+            <div className="atb-pill-labels">
+                <div className="atb-pill-label">Date:</div>
+                <div className="atb-pill-label">Priority:</div>
+                <div className="atb-pill-label atb-assign-label">Assign To:</div>
+            </div>
+
             <div className="atb-pills-row">
               <PillAnchor onOpen={rect => setCalRect(rect)} isOpen={showCal}>
                 <div className="atb-pill" onClick={() => { const r = pillCalRef.current?.getBoundingClientRect(); setCalRect(r); setShowCal(v=>!v); setShowPri(false); setShowAssign(false); }} ref={pillCalRef}>
@@ -721,6 +727,93 @@ const customCSS = `
   .atb-input::placeholder { color: #666; }
  .atb-textarea { resize: vertical; min-height: 60px; font-size: 16px; }
   @keyframes atbShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+
+  /* LABELS ABOVE PILLS */
+
+
+/* LABELS ABOVE PILLS */
+.atb-pill-labels{
+  display:flex;
+  width:100%;
+  gap:6px;
+  margin-top:8px;
+  margin-bottom:5px;
+}
+
+.atb-pill-label{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  color:#0F8989;
+  text-align:left;
+}
+
+/* Match exact pill widths */
+.atb-pill-label:nth-child(1){
+  width:72px;
+}
+
+.atb-pill-label:nth-child(2){
+  width:78px;
+}
+
+.atb-assign-label{
+  flex:1;
+}
+
+.atb-assign-label{
+  flex:1;
+}
+
+/* IOS SAFARI ZOOM FIX */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* RESPONSIVE FIX */
+@media (max-width: 600px){
+
+  .atb-modal{
+    width:100%;
+    max-width:100%;
+    border-radius:22px 22px 0 0;
+    padding:0 14px 24px;
+  }
+
+  .atb-pills-row{
+    gap:5px;
+    align-items:stretch;
+  }
+
+  .atb-pill{
+    min-height:38px;
+    padding:7px 10px;
+  }
+
+  .atb-pill-text{
+    font-size:11px;
+  }
+
+  .atb-send-btn{
+    width:38px;
+    height:38px;
+    min-width:38px;
+  }
+
+  .atb-input,
+  .atb-textarea{
+    font-size:16px !important;
+  }
+
+  .atb-drop-portal{
+    max-height:260px;
+  }
+
+}
 
   /* PILLS ROW */
   .atb-pills-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap; overflow: visible; }
