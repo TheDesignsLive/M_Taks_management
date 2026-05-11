@@ -6,12 +6,6 @@ import FormData from 'form-data';
 import con from '../config/db.js';
 import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
-import PushNotifications from "@pusher/push-notifications-server";
-
-const beamsClient = new PushNotifications({
-  instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-  secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F', // Dashboard se copy karo
-});
 
 const router = express.Router();
 
@@ -132,19 +126,7 @@ if (req.file) {
 
         if (req.io) req.io.emit('new_announcement', ann);
 
-// Push Notification trigger
-beamsClient.publishToInterests(['announcements'], {
-    web: {
-        notification: {
-            title: "Naya Announcement: " + title,
-            body: `Posted by ${whoAdded}`,
-            deep_link: "https://m-tms.thedesigns.live",
-            icon: "https://m-tms.thedesigns.live/images/hero.png"
-        }
-    }
-}).catch(err => console.error("Beams Error:", err));
-
-fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
+        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
             body: JSON.stringify({ id: ann.id }),

@@ -55,11 +55,6 @@ function PasswordInput({ id, placeholder, value, onChange }) {
   );
 }
 
-import * as PusherPushNotifications from "@pusher/push-notifications-web";
-
-const beamsClient = new PusherPushNotifications.Client({
-  instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-});
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   // ── Success State (This decides which JSX to show) ──
@@ -112,12 +107,6 @@ export default function App() {
 
 // ── Browser Tab Logo & Title ──
   useEffect(() => {
-    // Pusher Beams Registration logic
-    beamsClient.start()
-      .then(() => beamsClient.addDeviceInterest('announcements'))
-      .then(() => console.log('Successfully registered and subscribed!'))
-      .catch(console.error);
-
     // 1. Set Title
     document.title = "TMS Workspace";
 
