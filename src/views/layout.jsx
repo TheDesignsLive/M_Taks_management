@@ -724,7 +724,7 @@ const customCSS = `
 
   /* PILLS ROW */
   .atb-pills-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap; overflow: visible; }
-  .atb-pill { display: flex; align-items: center; gap: 5px; background: #3C3A3A; border: 1.5px solid rgba(15,137,137,0.35); border-radius: 30px; padding: 7px 11px; cursor: pointer; font-size: 12px; color: #CDF4F4; white-space: nowrap; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
+  .atb-pill { display: flex; align-items: center; gap: 5px; background: #3C3A3A; border: 1.5px solid rgba(15,137,137,0.35); border-radius: 10px; padding: 7px 11px; cursor: pointer; font-size: 12px; color: #CDF4F4; white-space: nowrap; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
   .atb-pill:hover { border-color: #0F8989; background: rgba(15,137,137,0.1); }
   .atb-pill-assign { flex: 1; }
   .atb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
