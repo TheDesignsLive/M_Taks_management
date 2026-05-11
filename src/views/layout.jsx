@@ -158,20 +158,30 @@ const [showLogoutModal, setShowLogoutModal] = useState(false);
 const [sessionRole, setSessionRole] = useState('');
 const [sessionControlType, setSessionControlType] = useState('');
 const [adminInfo, setAdminInfo] = useState(null);
+const [topBarPic, setTopBarPic] = useState(null);
+const [topBarName, setTopBarName] = useState('');
 
 useEffect(() => {
   fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
-if (d.loggedIn) {
+      if (d.loggedIn) {
         setSessionRole(d.role || '');
         setSessionControlType(d.control_type || '');
         if (d.role !== 'admin' && d.adminName) {
           setAdminInfo({ name: d.adminName });
         }
-        // Restore last visited page — already set by useState initializer
+        // Fetch profile pic for top bar
+        fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
+          .then(r => r.json())
+          .then(p => {
+            if (p.success) {
+              setTopBarPic(p.profilePic || null);
+              setTopBarName(p.name || '');
+            }
+          })
+          .catch(() => {});
       } else {
-        // Not logged in — clear saved page and stay on home
         localStorage.removeItem('activePage');
         setActivePage('home');
         window.location.href = '/';
@@ -362,7 +372,15 @@ if (data.status === 'success') {
           <div className="bar"></div>
         </div>
         <div style={s.brandName}>TMS Workspace</div>
-        <div style={{width: '30px'}}></div>
+        <div
+  onClick={() => setActivePage('profile')}
+  style={{ width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(145deg, #0f172a, #14b8a6)' }}
+>
+  {topBarPic
+    ? <img src={`https://tms.thedesigns.live/images/${topBarPic}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setTopBarPic(null)} />
+    : <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{topBarName ? topBarName.charAt(0).toUpperCase() : '?'}</span>
+  }
+</div>
       </header>
 
       {/* ─── DRAWER SIDEBAR ─── */}
