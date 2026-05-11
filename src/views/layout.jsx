@@ -1,5 +1,6 @@
 // layout.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { io as socketIO } from 'socket.io-client';
 import Home from './Home.jsx';
 import Notifications from './Notifications.jsx';
 import AssignedByMe from './AssignedByMe.jsx';
@@ -193,6 +194,22 @@ useEffect(() => {
 useEffect(() => {
   localStorage.setItem('activePage', activePage);
 }, [activePage]);
+
+useEffect(() => {
+  const socket = socketIO(BASE_URL, { withCredentials: true, transports: ['websocket', 'polling'] });
+  socket.on('update_profile', () => {
+    fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(p => {
+        if (p.success) {
+          setTopBarPic(p.profilePic || null);
+          setTopBarName(p.name || '');
+        }
+      })
+      .catch(() => {});
+  });
+  return () => { socket.disconnect(); };
+}, []);
 
   const [taskOpen, setTaskOpen]       = useState(false);
   const [title, setTitle]             = useState('');
