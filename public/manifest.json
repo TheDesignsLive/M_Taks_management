@@ -1,0 +1,20 @@
+{
+  "short_name": "M-TMS",
+  "name": "M-Task Management",
+  "icons": [
+    {
+      "src": "/images/hero.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/hero.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2E2D2D",
+  "background_color": "#3C3A3A"
+}
