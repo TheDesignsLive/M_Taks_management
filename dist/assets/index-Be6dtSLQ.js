@@ -356,13 +356,21 @@ input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !
  .atb-textarea { resize: vertical; min-height: 60px; font-size: 16px; }
   @keyframes atbShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
-  /* PILLS ROW */
-  .atb-pills-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: nowrap; overflow: visible; }
-  .atb-pill { display: flex; align-items: center; gap: 5px; background: #3C3A3A; border: 1.5px solid rgba(15,137,137,0.35); border-radius: 30px; padding: 7px 11px; cursor: pointer; font-size: 12px; color: #CDF4F4; white-space: nowrap; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
+/* PILLS ROW */
+  .atb-pills-row { display: flex; align-items: center; gap: 5px; margin-top: 4px; flex-wrap: nowrap; overflow: visible; width: 100%; box-sizing: border-box; }
+  .atb-pill { display: flex; align-items: center; gap: 4px; background: #3C3A3A; border: 1.5px solid rgba(15,137,137,0.35); border-radius: 30px; padding: 7px 9px; cursor: pointer; font-size: 11px; color: #CDF4F4; white-space: nowrap; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; min-width: 0; }
   .atb-pill:hover { border-color: #0F8989; background: rgba(15,137,137,0.1); }
-  .atb-pill-assign { flex: 1; }
-  .atb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .atb-pill-text { font-size: 12px; }
+  .atb-pill-assign { flex: 1; min-width: 0; max-width: 110px; }
+  .atb-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .atb-pill-text { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  @media (max-width: 360px) {
+    .atb-pills-row { gap: 4px; }
+    .atb-pill { padding: 6px 7px; font-size: 10px; }
+    .atb-pill-text { font-size: 10px; }
+    .atb-pill-assign { max-width: 80px; }
+    .atb-send-btn { width: 34px; height: 34px; min-width: 34px; }
+  }
 
   /* SEND BUTTON */
   .atb-send-btn { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #095959, #0F8989); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 12px rgba(9,89,89,0.4); flex-shrink: 0; }
@@ -414,6 +422,8 @@ input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !
 .atb-notify-btn {
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   padding: 0;
   border-radius: 50%;
   border: 1.5px solid rgba(255,255,255,0.12);
@@ -425,8 +435,11 @@ input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !
   cursor: pointer;
   transition: all 0.18s ease;
   flex-shrink: 0;
+  flex-grow: 0;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  aspect-ratio: 1 / 1;
 }
 
 .atb-notify-btn svg {
