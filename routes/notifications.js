@@ -130,24 +130,21 @@ if (req.file) {
         const ann = rows[0];
         if (!ann) return res.status(500).json({ success: false });
 
-        if (req.io) req.io.emit('new_announcement', ann);
+       if (req.io) req.io.emit('new_announcement', ann);
 
-// Push notification to target users
-const targetInterest = ann.role_id == 0
-  ? `admin-${req.session.adminId}-all`
-  : `admin-${req.session.adminId}-team-${ann.role_id}`;
-
-beamsClient.publishToInterests([targetInterest], {
+beamsClient.publishToInterests([`announcements-${req.session.adminId}`], {
   web: {
     notification: {
-      title: ann.title,
-      body: ann.description || 'New announcement',
-      icon: 'https://tms.thedesigns.live/images/tms.svg',
+      title: `📢 ${ann.title}`,
+      body: `${ann.added_by_name}: ${ann.description || 'New announcement'}`,
+      icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
+      deep_link: 'https://m-tms.thedesigns.live',
     },
   },
-}).catch(err => console.error('[Beams] Push failed:', err.message));
+}).then(r => console.log('[Beams] Sent:', r.publishId))
+  .catch(err => console.error('[Beams] Error:', err.message));
 
-        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
+fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
             body: JSON.stringify({ id: ann.id }),
