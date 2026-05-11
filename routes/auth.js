@@ -233,4 +233,27 @@ router.post("/forgot-password/send-otp", async (req, res) => {
     }
 });
 
+router.get('/beams-interests', async (req, res) => {
+    if (!req.session.role) return res.status(401).json({});
+    const { adminId, role, userId } = req.session;
+
+    let teamInterest = null;
+
+    if (role === 'user') {
+        try {
+            const [rows] = await con.query(
+                `SELECT r.team_id FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?`, [userId]
+            );
+            if (rows.length && rows[0].team_id) {
+                teamInterest = `ann-${adminId}-team-${rows[0].team_id}`;
+            }
+        } catch (e) {}
+    }
+
+    res.json({
+        allInterest: `ann-${adminId}-all`,
+        teamInterest,
+    });
+});
+
 export default router;

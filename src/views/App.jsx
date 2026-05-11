@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
-import * as PusherPushNotifications from '@pusher/push-notifications-web';
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =
@@ -120,25 +119,11 @@ export default function App() {
 
     // Baki aapka purana session check
     fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
-  .then(r => r.json())
-  .then(data => {
-    if (data.loggedIn) {
-      setIsLoggedIn(true);
-
-      // Beams push notification setup
-      const beamsClient = new PusherPushNotifications.Client({
-        instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-      });
-      beamsClient.start()
-        .then(() => {
-          console.log('[Beams] Permission granted & started');
-          return beamsClient.addDeviceInterest(`announcements-${data.adminId}`);
-        })
-        .then(() => console.log('[Beams] Subscribed to announcements-' + data.adminId))
-        .catch(err => console.error('[Beams] Setup failed:', err));
-    }
-  })
-  .catch(() => {});
+      .then(r => r.json())
+      .then(data => {
+        if (data.loggedIn) setIsLoggedIn(true);
+      })
+      .catch(() => {});
   }, []);
 
   // ─── TAB SWITCH ────────────────────────────────────────────────────────────

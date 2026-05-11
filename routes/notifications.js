@@ -9,8 +9,8 @@ import { notifyDesktop } from '../utils/notifyDesktop.js';
 import PushNotifications from '@pusher/push-notifications-server';
 
 const beamsClient = new PushNotifications({
-  instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-  secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
+    instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+    secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
 });
 
 const router = express.Router();
@@ -130,26 +130,34 @@ if (req.file) {
         const ann = rows[0];
         if (!ann) return res.status(500).json({ success: false });
 
-       if (req.io) req.io.emit('new_announcement', ann);
+        if (req.io) req.io.emit('new_announcement', ann);
 
-beamsClient.publishToInterests([`announcements-${req.session.adminId}`], {
-  web: {
-    notification: {
-      title: `📢 ${ann.title}`,
-      body: `${ann.added_by_name}: ${ann.description || 'New announcement'}`,
-      icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-      deep_link: 'https://m-tms.thedesigns.live',
-    },
-  },
-}).then(r => console.log('[Beams] Sent:', r.publishId))
-  .catch(err => console.error('[Beams] Error:', err.message));
-
-fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
+        fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
             body: JSON.stringify({ id: ann.id }),
         }).catch(err => console.error('[Mobile] notifyDesktop announcement_add failed:', err.message));
 
+
+        // ── Push Notification via Pusher Beams ──
+try {
+    const interest = role_id == 0
+        ? `ann-${req.session.adminId}-all`          // All Members
+        : `ann-${req.session.adminId}-team-${role_id}`; // Specific team
+
+    beamsClient.publishToInterests([interest], {
+        web: {
+            notification: {
+                title: title,
+                body: description || 'New announcement',
+                icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
+                deep_link: 'https://m-tms.thedesigns.live',
+            },
+        },
+    }).catch(err => console.error('[Beams] publish failed:', err.message));
+} catch (e) {
+    console.error('[Beams] error:', e.message);
+}
         res.json({ success: true });
     } catch (err) {
         console.error(err);
