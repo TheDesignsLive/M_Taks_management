@@ -92,10 +92,6 @@ const Notifications = () => {
 useEffect(() => {
     fetchNotifications();
 
-    // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
-   useEffect(() => {
-    fetchNotifications();
-
     // 🟢 Pusher Listener for Popup
     const pusher = new Pusher('YOUR_KEY', { cluster: 'YOUR_CLUSTER' });
     const channel = pusher.subscribe('tms-channel');
@@ -113,6 +109,16 @@ useEffect(() => {
                 icon: "/images/hero.png" // Tera logo path
             });
         }
+    });
+
+    // 🔔 socket.on code starts here (Keep as is)...
+
+    // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
+    socket.on('new_announcement', (newAnn) => {
+        setData(prev => ({
+            ...prev,
+            announcements: [newAnn, ...prev.announcements]
+        }));
     });
 
     socket.on('delete_announcement', (deletedId) => {
