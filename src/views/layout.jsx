@@ -517,8 +517,7 @@ if (data.status === 'success') {
                   <span className="atb-pill-text">{formatDisplayDate(date)}</span>
                 </div>
               </PillAnchor>
-
-              <button
+<button
   type="button"
   className={`atb-notify-btn ${notifyUser ? 'active' : ''}`}
   onClick={() => setNotifyUser(v => !v)}
@@ -537,6 +536,10 @@ if (data.status === 'success') {
     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
   </svg>
+
+  <span className="atb-notify-text">
+    {notifyUser ? 'ON' : 'OFF'}
+  </span>
 </button>
 
               <PillAnchor onOpen={rect => setPriRect(rect)} isOpen={showPri}>
@@ -800,19 +803,38 @@ const customCSS = `
   ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 10px; }
 
 
-  .atb-notify-btn {
+/* NOTIFY BUTTON */
+.atb-notify-btn {
+
   width: 38px;
   height: 38px;
+  padding: 0 10px;
   border-radius: 50%;
   border: 1.5px solid rgba(255,255,255,0.12);
   background: #3C3A3A;
   color: #777;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   cursor: pointer;
   transition: all 0.18s ease;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.atb-notify-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.atb-notify-text {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  line-height: 1;
+  user-select: none;
 }
 
 .atb-notify-btn.active {
@@ -822,10 +844,41 @@ const customCSS = `
   box-shadow: 0 0 10px rgba(20,184,166,0.18);
 }
 
-.atb-notify-btn:hover {
-  transform: scale(1.05);
+.atb-notify-btn:active {
+  transform: scale(0.96);
 }
-  
+
+@media (hover: hover) {
+  .atb-notify-btn:hover {
+    transform: scale(1.05);
+  }
+}
+
+/* IOS SAFARI FIX */
+@supports (-webkit-touch-callout: none) {
+  .atb-notify-btn {
+    padding-top: 2px;
+  }
+}
+
+/* SMALL MOBILE */
+@media (max-width: 480px) {
+  .atb-notify-btn {
+    min-width: 48px;
+    height: 36px;
+    padding: 0 8px;
+  }
+
+  .atb-notify-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .atb-notify-text {
+    font-size: 7px;
+  }
+}
+
 `;
 
 export default Layout;
