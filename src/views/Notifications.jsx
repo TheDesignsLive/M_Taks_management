@@ -1,7 +1,6 @@
 //notifications.jsx mobile
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import Pusher from 'pusher-js'; // Add this line
 
 // 🟢 Desktop Server (Hub) se connect karo
 const socket = io("https://tms.thedesigns.live", { withCredentials: true });
@@ -91,27 +90,6 @@ const Notifications = () => {
   const [form, setForm] = useState({ title: "", desc: "", teamId: "0", file: null });
 useEffect(() => {
     fetchNotifications();
-
-    // 🟢 Pusher Listener for Popup
-    const pusher = new Pusher('YOUR_KEY', { cluster: 'YOUR_CLUSTER' });
-    const channel = pusher.subscribe('tms-channel');
-
-    channel.bind('new-ann-event', function(data) {
-        // Request Permission if not granted
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
-
-        // Show Popup/System Notification
-        if (Notification.permission === "granted") {
-            new Notification("New Announcement: " + data.title, {
-                body: `Posted by ${data.added_by}`,
-                icon: "/images/hero.png" // Tera logo path
-            });
-        }
-    });
-
-    // 🔔 socket.on code starts here (Keep as is)...
 
     // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
     socket.on('new_announcement', (newAnn) => {

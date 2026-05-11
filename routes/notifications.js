@@ -7,17 +7,6 @@ import con from '../config/db.js';
 import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
 
-// Add these lines
-import Pusher from 'pusher';
-
-const pusher = new Pusher({
-  appId: "YOUR_APP_ID",
-  key: "YOUR_KEY",
-  secret: "YOUR_SECRET",
-  cluster: "YOUR_CLUSTER",
-  useTLS: true
-});
-
 const router = express.Router();
 
 // ✅ Ensure temp upload dir exists on mobile server
@@ -136,12 +125,6 @@ if (req.file) {
         if (!ann) return res.status(500).json({ success: false });
 
         if (req.io) req.io.emit('new_announcement', ann);
-
-// Pusher Trigger for Popup
-pusher.trigger("tms-channel", "new-ann-event", {
-    title: ann.title,
-    added_by: ann.added_by_name
-});
 
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
