@@ -6,12 +6,6 @@ import FormData from 'form-data';
 import con from '../config/db.js';
 import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
-import PushNotifications from '@pusher/push-notifications-server';
-
-const beamsClient = new PushNotifications({
-    instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-    secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
-});
 
 const router = express.Router();
 
@@ -138,26 +132,6 @@ if (req.file) {
             body: JSON.stringify({ id: ann.id }),
         }).catch(err => console.error('[Mobile] notifyDesktop announcement_add failed:', err.message));
 
-
-        // ── Push Notification via Pusher Beams ──
-try {
-    const interest = role_id == 0
-        ? `ann-${req.session.adminId}-all`          // All Members
-        : `ann-${req.session.adminId}-team-${role_id}`; // Specific team
-
-    beamsClient.publishToInterests([interest], {
-        web: {
-            notification: {
-                title: title,
-                body: description || 'New announcement',
-                icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-                deep_link: 'https://m-tms.thedesigns.live',
-            },
-        },
-    }).catch(err => console.error('[Beams] publish failed:', err.message));
-} catch (e) {
-    console.error('[Beams] error:', e.message);
-}
         res.json({ success: true });
     } catch (err) {
         console.error(err);

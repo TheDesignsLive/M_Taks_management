@@ -212,39 +212,6 @@ useEffect(() => {
   return () => { socket.disconnect(); };
 }, []);
 
-useEffect(() => {
-    // Only subscribe when session is loaded and we have adminId
-    if (!sessionRole) return;
-
-    import('@pusher/push-notifications-web').then(({ Client }) => {
-        const beamsClient = new Client({
-            instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-        });
-
-        beamsClient.start()
-            .then(() => Notification.requestPermission())
-            .then(() => {
-                // Always subscribe to "all members" interest for this admin
-                beamsClient.addDeviceInterest(`ann-${sessionRole}-all`)
-                    .catch(() => {});
-
-                // Also subscribe to own team interest (if we know it)
-                if (sessionControlType) {
-                    // fetch team interest from session
-                    fetch(`${BASE_URL}/api/auth/beams-interests`, { credentials: 'include' })
-                        .then(r => r.json())
-                        .then(d => {
-                            if (d.teamInterest) {
-                                beamsClient.addDeviceInterest(d.teamInterest).catch(() => {});
-                            }
-                        })
-                        .catch(() => {});
-                }
-            })
-            .catch(() => {}); // User denied or browser unsupported
-    }).catch(() => {});
-}, [sessionRole]);
-
   const [taskOpen, setTaskOpen]       = useState(false);
   const [title, setTitle]             = useState('');
   const [desc, setDesc]                = useState('');
