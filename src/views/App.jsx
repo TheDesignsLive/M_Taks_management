@@ -2,11 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
-import * as PusherPushNotifications from "@pusher/push-notifications-web";
-
-const beamsClient = new PusherPushNotifications.Client({
-  instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-});
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =
@@ -112,12 +107,6 @@ export default function App() {
 
 // ── Browser Tab Logo & Title ──
   useEffect(() => {
-    // Pusher Beams Registration
-    beamsClient.start()
-      .then(() => beamsClient.addDeviceInterest('announcements'))
-      .then(() => console.log('Successfully registered and subscribed!'))
-      .catch(console.error);
-
     // 1. Set Title
     document.title = "TMS Workspace";
 
