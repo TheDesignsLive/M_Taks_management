@@ -161,6 +161,7 @@ const [sessionControlType, setSessionControlType] = useState('');
 const [adminInfo, setAdminInfo] = useState(null);
 const [topBarPic, setTopBarPic] = useState(null);
 const [topBarName, setTopBarName] = useState('');
+const [notifyUser, setNotifyUser] = useState(false);
 
 useEffect(() => {
   fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
@@ -298,6 +299,7 @@ useEffect(() => {
     setPriority('Medium'); setAssignTo('self'); setAssignLabel('Myself');
     setTitleError(false); setShowCal(false); setShowPri(false); setShowAssign(false);
     setOpenTeam(null); setShowOthers(false);
+    setNotifyUser(false);
   }
 
   async function handleSubmit() {
@@ -319,6 +321,7 @@ useEffect(() => {
           date,
           priority,
           assignedTo: assignTo,
+          notifyUser,
         }),
       });
       const data = await res.json();
@@ -514,6 +517,27 @@ if (data.status === 'success') {
                   <span className="atb-pill-text">{formatDisplayDate(date)}</span>
                 </div>
               </PillAnchor>
+
+              <button
+  type="button"
+  className={`atb-notify-btn ${notifyUser ? 'active' : ''}`}
+  onClick={() => setNotifyUser(v => !v)}
+  title={notifyUser ? 'Notification ON' : 'Notification OFF'}
+>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    width="18"
+    height="18"
+  >
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>
+</button>
 
               <PillAnchor onOpen={rect => setPriRect(rect)} isOpen={showPri}>
                 <div className="atb-pill" onClick={() => { const r = pillPriRef.current?.getBoundingClientRect(); setPriRect(r); setShowPri(v=>!v); setShowCal(false); setShowAssign(false); }} ref={pillPriRef}>
@@ -764,6 +788,8 @@ const customCSS = `
   .atb-spin { animation: atbSpin 0.8s linear infinite; }
   @keyframes atbSpin { to { transform: rotate(360deg); } }
 
+
+
   /* TOAST */
   .atb-toast { position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); background: #095959; color: #CDF4F4; padding: 11px 22px; border-radius: 30px; font-size: 13px; z-index: 9999; transition: 0.32s; opacity: 0; border: 1px solid rgba(15,137,137,0.3); }
   .atb-toast.show { bottom: 28px; opacity: 1; }
@@ -772,6 +798,34 @@ const customCSS = `
   ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: #2E2D2D; }
   ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 10px; }
+
+
+  .atb-notify-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: #3C3A3A;
+  color: #777;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.atb-notify-btn.active {
+  color: #14b8a6;
+  border-color: rgba(20,184,166,0.5);
+  background: rgba(20,184,166,0.12);
+  box-shadow: 0 0 10px rgba(20,184,166,0.18);
+}
+
+.atb-notify-btn:hover {
+  transform: scale(1.05);
+}
+  
 `;
 
 export default Layout;
