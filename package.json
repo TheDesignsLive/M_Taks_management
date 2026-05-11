@@ -13,6 +13,8 @@
     "dev": "concurrently \"npm run dev-back\" \"npm run dev-front\""
   },
   "dependencies": {
+    "@pusher/push-notifications-server": "^1.2.7",
+    "@pusher/push-notifications-web": "^1.1.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
