@@ -271,6 +271,7 @@ router.post('/update-profile', requireAuth, (req, res) => {
                 }
             }
 notifyDesktop('profile');
+if (req.io) req.io.emit('update_profile');
 
 return res.json({
     success:    true,
@@ -323,7 +324,8 @@ router.post('/remove-picture', requireAuth, async (req, res) => {
             await con.query(`UPDATE ${table} SET profile_pic = NULL WHERE id = ?`, [id]);
         }
 
-        return res.json({ success: true, name: rows[0].name || '' });
+        if (req.io) req.io.emit('update_profile');
+return res.json({ success: true, name: rows[0].name || '' });
 
     } catch (err) {
         console.error('[Profile REMOVE-PIC]', err);
