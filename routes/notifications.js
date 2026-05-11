@@ -6,6 +6,12 @@ import FormData from 'form-data';
 import con from '../config/db.js';
 import multer from 'multer';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
+import PushNotifications from "@pusher/push-notifications-server";
+
+const beamsClient = new PushNotifications({
+  instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+  secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
+});
 
 const router = express.Router();
 
@@ -125,6 +131,19 @@ if (req.file) {
         if (!ann) return res.status(500).json({ success: false });
 
         if (req.io) req.io.emit('new_announcement', ann);
+
+        // ✅ Send Background Push Notification
+        beamsClient.publishToInterests(['announcements'], {
+          web: {
+            notification: {
+              title: "📢 Naya Announcement!",
+              body: `${ann.added_by_name}: ${title}`,
+              deep_link: "https://m-tms.thedesigns.live/notifications",
+              icon: "https://m-tms.thedesigns.live/images/hero.png"
+            }
+          }
+        }).then(pubRes => console.log("Published:", pubRes.publishId))
+          .catch(err => console.error("Beams Error:", err));
 
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
