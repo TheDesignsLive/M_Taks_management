@@ -805,22 +805,20 @@ const customCSS = `
 
 /* NOTIFY BUTTON */
 .atb-notify-btn {
-
-  width: 38px;
-  height: 38px;
-  padding: 0 10px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border-radius: 50%;
   border: 1.5px solid rgba(255,255,255,0.12);
   background: #3C3A3A;
   color: #777;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   cursor: pointer;
   transition: all 0.18s ease;
   flex-shrink: 0;
+  position: relative;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -829,12 +827,26 @@ const customCSS = `
   height: 16px;
 }
 
+/* slash line — visible when OFF */
+.atb-notify-btn::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 68%;
+  background: #777;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  opacity: 1;
+  transition: opacity 0.18s;
+}
+
+/* hide slash when ON */
+.atb-notify-btn.active::after {
+  opacity: 0;
+}
+
 .atb-notify-text {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  line-height: 1;
-  user-select: none;
+  display: none;
 }
 
 .atb-notify-btn.active {
@@ -857,25 +869,20 @@ const customCSS = `
 /* IOS SAFARI FIX */
 @supports (-webkit-touch-callout: none) {
   .atb-notify-btn {
-    padding-top: 2px;
+    padding-top: 0;
   }
 }
 
 /* SMALL MOBILE */
 @media (max-width: 480px) {
   .atb-notify-btn {
-    min-width: 48px;
+    width: 36px;
     height: 36px;
-    padding: 0 8px;
   }
 
   .atb-notify-btn svg {
     width: 15px;
     height: 15px;
-  }
-
-  .atb-notify-text {
-    font-size: 7px;
   }
 }
 
