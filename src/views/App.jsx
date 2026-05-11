@@ -309,15 +309,35 @@ async function sendOtp() {
   }
 
   // ─── COMPONENT SWITCHING LOGIC ───────────────────────────────────────────────
-  if (isLoggedIn) {
-      return <Layout />; 
-  }
+if (isLoggedIn) {
+    // Beams initialize
+    if (window.PusherPushNotifications) {
+      fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(d => {
+          if (!d.loggedIn) return;
+          const beamsClient = new window.PusherPushNotifications.Client({
+            instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+          });
+          beamsClient.start()
+            .then(() => beamsClient.addDeviceInterest(`admin-${d.adminId}-all`))
+            .then(() => {
+              if (d.role_id) {
+                return beamsClient.addDeviceInterest(`admin-${d.adminId}-team-${d.role_id}`);
+              }
+            })
+            .catch(err => console.error('[Beams]', err));
+        });
+    }
+    return <Layout />;
+}
 
   // ─── RENDER ───────────────────────────────────────────────────────
   return (
     <>
       <style>{CSS}</style>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://js.pusher.com/beams/1.0/push-notifications-cdn.js"></script>
       <AlertDialog {...alert} onClose={closeAlert} />
 
       <div className="bg-graphics">
