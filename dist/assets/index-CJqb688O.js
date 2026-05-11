@@ -408,43 +408,103 @@ input:focus, select:focus { border-color: #0F8989 !important; box-shadow: none !
   ::-webkit-scrollbar-thumb { background: #0F8989; border-radius: 10px; }
 `,Fi=window.location.hostname===`localhost`||window.location.hostname===`127.0.0.1`?`http://localhost:5000`:`https://m-tms.thedesigns.live`;function Ii({show:e,title:t,message:n,isSuccess:r,onClose:i}){return e?(0,z.jsx)(`div`,{className:`dialog-overlay`,style:{display:`flex`},children:(0,z.jsxs)(`div`,{className:`modal-content`,children:[(0,z.jsx)(`i`,{className:r?`fa-solid fa-circle-check`:`fa-solid fa-triangle-exclamation`,style:{fontSize:40,marginBottom:10,color:r?`#2ecc71`:`#e74c3c`}}),(0,z.jsx)(`h3`,{style:{marginTop:0},children:t}),(0,z.jsx)(`p`,{style:{color:`#555`,fontSize:15,marginBottom:10},children:n}),(0,z.jsx)(`div`,{className:`modal-buttons`,children:(0,z.jsx)(`button`,{className:`btn ${r?`btn-success`:`btn-danger`}`,onClick:i,children:`Okay`})})]})}):null}function Li({id:e,placeholder:t,value:n,onChange:r}){let[i,a]=(0,v.useState)(!1);return(0,z.jsxs)(`div`,{className:`input-group`,style:{position:`relative`},children:[(0,z.jsx)(`input`,{type:i?`text`:`password`,id:e,placeholder:t,value:n,onChange:r,required:!0}),(0,z.jsx)(`i`,{className:`fa-solid ${i?`fa-eye`:`fa-eye-slash`} toggle-password`,onClick:()=>a(!i)})]})}function Ri(){let[e,t]=(0,v.useState)(!1),[n,r]=(0,v.useState)(0),[i,a]=(0,v.useState)(`auth`),[o,s]=(0,v.useState)(1),[c,l]=(0,v.useState)({show:!1,title:``,message:``,isSuccess:!1}),u=(e,t,n)=>l({show:!0,title:e,message:t,isSuccess:n}),d=()=>l(e=>({...e,show:!1})),[f,p]=(0,v.useState)(`user`),[m,h]=(0,v.useState)(``),[g,_]=(0,v.useState)(``),[y,b]=(0,v.useState)(``),[x,S]=(0,v.useState)(``),[C,w]=(0,v.useState)(``),[T,E]=(0,v.useState)(null),[D,O]=(0,v.useState)(``),[k,A]=(0,v.useState)(``),[j,M]=(0,v.useState)(``),[ee,N]=(0,v.useState)(``),[te,P]=(0,v.useState)(null),[F,ne]=(0,v.useState)(``),[re,ie]=(0,v.useState)(``),[ae,oe]=(0,v.useState)(``),[I,se]=(0,v.useState)(``),[ce,L]=(0,v.useState)(``),[le,ue]=(0,v.useState)(null),[de,fe]=(0,v.useState)(!1),[pe,me]=(0,v.useState)(``),[he,ge]=(0,v.useState)(``),[_e,ve]=(0,v.useState)(``),[ye,be]=(0,v.useState)(``);(0,v.useEffect)(()=>{document.title=`TMS Workspace`;let e=document.querySelector(`link[rel~='icon']`)||document.createElement(`link`);e.type=`image/jpeg`,e.rel=`icon`,e.href=`/public/images/tms.svg`,document.getElementsByTagName(`head`)[0].appendChild(e),fetch(`${Fi}/api/auth/session`,{credentials:`include`}).then(e=>e.json()).then(e=>{e.loggedIn&&t(!0)}).catch(()=>{})},[]);function xe(e){r(e),a(`auth`),s(1)}async function Se(e){e.preventDefault();try{(await(await fetch(`${Fi}/api/auth/login`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({email:m,password:g,login_type:f})})).json()).status===`success`?t(!0):u(`Login Failed`,`Incorrect Email or Password`,!1)}catch{u(`Error`,`Network error. Please try again.`,!1)}}async function Ce(){if(!y||!x){u(`Validation`,`Please fill all fields`,!1);return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)){u(`Validation`,`Enter a valid email address.`,!1);return}try{if((await(await fetch(`${Fi}/api/auth/check-email`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({email:x})})).json()).exists){u(`Error`,`Email already exists ❌`,!1),S(``);return}let e=Math.floor(1e5+Math.random()*9e5);E(e),s(2),await fetch(`${Fi}/api/auth/forgot-password/send-otp`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({contact:x,otp:e,sent_for:`signup`})})}catch{u(`Error`,`Server error`,!1)}}function we(){if(Number(C)!==T){u(`Error`,`Invalid OTP. Try again.`,!1);return}u(`Success`,`OTP Verified Successfully!`,!0),s(3)}async function Te(e){e.preventDefault(),ne(``),ie(``),oe(``);let n=!1;if(k.length!==10&&(ne(`Please enter a valid 10-digit phone number.`),n=!0),/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(j)||(ie(`Weak password.`),n=!0),j!==ee&&(oe(`Passwords mismatch.`),n=!0),n)return;let r=new FormData;r.append(`name`,y),r.append(`company_name`,D),r.append(`email`,x),r.append(`phone`,k),r.append(`password`,j),te&&r.append(`profile_pic`,te);try{let e=await(await fetch(`${Fi}/api/auth/signup`,{method:`POST`,credentials:`include`,body:r})).json();e.status===`success`?(u(`Success`,`Account created!`,!0),setTimeout(()=>{t(!0)},1500)):u(`Signup Error`,e.message,!1)}catch{u(`Error`,`Network error. Try again.`,!1)}}async function Ee(){if(!I){u(`Error`,`Please enter email or phone`,!1);return}L(``),fe(!0);try{if((await(await fetch(`${Fi}/api/auth/forgot-password/check`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({contact:I})})).json()).status===`not_found`){fe(!1),u(`Not Found`,`Email or Phone not found in our records.`,!1),se(``);return}let e=Math.floor(1e5+Math.random()*9e5);ue(e),fetch(`${Fi}/api/auth/forgot-password/send-otp`,{method:`POST`,headers:{"Content-Type":`application/json`},body:JSON.stringify({contact:I,otp:e,sent_for:`forget_password`})})}catch(e){console.error(`OTP Error:`,e)}}function De(){Number(ce)===le?a(`reset`):(L(``),u(`Invalid`,`Incorrect OTP. Try again.`,!1))}async function Oe(){ve(``),be(``);let e=!1;if(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(pe)||(ve(`Weak password.`),e=!0),pe!==he&&(be(`Passwords mismatch.`),e=!0),!pe||!he){u(`Error`,`Please fill all fields`,!1);return}if(!e)try{let e=await(await fetch(`${Fi}/api/auth/forgot-password/reset`,{method:`POST`,headers:{"Content-Type":`application/json`},credentials:`include`,body:JSON.stringify({contact:I,new_password:pe})})).json();e.status===`success`?(u(`Success`,`Password reset successfully!`,!0),a(`auth`),r(0)):u(`Error`,e.message||`Error resetting password`,!1)}catch{u(`Error`,`Server error`,!1)}}return e?(0,z.jsx)(Mi,{}):(0,z.jsxs)(z.Fragment,{children:[(0,z.jsx)(`style`,{children:zi}),(0,z.jsx)(`link`,{rel:`stylesheet`,href:`https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css`}),(0,z.jsx)(Ii,{...c,onClose:d}),(0,z.jsxs)(`div`,{className:`bg-graphics`,children:[(0,z.jsx)(`div`,{className:`bg-mesh`}),(0,z.jsx)(`div`,{className:`shape shape-1`}),(0,z.jsx)(`div`,{className:`shape shape-2`}),(0,z.jsx)(`div`,{className:`shape shape-3`}),(0,z.jsx)(`div`,{className:`shape shape-4`})]}),(0,z.jsx)(`div`,{className:`auth-screen`,children:(0,z.jsx)(`div`,{className:`auth-wrapper`,children:(0,z.jsxs)(`div`,{className:`container`,children:[(0,z.jsx)(`div`,{className:`logo-container`,children:(0,z.jsx)(`img`,{src:`/images/tms_logo.jpeg`,alt:`TMS Logo`})}),i===`auth`&&(0,z.jsx)(`div`,{id:`authTabs`,children:(0,z.jsxs)(`div`,{className:`tabs`,children:[(0,z.jsx)(`div`,{className:`tab ${n===0?`active`:``}`,onClick:()=>xe(0),children:`Login`}),(0,z.jsx)(`div`,{className:`tab ${n===1?`active`:``}`,onClick:()=>xe(1),children:`Signup`}),(0,z.jsx)(`div`,{className:`underline`,style:{left:n*50+`%`}})]})}),i===`auth`&&n===0&&(0,z.jsxs)(`form`,{onSubmit:Se,children:[(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsxs)(`select`,{value:f,onChange:e=>p(e.target.value),children:[(0,z.jsx)(`option`,{value:`user`,children:`Login as User`}),(0,z.jsx)(`option`,{value:`admin`,children:`Login as Admin`})]})}),(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`email`,placeholder:`Email`,value:m,onChange:e=>h(e.target.value),required:!0})}),(0,z.jsx)(Li,{id:`loginPassword`,placeholder:`Password`,value:g,onChange:e=>_(e.target.value)}),(0,z.jsx)(`button`,{type:`submit`,children:`Login`}),(0,z.jsx)(`span`,{onClick:()=>{a(`forgot`),fe(!1)},className:`forgot-password-link`,children:`Forgot Password?`})]}),i===`auth`&&n===1&&(0,z.jsxs)(`form`,{onSubmit:Te,children:[o===1&&(0,z.jsxs)(`div`,{children:[(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`text`,placeholder:`Full Name`,value:y,onChange:e=>b(e.target.value),required:!0})}),(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`email`,placeholder:`Email`,value:x,onChange:e=>S(e.target.value),required:!0})}),(0,z.jsx)(`button`,{type:`button`,onClick:Ce,children:`Next`})]}),o===2&&(0,z.jsxs)(`div`,{children:[(0,z.jsx)(`p`,{style:{textAlign:`center`,marginBottom:`15px`,color:`#555`,fontSize:`14px`},children:`Enter the verification code sent to your email`}),(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`text`,placeholder:`Verification Code`,value:C,onChange:e=>w(e.target.value),required:!0})}),(0,z.jsxs)(`div`,{className:`input-group`,style:{display:`flex`,gap:10},children:[(0,z.jsx)(`button`,{type:`button`,style:{background:`#e2e8f0`,color:`#333`},onClick:()=>s(1),children:`Back`}),(0,z.jsx)(`button`,{type:`button`,onClick:we,children:`Verify`})]})]}),o===3&&(0,z.jsxs)(`div`,{children:[(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`text`,placeholder:`Company Name`,value:D,onChange:e=>O(e.target.value),required:!0})}),(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`text`,placeholder:`Phone Number`,maxLength:`10`,value:k,onChange:e=>A(e.target.value.replace(/[^0-9]/g,``)),required:!0})}),(0,z.jsx)(Li,{id:`signupPassword`,placeholder:`Password`,value:j,onChange:e=>M(e.target.value)}),(0,z.jsx)(Li,{id:`confirmPassword`,placeholder:`Confirm Password`,value:ee,onChange:e=>N(e.target.value)}),(0,z.jsxs)(`div`,{className:`input-group`,children:[(0,z.jsx)(`label`,{style:{fontWeight:`normal`,fontSize:12,color:`#666`},children:`Profile Picture (Optional)`}),(0,z.jsx)(`input`,{type:`file`,accept:`image/*`,onChange:e=>P(e.target.files[0])})]}),(0,z.jsx)(`button`,{type:`submit`,children:`Create Account`})]})]}),i===`forgot`&&(0,z.jsxs)(`div`,{children:[(0,z.jsx)(`h2`,{style:{fontSize:`20px`,marginBottom:`15px`,color:`#1e293b`},children:`Forgot Password`}),(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`text`,placeholder:`Enter Email or Phone`,value:I,onChange:e=>se(e.target.value)})}),(0,z.jsx)(`button`,{type:`button`,onClick:Ee,children:`Send OTP`}),de&&(0,z.jsxs)(`div`,{style:{marginTop:`15px`},children:[(0,z.jsx)(`div`,{className:`input-group`,children:(0,z.jsx)(`input`,{type:`text`,placeholder:`Enter OTP`,value:ce,onChange:e=>L(e.target.value)})}),(0,z.jsx)(`button`,{type:`button`,onClick:De,children:`Verify OTP`})]}),(0,z.jsx)(`span`,{onClick:()=>a(`auth`),className:`forgot-password-link`,children:`Back to Login`})]}),i===`reset`&&(0,z.jsxs)(`div`,{children:[(0,z.jsx)(`h2`,{style:{fontSize:`20px`,marginBottom:`15px`,color:`#1e293b`},children:`Reset Password`}),(0,z.jsx)(Li,{id:`newpass`,placeholder:`New Password`,value:pe,onChange:e=>me(e.target.value)}),(0,z.jsx)(Li,{id:`confpass`,placeholder:`Confirm Password`,value:he,onChange:e=>ge(e.target.value)}),(0,z.jsx)(`button`,{type:`button`,onClick:Oe,children:`Reset Password`})]})]})})})]})}var zi=`
 * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Roboto,sans-serif; }
-body { background:#0f172a; overflow:hidden; }
+html, body { height:100%; overflow:hidden; background:#0f172a; }
 
-.bg-graphics { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; pointer-events:none; }
-.bg-mesh { position:absolute; width:100%; height:100%; background-image:radial-gradient(at 0% 0%,rgba(20,184,166,.15) 0px,transparent 50%), radial-gradient(at 100% 100%,rgba(3,105,161,.12) 0px,transparent 50%); }
-.shape { position:absolute; filter:blur(90px); border-radius:50%; opacity:.5; animation:drift 20s infinite alternate ease-in-out; }
-.shape-1 { top:-10%; left:-10%; width:45vw; height:45vw; background:#2dd4bf; }
-.shape-2 { bottom:-20%; right:-10%; width:55vw; height:55vw; background:#0ea5e9; }
-@keyframes drift { 0%{transform:scale(1) translate(0,0)} 100%{transform:scale(1.1) translate(5vw,5vh)} }
+/* ── Background ── */
+.bg-graphics { position:fixed; inset:0; z-index:0; pointer-events:none; }
+.bg-mesh { position:absolute; width:100%; height:100%; background-image:radial-gradient(at 0% 0%,rgba(20,184,166,.18) 0px,transparent 50%), radial-gradient(at 100% 100%,rgba(3,105,161,.14) 0px,transparent 50%); }
+.shape { position:absolute; filter:blur(80px); border-radius:50%; opacity:.45; animation:drift 20s infinite alternate ease-in-out; }
+.shape-1 { top:-10%; left:-15%; width:60vw; height:60vw; background:#2dd4bf; }
+.shape-2 { bottom:-20%; right:-15%; width:70vw; height:70vw; background:#0ea5e9; }
+@keyframes drift { 0%{transform:scale(1) translate(0,0)} 100%{transform:scale(1.1) translate(4vw,4vh)} }
 
-.auth-screen { min-height:100vh; display:flex; justify-content:center; align-items:center; position:relative; z-index:10; }
-.auth-wrapper { animation:fadeIn 0.8s ease-out; }
-.container { width:400px; background:#fff; border-radius:16px; padding:30px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); }
+/* ── Auth Screen ── */
+.auth-screen {
+  height:100vh; height:100dvh;
+  display:flex; justify-content:center; align-items:center;
+  position:relative; z-index:10;
+  padding:16px;
+  overflow-y:auto;
+}
+.auth-wrapper { width:100%; max-width:380px; animation:fadeIn 0.6s ease-out; }
 
-.logo-container { text-align:center; margin-bottom:25px; }
-.logo-container img { width:80px; height:80px; border-radius:50%; border:3px solid #14b8a6; object-fit:cover; }
+/* ── Card ── */
+.container {
+  background:rgba(255,255,255,0.97);
+  border-radius:20px;
+  padding:24px 20px 28px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(20,184,166,0.15);
+  width:100%;
+}
 
-.tabs { display:flex; position:relative; border-bottom:2px solid #f1f5f9; margin-bottom:25px; }
-.tab { flex:1; text-align:center; padding:12px; cursor:pointer; font-weight:700; color:#64748b; transition:0.3s; }
+/* ── Logo ── */
+.logo-container { text-align:center; margin-bottom:20px; }
+.logo-container img { width:64px; height:64px; border-radius:50%; border:2.5px solid #14b8a6; object-fit:cover; box-shadow:0 4px 16px rgba(20,184,166,0.3); }
+
+/* ── Tabs ── */
+.tabs { display:flex; position:relative; background:#f1f5f9; border-radius:10px; margin-bottom:20px; padding:3px; }
+.tab { flex:1; text-align:center; padding:9px; cursor:pointer; font-weight:700; font-size:13px; color:#64748b; border-radius:8px; transition:.25s; z-index:1; position:relative; }
 .tab.active { color:#0f766e; }
-.underline { position:absolute; bottom:-2px; left:0; width:50%; height:3px; background:#14b8a6; transition:.3s; }
+.underline { position:absolute; top:3px; left:3px; width:calc(50% - 3px); height:calc(100% - 6px); background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.12); transition:.3s cubic-bezier(.4,0,.2,1); }
 
-.input-group { margin-bottom:18px; position:relative; }
-.input-group input, .input-group select { width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:14px; background:#f8fafc; color:#1e293b; -webkit-text-fill-color:#1e293b; }
-.input-group input:focus { border-color:#14b8a6; background:#fff; color:#1e293b; -webkit-text-fill-color:#1e293b; }
+/* ── Inputs ── */
+.input-group { margin-bottom:14px; position:relative; }
+.input-group input,
+.input-group select {
+  width:100%; padding:11px 12px;
+  border-radius:10px; border:1.5px solid #e2e8f0;
+  outline:none; font-size:14px;
+  background:#f8fafc; color:#1e293b;
+  -webkit-text-fill-color:#1e293b;
+  transition:border-color .2s, box-shadow .2s;
+}
+.input-group input:focus,
+.input-group select:focus {
+  border-color:#14b8a6;
+  box-shadow:0 0 0 3px rgba(20,184,166,0.12);
+  background:#fff;
+}
 .input-group input::placeholder { color:#94a3b8; -webkit-text-fill-color:#94a3b8; }
-.input-group input:-webkit-autofill, .input-group input:-webkit-autofill:focus { -webkit-box-shadow:0 0 0 1000px #f8fafc inset; -webkit-text-fill-color:#1e293b; }
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:focus {
+  -webkit-box-shadow:0 0 0 1000px #f8fafc inset;
+  -webkit-text-fill-color:#1e293b;
+}
 
-button { width:100%; padding:12px; border:none; border-radius:8px; background:#14b8a6; color:#fff; font-size:15px; font-weight:600; cursor:pointer; transition:.3s; }
-button:hover { background:#0f766e; transform:translateY(-1px); }
+/* ── Button ── */
+button {
+  width:100%; padding:12px;
+  border:none; border-radius:10px;
+  background:linear-gradient(135deg,#0f766e,#14b8a6);
+  color:#fff; font-size:14px; font-weight:700;
+  cursor:pointer; transition:.2s;
+  box-shadow:0 4px 14px rgba(20,184,166,0.35);
+  letter-spacing:0.2px;
+}
+button:active { transform:scale(0.98); opacity:0.92; }
 
-.forgot-password-link { display:block; text-align:center; margin-top:20px; font-size:14px; color:#0f766e; cursor:pointer; font-weight:500; }
-.toggle-password { position:absolute; right:12px; top:14px; cursor:pointer; color:#94a3b8; }
+/* ── Misc ── */
+.forgot-password-link { display:block; text-align:center; margin-top:16px; font-size:13px; color:#0f766e; cursor:pointer; font-weight:600; }
+.toggle-password { position:absolute; right:12px; top:13px; cursor:pointer; color:#94a3b8; font-size:14px; }
 
-.dialog-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:9999; display:none; justify-content:center; align-items:center; }
-.modal-content { background:#fff; width:340px; padding:30px; border-radius:16px; text-align:center; }
-.btn-success { background:#14b8a6; }
-.btn-danger { background:#ef4444; }
+/* ── Dialog ── */
+.dialog-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:9999; display:none; justify-content:center; align-items:center; padding:16px; }
+.modal-content { background:#fff; width:100%; max-width:320px; padding:26px 22px; border-radius:16px; text-align:center; }
+.modal-content h3 { font-size:15px; color:#1e293b; margin:8px 0 6px; }
+.modal-content p { font-size:13px; color:#64748b; margin-bottom:18px; line-height:1.5; }
+.modal-buttons { display:flex; }
+.btn-success { background:linear-gradient(135deg,#0f766e,#14b8a6); color:#fff; }
+.btn-danger  { background:#ef4444; color:#fff; }
 
-@keyframes fadeIn { from{opacity:0; transform:scale(0.95)} to{opacity:1; transform:scale(1)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Safe area (notch phones) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .auth-screen { padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+}
+
+/* ── Scrollable on tiny phones ── */
+@media (max-height: 600px) {
+  .auth-screen { align-items:flex-start; padding-top:24px; }
+}
 `;(0,y.createRoot)(document.getElementById(`root`)).render((0,z.jsx)(v.StrictMode,{children:(0,z.jsx)(Ri,{})}));
