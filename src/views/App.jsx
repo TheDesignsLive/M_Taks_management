@@ -1,5 +1,7 @@
 //App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
+import io from 'socket.io-client';
+import PusherPushNotifications from '@pusher/push-notifications-web';
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
 
@@ -60,6 +62,8 @@ export default function App() {
   // ── Success State (This decides which JSX to show) ──
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+const beamsRef = useRef(null);
+
   // ── UI State ──
   const [activeTab, setActiveTab] = useState(0);   // 0=Login, 1=Signup
   const [view, setView] = useState('auth');         // 'auth' | 'forgot' | 'reset'
@@ -106,25 +110,91 @@ export default function App() {
   const [resetConfError, setResetConfError] = useState('');
 
 // ── Browser Tab Logo & Title ──
-  useEffect(() => {
-    // 1. Set Title
+ useEffect(() => {
+
     document.title = "TMS Workspace";
 
-    // 2. Set Favicon (Logo)
     const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
     link.type = 'image/jpeg';
     link.rel = 'icon';
-    link.href = '/public/images/tms.svg'; // Aapka logo path
+    link.href = '/images/tms.svg';
+
     document.getElementsByTagName('head')[0].appendChild(link);
 
-    // Baki aapka purana session check
-    fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => {
-        if (data.loggedIn) setIsLoggedIn(true);
-      })
-      .catch(() => {});
-  }, []);
+    // SESSION CHECK
+    fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.loggedIn) setIsLoggedIn(true);
+        })
+        .catch(() => {});
+
+    // ✅ REGISTER SERVICE WORKER
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(() => console.log('Service Worker Registered'));
+    }
+
+    // ✅ PUSHER BEAMS
+const beamsClient = new PusherPushNotifications.Client({
+    instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+});
+
+beamsRef.current = beamsClient;
+
+beamsClient.start()
+    .then(() => {
+        console.log('Pusher Beams Started');
+
+        return Notification.requestPermission();
+    })
+    .then(() => {
+        return beamsClient.addDeviceInterest('all-users');
+    })
+    .then(() => console.log('Subscribed'))
+    .catch(console.error);
+const socket = io(BASE_URL, {
+    withCredentials: true
+});
+// ✅ SOCKET REALTIME POPUP + SYSTEM NOTIFICATION
+socket.on('new_announcement', (data) => {
+
+    // WEB POPUP
+    showAlert(
+        'New Announcement',
+        data.title || 'New Announcement Added',
+        true
+    );
+
+    // SYSTEM NOTIFICATION
+    if (Notification.permission === 'granted') {
+
+        navigator.serviceWorker.getRegistration()
+            .then((registration) => {
+
+                if (registration) {
+                    registration.showNotification(
+                        data.title || 'TMS Notification',
+                        {
+                            body: data.description || 'New update received',
+                            icon: '/images/tms_logo.jpeg',
+                            badge: '/images/tms_logo.jpeg',
+                            vibrate: [200, 100, 200],
+
+                            data: {
+                                url: '/'
+                            }
+                        }
+                    );
+                }
+
+            });
+
+    }
+
+});
+
+}, []);
 
   // ─── TAB SWITCH ────────────────────────────────────────────────────────────
   function showTab(index) {
