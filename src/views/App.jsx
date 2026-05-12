@@ -140,13 +140,34 @@ const beamsClient = new PusherPushNotifications.Client({
 beamsRef.current = beamsClient;
 
 beamsClient.start()
+
     .then(() => {
         console.log('Pusher Beams Started');
 
         return Notification.requestPermission();
     })
     .then(() => {
-        return beamsClient.addDeviceInterest('all-users');
+        const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
+    credentials: 'include'
+});
+
+const sessionData = await sessionRes.json();
+
+if (sessionData.loggedIn) {
+
+    // ALL COMPANY MEMBERS
+    await beamsClient.addDeviceInterest(
+        `admin-${sessionData.adminId}`
+    );
+
+    // SPECIFIC TEAM
+    if (sessionData.role_id) {
+        await beamsClient.addDeviceInterest(
+            `admin-${sessionData.adminId}-team-${sessionData.role_id}`
+        );
+    }
+
+}
     })
     .then(() => console.log('Subscribed'))
     .catch(console.error);

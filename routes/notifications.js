@@ -130,9 +130,21 @@ if (req.file) {
         if (!ann) return res.status(500).json({ success: false });
 
         if (req.io) req.io.emit('new_announcement', ann);
+
+        let interests = [];
+
+// ALL MEMBERS of same company/admin
+if (parseInt(role_id) === 0) {
+    interests.push(`admin-${req.session.adminId}`);
+}
+
+// SPECIFIC TEAM MEMBERS
+else {
+    interests.push(`admin-${req.session.adminId}-team-${role_id}`);
+}
         // PUSH NOTIFICATION
-await beamsClient.publishToInterests(['all-users'], {
-    web: {
+await beamsClient.publishToInterests(interests, {
+        web: {
         notification: {
             title: ann.title,
             body: ann.description,
