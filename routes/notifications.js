@@ -1,6 +1,5 @@
 //notifications.js mobile
 import express from 'express';
-import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
 import FormData from 'form-data';
@@ -126,26 +125,6 @@ if (req.file) {
         if (!ann) return res.status(500).json({ success: false });
 
         if (req.io) req.io.emit('new_announcement', ann);
-
-// ─── SEND ONESIGNAL PUSH ───
-await fetch('https://onesignal.com/api/v1/notifications', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic 75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F'
-    },
-    body: JSON.stringify({
-        app_id: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-        included_segments: ['All'],
-        headings: {
-            en: 'New Announcement'
-        },
-        contents: {
-            en: title
-        },
-        url: 'https://m-tms.thedesigns.live'
-    })
-});
 
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',

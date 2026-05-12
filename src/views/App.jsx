@@ -1,6 +1,5 @@
 //App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
-import OneSignal from 'react-onesignal';
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
 
@@ -108,31 +107,6 @@ export default function App() {
 
 // ── Browser Tab Logo & Title ──
   useEffect(() => {
-
-  // ─── ONESIGNAL INIT ───
-  OneSignal.init({
-  appId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-
-  allowLocalhostAsSecureOrigin: true,
-
-  notifyButton: {
-    enable: false,
-  },
-
-  promptOptions: {
-    slidedown: {
-      enabled: true,
-      autoPrompt: true,
-      timeDelay: 3,
-      pageViews: 1,
-    },
-  },
-
-  serviceWorkerPath: '/OneSignalSDKWorker.js',
-})
-  .then(() => {
-    console.log('OneSignal initialized');
-  });
     // 1. Set Title
     document.title = "TMS Workspace";
 
@@ -146,20 +120,9 @@ export default function App() {
     // Baki aapka purana session check
     fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
       .then(r => r.json())
-       .then(async data => {
-  if (data.loggedIn) setIsLoggedIn(true);
-
- const permission = await OneSignal.Notifications.permission;
-
-if (permission !== "granted") {
-
-  setTimeout(async () => {
-
-    await OneSignal.Slidedown.promptPush();
-
-  }, 3000);
-}
-})
+      .then(data => {
+        if (data.loggedIn) setIsLoggedIn(true);
+      })
       .catch(() => {});
   }, []);
 
