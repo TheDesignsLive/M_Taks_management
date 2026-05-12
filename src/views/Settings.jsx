@@ -124,36 +124,7 @@ const checkNotificationPermission = async () => {
     setNotificationStatus("Not Enabled");
   }
 };
-const handleDisableNotifications = async () => {
-  try {
 
-    // remove push subscription
-    const registration = await navigator.serviceWorker.ready;
-
-    const subscription = await registration.pushManager.getSubscription();
-
-    if (subscription) {
-      await subscription.unsubscribe();
-    }
-
-    setNotificationStatus("Not Enabled");
-
-    showAlert(
-      "Notifications Disabled",
-      "Push notifications turned off successfully",
-      true
-    );
-
-  } catch (err) {
-    console.log(err);
-
-    showAlert(
-      "Error",
-      "Failed to disable notifications",
-      false
-    );
-  }
-};
 const handleEnableNotifications = async () => {
   try {
     if (!("Notification" in window)) {
@@ -362,11 +333,7 @@ const handleEnableNotifications = async () => {
 <div style={S.card}>
   <div
     style={S.menuItem}
-    onClick={
-      notificationStatus === "Enabled"
-        ? handleDisableNotifications
-        : handleEnableNotifications
-    }
+    onClick={handleEnableNotifications}
   >
     <div style={S.menuLeft}>
       <div
@@ -380,17 +347,11 @@ const handleEnableNotifications = async () => {
       </div>
 
       <div>
-        <div style={S.menuTitle}>
-  {notificationStatus === "Enabled"
-    ? "Disable Notifications"
-    : "Enable Notifications"}
-</div>
+        <div style={S.menuTitle}>Enable Notifications</div>
 
         <div style={S.menuSub}>
-  {notificationStatus === "Enabled"
-    ? "Tap to turn OFF notifications"
-    : `Status: ${notificationStatus}`}
-</div>
+          Status: {notificationStatus}
+        </div>
       </div>
     </div>
 
