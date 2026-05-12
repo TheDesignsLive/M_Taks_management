@@ -146,7 +146,7 @@ beamsClient.start()
 
         return Notification.requestPermission();
     })
-    .then(() => {
+    .then(async () => {
         const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
     credentials: 'include'
 });
