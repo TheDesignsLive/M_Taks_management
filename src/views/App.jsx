@@ -111,13 +111,26 @@ export default function App() {
 
   // ─── ONESIGNAL INIT ───
   OneSignal.init({
-    appId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
-    safari_web_id: 'web.onesignal.auto',
-    notifyButton: {
-      enable: true,
+  appId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+
+  allowLocalhostAsSecureOrigin: true,
+
+  notifyButton: {
+    enable: false,
+  },
+
+  promptOptions: {
+    slidedown: {
+      enabled: true,
+      autoPrompt: true,
+      timeDelay: 3,
+      pageViews: 1,
     },
-    allowLocalhostAsSecureOrigin: true,
-  }).then(() => {
+  },
+
+  serviceWorkerPath: '/OneSignalSDKWorker.js',
+})
+  .then(() => {
     console.log('OneSignal initialized');
   });
     // 1. Set Title
@@ -136,11 +149,16 @@ export default function App() {
        .then(async data => {
   if (data.loggedIn) setIsLoggedIn(true);
 
-  const permission = await OneSignal.Notifications.permission;
+ const permission = await OneSignal.Notifications.permission;
 
-  if (permission !== "granted") {
-    await OneSignal.Notifications.requestPermission();
-  }
+if (permission !== "granted") {
+
+  setTimeout(async () => {
+
+    await OneSignal.Slidedown.promptPush();
+
+  }, 3000);
+}
 })
       .catch(() => {});
   }, []);
