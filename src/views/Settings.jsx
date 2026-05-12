@@ -19,6 +19,12 @@ const TrashIcon = () => (
     <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
   </svg>
 );
+const BellIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>
+);
 const LogoutIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -85,8 +91,11 @@ const Settings = () => {
   const [alertBox, setAlertBox] = useState({ show: false, title: "", msg: "", isSuccess: true });
 const [labelForm, setLabelForm] = useState({ changes: '', update: '' });
 const [labelSaving, setLabelSaving] = useState(false);
-
-  useEffect(() => { fetchSettings(); }, []);
+const [notificationStatus, setNotificationStatus] = useState("Checking...");
+  useEffect(() => {
+  fetchSettings();
+  checkNotificationPermission();
+}, []);
 
   const fetchSettings = async () => {
     try {
@@ -99,7 +108,55 @@ const [labelSaving, setLabelSaving] = useState(false);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
+const checkNotificationPermission = async () => {
+  if (!("Notification" in window)) {
+    setNotificationStatus("Not Supported");
+    return;
+  }
 
+  const permission = Notification.permission;
+
+  if (permission === "granted") {
+    setNotificationStatus("Enabled");
+  } else if (permission === "denied") {
+    setNotificationStatus("Blocked");
+  } else {
+    setNotificationStatus("Not Enabled");
+  }
+};
+
+const handleEnableNotifications = async () => {
+  try {
+    if (!("Notification" in window)) {
+      return showAlert("Unsupported", "Notifications not supported on this device", false);
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission === "granted") {
+      setNotificationStatus("Enabled");
+
+      showAlert(
+        "Notifications Enabled",
+        "Push notifications are now active!",
+        true
+      );
+    } else if (permission === "denied") {
+      setNotificationStatus("Blocked");
+
+      showAlert(
+        "Notifications Blocked",
+        "Please allow notifications from Safari Settings.",
+        false
+      );
+    } else {
+      setNotificationStatus("Not Enabled");
+    }
+  } catch (err) {
+    console.log(err);
+    showAlert("Error", "Failed to enable notifications", false);
+  }
+};
   const showAlert = (title, msg, isSuccess = true) => {
     setAlertBox({ show: true, title, msg, isSuccess });
   };
@@ -270,7 +327,39 @@ const [labelSaving, setLabelSaving] = useState(false);
         </div>
     </>
 )}
+{/* Notifications */}
+<div style={{ ...S.sectionLabel, marginTop: 24 }}>NOTIFICATIONS</div>
 
+<div style={S.card}>
+  <div
+    style={S.menuItem}
+    onClick={handleEnableNotifications}
+  >
+    <div style={S.menuLeft}>
+      <div
+        style={{
+          ...S.menuIcon,
+          background: "rgba(15,137,137,0.15)",
+          color: "#0F8989"
+        }}
+      >
+        <BellIcon />
+      </div>
+
+      <div>
+        <div style={S.menuTitle}>Enable Notifications</div>
+
+        <div style={S.menuSub}>
+          Status: {notificationStatus}
+        </div>
+      </div>
+    </div>
+
+    <span style={S.chevron}>
+      <ChevronRight />
+    </span>
+  </div>
+</div>
 {/* Account Section */}
 <div style={{ ...S.sectionLabel, marginTop: 24 }}>ACCOUNT</div>
         <div style={S.card}>
