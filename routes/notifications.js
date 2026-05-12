@@ -140,7 +140,6 @@ await beamsClient.publishToInterests(['all-users'], {
         }
     }
 });
-
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
