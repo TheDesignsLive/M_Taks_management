@@ -1,5 +1,6 @@
 //App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
+import OneSignal from 'react-onesignal';
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
 
@@ -107,6 +108,18 @@ export default function App() {
 
 // ── Browser Tab Logo & Title ──
   useEffect(() => {
+
+  // ─── ONESIGNAL INIT ───
+  OneSignal.init({
+    appId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+    safari_web_id: 'web.onesignal.auto',
+    notifyButton: {
+      enable: true,
+    },
+    allowLocalhostAsSecureOrigin: true,
+  }).then(() => {
+    console.log('OneSignal initialized');
+  });
     // 1. Set Title
     document.title = "TMS Workspace";
 
@@ -120,9 +133,15 @@ export default function App() {
     // Baki aapka purana session check
     fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
       .then(r => r.json())
-      .then(data => {
-        if (data.loggedIn) setIsLoggedIn(true);
-      })
+       .then(async data => {
+  if (data.loggedIn) setIsLoggedIn(true);
+
+  const permission = await OneSignal.Notifications.permission;
+
+  if (permission !== "granted") {
+    await OneSignal.Notifications.requestPermission();
+  }
+})
       .catch(() => {});
   }, []);
 
