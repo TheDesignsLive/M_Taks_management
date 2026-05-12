@@ -33,7 +33,6 @@ function AlertDialog({ show, title, message, isSuccess, onClose }) {
     </div>
   );
 }
-
 // ─── PASSWORD INPUT WITH TOGGLE ───────────────────────────────────────────────
 function PasswordInput({ id, placeholder, value, onChange }) {
   const [visible, setVisible] = useState(false);
