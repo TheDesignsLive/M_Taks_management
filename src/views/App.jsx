@@ -141,7 +141,7 @@ beamsRef.current = beamsClient;
 
 beamsClient.start()
 
-    .then(() => {
+    .then(async () => {
         console.log('Pusher Beams Started');
 
         return Notification.requestPermission();
