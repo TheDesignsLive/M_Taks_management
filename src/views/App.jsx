@@ -1,8 +1,7 @@
 //App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import PusherPushNotifications from '@pusher/push-notifications-web';
-// 1. Apni doosri file ko yahan import karein
+import * as PusherPushNotifications from "@pusher/push-notifications-web";// 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
