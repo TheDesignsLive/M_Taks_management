@@ -155,17 +155,25 @@ const sessionData = await sessionRes.json();
 
 if (sessionData.loggedIn) {
 
-    // ALL COMPANY MEMBERS
+    // ADMIN ONLY → receive all notifications
+if (
+    sessionData.role === 'admin' ||
+    sessionData.control_type === 'ADMIN' ||
+    sessionData.control_type === 'OWNER'
+) {
+
     await beamsClient.addDeviceInterest(
         `admin-${sessionData.adminId}`
     );
+}
 
-    // SPECIFIC TEAM
-    if (sessionData.role_id) {
-        await beamsClient.addDeviceInterest(
-            `admin-${sessionData.adminId}-team-${sessionData.role_id}`
-        );
-    }
+// TEAM MEMBER → only team notifications
+if (sessionData.role_id) {
+
+    await beamsClient.addDeviceInterest(
+        `admin-${sessionData.adminId}-team-${sessionData.role_id}`
+    );
+}
 
 }
     })
