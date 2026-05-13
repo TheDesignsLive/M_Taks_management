@@ -136,7 +136,7 @@ const handleEnableNotifications = async () => {
 // 🟢 ALREADY ENABLED
 if (permission === "granted") {
   showAlert(
-    "Already Enabled 😎",
+    "Already Enabled ✅",
     "Notifications are already active. You're all set!",
     true
   );
