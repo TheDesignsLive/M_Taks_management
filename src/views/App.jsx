@@ -182,42 +182,10 @@ if (sessionData.role_id) {
 const socket = io(BASE_URL, {
     withCredentials: true
 });
-// ✅ SOCKET REALTIME POPUP + SYSTEM NOTIFICATION
 socket.on('new_announcement', (data) => {
-
-    // WEB POPUP
-    showAlert(
-        'New Announcement',
-        data.title || 'New Announcement Added',
-        true
-    );
-
-    // SYSTEM NOTIFICATION
-    if (Notification.permission === 'granted') {
-
-        navigator.serviceWorker.getRegistration()
-            .then((registration) => {
-
-                if (registration) {
-                    registration.showNotification(
-                        data.title || 'TMS Notification',
-                        {
-                            body: data.description || 'New update received',
-                            icon: '/images/tms_logo.jpeg',
-                            badge: '/images/tms_logo.jpeg',
-                            vibrate: [200, 100, 200],
-
-                            data: {
-                                url: '/'
-                            }
-                        }
-                    );
-                }
-
-            });
-
-    }
-
+    // Sirf App ke andar wala popup dikhao
+    showAlert('New Announcement', data.title || 'New Announcement Added', true);
+    // System notification ab Pusher Beams background mein khud dikhayega
 });
 
 }, []);
