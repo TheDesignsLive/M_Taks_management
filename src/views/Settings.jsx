@@ -115,13 +115,12 @@ const checkNotificationPermission = async () => {
   }
 
   const permission = Notification.permission;
-
   if (permission === "granted") {
     setNotificationStatus("Enabled");
   } else if (permission === "denied") {
-    setNotificationStatus("Blocked");
+    setNotificationStatus("Blocked (Go to Settings)"); // Taki user ko pata chale settings jana hai
   } else {
-    setNotificationStatus("Not Enabled");
+    setNotificationStatus("Ready to Enable");
   }
 };
 
@@ -131,32 +130,36 @@ const handleEnableNotifications = async () => {
       return showAlert("Unsupported", "Notifications not supported on this device", false);
     }
 
+    // 1. Current status check karo
+    const currentPermission = Notification.permission;
+
+    // 2. Agar status 'denied' hai (Blocked), toh popup nahi aayega
+    if (currentPermission === "denied") {
+      setNotificationStatus("Blocked");
+      return showAlert(
+        "Permission Blocked", 
+        "Aapne notifications block kiye hain. Please Mobile Settings > Apps > TMS mein jaakar manually 'Allow' karein.", 
+        false
+      );
+    }
+
+    // 3. Agar 'default' hai (Pehli baar ya reset ke baad), toh popup maango
     const permission = await Notification.requestPermission();
 
     if (permission === "granted") {
       setNotificationStatus("Enabled");
-
-      showAlert(
-        "Notifications Enabled",
-        "Push notifications are now active!",
-        true
-      );
-    } else if (permission === "denied") {
-      setNotificationStatus("Blocked");
-
-      showAlert(
-        "Notifications Blocked",
-        "Please allow notifications from Safari Settings.",
-        false
-      );
+      showAlert("Notifications Enabled", "Push notifications are now active!", true);
     } else {
-      setNotificationStatus("Not Enabled");
+      setNotificationStatus("Blocked");
+      showAlert("Permission Denied", "Aapne permission nahi di. Settings se on karein.", false);
     }
   } catch (err) {
     console.log(err);
     showAlert("Error", "Failed to enable notifications", false);
   }
 };
+
+
   const showAlert = (title, msg, isSuccess = true) => {
     setAlertBox({ show: true, title, msg, isSuccess });
   };
