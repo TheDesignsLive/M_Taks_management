@@ -116,13 +116,13 @@ const checkNotificationPermission = async () => {
 
   const permission = Notification.permission;
 
- if (permission === "granted") {
-  setNotificationStatus("Enabled ");
-} else if (permission === "denied") {
-  setNotificationStatus("Blocked ");
-} else {
-  setNotificationStatus("Not Enabled ");
-}
+  if (permission === "granted") {
+    setNotificationStatus("Enabled");
+  } else if (permission === "denied") {
+    setNotificationStatus("Blocked");
+  } else {
+    setNotificationStatus("Not Enabled");
+  }
 };
 
 const handleEnableNotifications = async () => {
@@ -131,54 +131,27 @@ const handleEnableNotifications = async () => {
       return showAlert("Unsupported", "Notifications not supported on this device", false);
     }
 
-    const permission = Notification.permission;
+    const permission = await Notification.requestPermission();
 
-// 🟢 ALREADY ENABLED
-if (permission === "granted") {
-  showAlert(
-    "Already Enabled ✅",
-    "Notifications are already active. You're all set!",
-    true
-  );
-  return;
-}
+    if (permission === "granted") {
+      setNotificationStatus("Enabled");
 
-// 🔴 BLOCKED → GO TO SETTINGS
-if (permission === "denied") {
-  showAlert(
-    "Permission Blocked 🚫",
-    "Notifications are blocked.\n\n👉 Go to Settings > Site Settings > Notifications and allow it manually.",
-    false
-  );
+      showAlert(
+        "Notifications Enabled",
+        "Push notifications are now active!",
+        true
+      );
+    } else if (permission === "denied") {
+      setNotificationStatus("Blocked");
 
-  // OPTIONAL: open settings (works in some browsers only)
-  window.open("chrome://settings/content/notifications");
-
-  return;
-}
-
-// ⚠️ DEFAULT → ASK PERMISSION
-const newPermission = await Notification.requestPermission();
-
-if (newPermission === "granted") {
-  setNotificationStatus("Enabled ");
-
-  showAlert(
-    "Enabled Successfully 🔔",
-    "Now you'll receive real-time updates!",
-    true
-  );
-} else if (newPermission === "denied") {
-  setNotificationStatus("Blocked ");
-
-  showAlert(
-    "Blocked 😑",
-    "You denied the permission.\n\nIf you change your mind, enable it from browser settings.",
-    false
-  );
-} else {
-  setNotificationStatus("Not Enabled ");
-}
+      showAlert(
+        "Notifications Blocked",
+        "Please allow notifications from Safari Settings.",
+        false
+      );
+    } else {
+      setNotificationStatus("Not Enabled");
+    }
   } catch (err) {
     console.log(err);
     showAlert("Error", "Failed to enable notifications", false);
