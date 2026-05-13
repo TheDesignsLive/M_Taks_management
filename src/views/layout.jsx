@@ -9,6 +9,64 @@ import Settings from './Settings.jsx';
 import Profile from './Profile.jsx';
 import AllMemberTasks from './AllMemberTasks.jsx';
 
+// ─── BEAMS CONFIG ────────────────────────────────────────────────────────────
+const BEAMS_INSTANCE_ID = '423440a8-1fc5-4373-8e6b-0085dccafc58';
+
+function loadBeamsSDK() {
+    return new Promise((resolve, reject) => {
+        if (window.PusherPushNotifications) return resolve();
+        const s = document.createElement('script');
+        s.src = 'https://js.pusher.com/beams/1.0/push-notifications-cdn.js';
+        s.async = true;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Beams SDK load failed'));
+        document.head.appendChild(s);
+    });
+}
+
+async function initMobileBeams(beamsUserId) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.warn('[MobileBeams] Push not supported');
+        return;
+    }
+    try {
+        await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+        await loadBeamsSDK();
+        const PPN = window.PusherPushNotifications;
+        if (!PPN || !PPN.Client) { console.warn('[MobileBeams] SDK not available'); return; }
+        const beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
+        const lastUser = localStorage.getItem('beams_last_user');
+        if (lastUser && lastUser !== beamsUserId) {
+            try { await beamsClient.stop(); localStorage.removeItem('beams_subscribed_' + lastUser); localStorage.removeItem('beams_last_user'); } catch(e) {}
+        }
+        const permission = Notification.permission;
+        if (permission === 'granted') {
+            await subscribeMobileBeams(beamsClient, beamsUserId);
+        } else if (permission === 'default') {
+            if (!localStorage.getItem('beams_subscribed_' + beamsUserId)) {
+                setTimeout(async () => {
+                    const perm = await Notification.requestPermission();
+                    if (perm === 'granted') await subscribeMobileBeams(beamsClient, beamsUserId);
+                }, 2000);
+            }
+        }
+    } catch(err) { console.warn('[MobileBeams] Init error:', err.message); }
+}
+
+async function subscribeMobileBeams(beamsClient, beamsUserId) {
+    try {
+        await beamsClient.start();
+        const tokenProvider = new window.PusherPushNotifications.TokenProvider({
+            url: 'https://tms.thedesigns.live/beams-auth',
+            credentials: 'include',
+        });
+        await beamsClient.setUserId(beamsUserId, tokenProvider);
+        localStorage.setItem('beams_subscribed_' + beamsUserId, '1');
+        localStorage.setItem('beams_last_user', beamsUserId);
+        console.log('[MobileBeams] ✅ Subscribed as:', beamsUserId);
+    } catch(err) { console.warn('[MobileBeams] Subscribe error:', err.message); }
+}
+
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -167,12 +225,20 @@ useEffect(() => {
   fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
     .then(r => r.json())
     .then(d => {
-      if (d.loggedIn) {
+if (d.loggedIn) {
         setSessionRole(d.role || '');
         setSessionControlType(d.control_type || '');
         if (d.role !== 'admin' && d.adminName) {
           setAdminInfo({ name: d.adminName });
         }
+        // ✅ Init Beams
+        let beamsUserId;
+        if (d.role === 'admin' || d.role === 'owner') {
+            beamsUserId = 'admin_' + d.adminId;
+        } else {
+            beamsUserId = String(d.userId);
+        }
+        initMobileBeams(beamsUserId);
         // Fetch profile pic for top bar
         fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
           .then(r => r.json())

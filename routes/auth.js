@@ -138,13 +138,16 @@ router.post("/login", async (req, res) => {
 // ================= SESSION CHECK ====================
 router.get("/session", (req, res) => {
     if (req.session.adminId || req.session.userId) {
-return res.json({ 
-    loggedIn: true, 
-    role: req.session.role,
-    control_type: req.session.control_type,
-    adminName: req.session.adminName || null,
-    redirect: '/home' 
-});
+        return res.json({ 
+            loggedIn: true, 
+            role:     req.session.role,
+            control_type: req.session.control_type,
+            adminName: req.session.adminName || null,
+            userId:   req.session.userId  || null,
+            adminId:  req.session.adminId || null,
+            userName: req.session.userName || null,
+            redirect: '/home' 
+        });
     }
     res.json({ loggedIn: false });
 });
