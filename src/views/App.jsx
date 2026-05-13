@@ -138,47 +138,29 @@ const beamsClient = new PusherPushNotifications.Client({
 });
 
 beamsRef.current = beamsClient;
+window.__beamsClient = beamsClient;
 
-beamsClient.start()
+fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
+  .then(r => r.json())
+  .then(sessionData => {
+    if (!sessionData.loggedIn) return;
 
-    .then(async () => {
+    beamsClient.start()
+      .then(() => {
         console.log('Pusher Beams Started');
 
-        return Notification.requestPermission();
-    })
-    .then(async () => {
-        const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
-    credentials: 'include'
-});
-
-const sessionData = await sessionRes.json();
-
-if (sessionData.loggedIn) {
-
-    // ADMIN ONLY → receive all notifications
-if (
-    sessionData.role === 'admin' ||
-    sessionData.control_type === 'ADMIN' ||
-    sessionData.control_type === 'OWNER'
-) {
-
-    await beamsClient.addDeviceInterest(
-        `admin-${sessionData.adminId}`
-    );
-}
-
-// TEAM MEMBER → only team notifications
-if (sessionData.role_id) {
-
-    await beamsClient.addDeviceInterest(
-        `admin-${sessionData.adminId}-team-${sessionData.role_id}`
-    );
-}
-
-}
-    })
-    .then(() => console.log('Subscribed'))
-    .catch(console.error);
+        // 🔥 All members interest (important change)
+        return beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-all`);
+      })
+      .then(() => {
+        // 🔥 Team specific
+        if (sessionData.role_id) {
+          return beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-team-${sessionData.role_id}`);
+        }
+      })
+      .then(() => console.log('Beams subscribed'))
+      .catch(console.error);
+  });
 const socket = io(BASE_URL, {
     withCredentials: true
 });

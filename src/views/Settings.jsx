@@ -131,30 +131,32 @@ const handleEnableNotifications = async () => {
       return showAlert("Unsupported", "Notifications not supported on this device", false);
     }
 
+    // Agar already enabled hai to OFF karo
+    if (Notification.permission === "granted" && notificationStatus === "Enabled") {
+      // Beams se unsubscribe karo
+      if (window.__beamsClient) {
+        await window.__beamsClient.stop();
+        console.log('[Beams] Stopped');
+      }
+      setNotificationStatus("Disabled");
+      showAlert("Notifications Disabled", "You won't receive push notifications anymore.", false);
+      return;
+    }
+
     const permission = await Notification.requestPermission();
 
     if (permission === "granted") {
       setNotificationStatus("Enabled");
-
-      showAlert(
-        "Notifications Enabled",
-        "Push notifications are now active!",
-        true
-      );
+      showAlert("Notifications Enabled", "Push notifications are now active!", true);
     } else if (permission === "denied") {
       setNotificationStatus("Blocked");
-
-      showAlert(
-        "Notifications Blocked",
-        "Please allow notifications from Safari Settings.",
-        false
-      );
+      showAlert("Notifications Blocked", "Please allow notifications from browser Settings.", false);
     } else {
       setNotificationStatus("Not Enabled");
     }
   } catch (err) {
     console.log(err);
-    showAlert("Error", "Failed to enable notifications", false);
+    showAlert("Error", "Failed to toggle notifications", false);
   }
 };
   const showAlert = (title, msg, isSuccess = true) => {

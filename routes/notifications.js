@@ -143,15 +143,22 @@ else {
     interests.push(`admin-${req.session.adminId}-team-${role_id}`);
 }
         // PUSH NOTIFICATION
-await beamsClient.publishToInterests(interests, {
-        web: {
-        notification: {
-            title: ann.title,
-            body: ann.description,
-            deep_link: 'https://m-tms.thedesigns.live'
-        }
-    }
-});
+// role_id=0 means All Members, otherwise specific team
+const targetInterest = (role_id == 0 || !role_id)
+  ? `admin-${req.session.adminId}-all`
+  : `admin-${req.session.adminId}-team-${role_id}`;
+
+beamsClient.publishToInterests([targetInterest], {
+  web: {
+    notification: {
+      title: `📢 ${ann.title}`,
+      body: `${ann.added_by_name}: ${ann.description || ''}`,
+      deep_link: 'https://m-tms.thedesigns.live',
+      icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
+    },
+  },
+}).then(r => console.log('[Beams] Sent to:', targetInterest, r.publishId))
+  .catch(err => console.error('[Beams] Error:', err.message));
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
