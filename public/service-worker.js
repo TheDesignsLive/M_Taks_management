@@ -1,5 +1,4 @@
+// public/service-worker.js
 importScripts("https://js.pusher.com/beams/service-worker.js");
 
-PusherBeams.onMessageReceived = (payload) => {
-  console.log("Background Notification Received:", payload);
-};
+// Ye file background mein patti (notification) dikhane ka kaam karegi
