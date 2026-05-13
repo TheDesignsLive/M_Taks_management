@@ -148,7 +148,7 @@ await beamsClient.publishToInterests(interests, {
         notification: {
             title: ann.title,
             body: ann.description,
-            deep_link: '/'
+            deep_link: 'https://m-tms.thedesigns.live'
         }
     }
 });
