@@ -144,17 +144,14 @@ else {
 }
         // PUSH NOTIFICATION
 await beamsClient.publishToInterests(interests, {
-    web: {
+        web: {
         notification: {
             title: ann.title,
             body: ann.description,
-            deep_link: 'https://m-tms.thedesigns.live/notifications',
-            icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-            hide_notification_if_site_has_focus: false // <--- YE SABSE ZAROORI HAI
+            deep_link: 'https://m-tms.thedesigns.live'
         }
     }
-}).then(pubRes => console.log("Published ID:", pubRes.publishId))
-  .catch(err => console.error("Beams Error:", err));
+});
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
