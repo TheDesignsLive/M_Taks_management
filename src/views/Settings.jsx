@@ -117,11 +117,11 @@ const checkNotificationPermission = async () => {
   const permission = Notification.permission;
 
  if (permission === "granted") {
-  setNotificationStatus("Enabled ✅");
+  setNotificationStatus("Enabled ");
 } else if (permission === "denied") {
-  setNotificationStatus("Blocked ❌");
+  setNotificationStatus("Blocked ");
 } else {
-  setNotificationStatus("Not Enabled ⚠️");
+  setNotificationStatus("Not Enabled ");
 }
 };
 
@@ -136,19 +136,19 @@ const handleEnableNotifications = async () => {
 // 🟢 ALREADY ENABLED
 if (permission === "granted") {
   showAlert(
-    "Already Enabled 😎",
-    "Notifications are already active. You're all set!",
-    true
-  );
+  "Already Enabled",
+  "🔔 Notifications are already active. You're all set!",
+  true
+);
   return;
 }
 
 // 🔴 BLOCKED → GO TO SETTINGS
 if (permission === "denied") {
   showAlert(
-    "Permission Blocked 🚫",
-    "Notifications are blocked.\n\n👉 Go to Settings > Site Settings > Notifications and allow it manually.",
-    false
+    "Enabled Successfully",
+  "✅ You will now receive real-time updates!",
+  true
   );
 
   // OPTIONAL: open settings (works in some browsers only)
@@ -161,7 +161,7 @@ if (permission === "denied") {
 const newPermission = await Notification.requestPermission();
 
 if (newPermission === "granted") {
-  setNotificationStatus("Enabled ✅");
+  setNotificationStatus("Enabled ");
 
   showAlert(
     "Enabled Successfully 🔔",
@@ -169,7 +169,7 @@ if (newPermission === "granted") {
     true
   );
 } else if (newPermission === "denied") {
-  setNotificationStatus("Blocked ❌");
+  setNotificationStatus("Blocked ");
 
   showAlert(
     "Blocked 😑",
@@ -177,7 +177,7 @@ if (newPermission === "granted") {
     false
   );
 } else {
-  setNotificationStatus("Not Enabled ⚠️");
+  setNotificationStatus("Not Enabled ");
 }
   } catch (err) {
     console.log(err);
