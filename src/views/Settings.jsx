@@ -136,19 +136,19 @@ const handleEnableNotifications = async () => {
 // 🟢 ALREADY ENABLED
 if (permission === "granted") {
   showAlert(
-  "Already Enabled",
-  "🔔 Notifications are already active. You're all set!",
-  true
-);
+    "Already Enabled 😎",
+    "Notifications are already active. You're all set!",
+    true
+  );
   return;
 }
 
 // 🔴 BLOCKED → GO TO SETTINGS
 if (permission === "denied") {
   showAlert(
-    "Enabled Successfully",
-  "✅ You will now receive real-time updates!",
-  true
+    "Permission Blocked 🚫",
+    "Notifications are blocked.\n\n👉 Go to Settings > Site Settings > Notifications and allow it manually.",
+    false
   );
 
   // OPTIONAL: open settings (works in some browsers only)
