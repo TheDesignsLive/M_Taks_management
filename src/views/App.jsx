@@ -140,30 +140,6 @@ const beamsClient = new PusherPushNotifications.Client({
 beamsRef.current = beamsClient;
 
 beamsClient.start()
-.then(async () => {
-
-    const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
-        credentials: 'include'
-    });
-
-    const sessionData = await sessionRes.json();
-
-    if (sessionData.loggedIn) {
-
-        // ✅ UNIQUE USER IDENTIFY (VERY IMPORTANT)
-        await beamsClient.setUserId(String(sessionData.adminId || sessionData.userId), {
-            fetchToken: (userId) => {
-                return fetch(`${BASE_URL}/api/pusher/auth`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ userId })
-                }).then(res => res.json());
-            }
-        });
-
-    }
-})
 
     .then(async () => {
         console.log('Pusher Beams Started');
@@ -192,13 +168,8 @@ if (
 }
 
 // TEAM MEMBER → only team notifications
-// ✅ EVERYONE should subscribe to admin channel
-await beamsClient.addDeviceInterest(
-    `admin-${sessionData.adminId}`
-);
-
-// ✅ TEAM SPECIFIC
 if (sessionData.role_id) {
+
     await beamsClient.addDeviceInterest(
         `admin-${sessionData.adminId}-team-${sessionData.role_id}`
     );

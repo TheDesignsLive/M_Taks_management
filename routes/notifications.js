@@ -135,15 +135,12 @@ if (req.file) {
 
 // ALL MEMBERS of same company/admin
 if (parseInt(role_id) === 0) {
-
-    // ✅ ALL USERS (admin + all teams)
     interests.push(`admin-${req.session.adminId}`);
+}
 
-} else {
-
-    // ✅ SPECIFIC TEAM
+// SPECIFIC TEAM MEMBERS
+else {
     interests.push(`admin-${req.session.adminId}-team-${role_id}`);
-
 }
         // PUSH NOTIFICATION
 await beamsClient.publishToInterests(interests, {
