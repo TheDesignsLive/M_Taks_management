@@ -115,13 +115,14 @@ const checkNotificationPermission = async () => {
   }
 
   const permission = Notification.permission;
-  if (permission === "granted") {
-    setNotificationStatus("Enabled");
-  } else if (permission === "denied") {
-    setNotificationStatus("Blocked (Go to Settings)"); // Taki user ko pata chale settings jana hai
-  } else {
-    setNotificationStatus("Ready to Enable");
-  }
+
+ if (permission === "granted") {
+  setNotificationStatus("Enabled ✅");
+} else if (permission === "denied") {
+  setNotificationStatus("Blocked ❌");
+} else {
+  setNotificationStatus("Not Enabled ⚠️");
+}
 };
 
 const handleEnableNotifications = async () => {
@@ -130,36 +131,59 @@ const handleEnableNotifications = async () => {
       return showAlert("Unsupported", "Notifications not supported on this device", false);
     }
 
-    // 1. Current status check karo
-    const currentPermission = Notification.permission;
+    const permission = Notification.permission;
 
-    // 2. Agar status 'denied' hai (Blocked), toh popup nahi aayega
-    if (currentPermission === "denied") {
-      setNotificationStatus("Blocked");
-      return showAlert(
-        "Permission Blocked", 
-        "Aapne notifications block kiye hain. Please Mobile Settings > Apps > TMS mein jaakar manually 'Allow' karein.", 
-        false
-      );
-    }
+// 🟢 ALREADY ENABLED
+if (permission === "granted") {
+  showAlert(
+    "Already Enabled 😎",
+    "Notifications are already active. You're all set!",
+    true
+  );
+  return;
+}
 
-    // 3. Agar 'default' hai (Pehli baar ya reset ke baad), toh popup maango
-    const permission = await Notification.requestPermission();
+// 🔴 BLOCKED → GO TO SETTINGS
+if (permission === "denied") {
+  showAlert(
+    "Permission Blocked 🚫",
+    "Notifications are blocked.\n\n👉 Go to Settings > Site Settings > Notifications and allow it manually.",
+    false
+  );
 
-    if (permission === "granted") {
-      setNotificationStatus("Enabled");
-      showAlert("Notifications Enabled", "Push notifications are now active!", true);
-    } else {
-      setNotificationStatus("Blocked");
-      showAlert("Permission Denied", "Aapne permission nahi di. Settings se on karein.", false);
-    }
+  // OPTIONAL: open settings (works in some browsers only)
+  window.open("chrome://settings/content/notifications");
+
+  return;
+}
+
+// ⚠️ DEFAULT → ASK PERMISSION
+const newPermission = await Notification.requestPermission();
+
+if (newPermission === "granted") {
+  setNotificationStatus("Enabled ✅");
+
+  showAlert(
+    "Enabled Successfully 🔔",
+    "Now you'll receive real-time updates!",
+    true
+  );
+} else if (newPermission === "denied") {
+  setNotificationStatus("Blocked ❌");
+
+  showAlert(
+    "Blocked 😑",
+    "You denied the permission.\n\nIf you change your mind, enable it from browser settings.",
+    false
+  );
+} else {
+  setNotificationStatus("Not Enabled ⚠️");
+}
   } catch (err) {
     console.log(err);
     showAlert("Error", "Failed to enable notifications", false);
   }
 };
-
-
   const showAlert = (title, msg, isSuccess = true) => {
     setAlertBox({ show: true, title, msg, isSuccess });
   };
