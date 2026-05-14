@@ -156,8 +156,7 @@ router.post('/add-task', async (req, res) => {
                 );
             }
 
-            req.io.emit('update_tasks');
-            notifyDesktop();
+    req.io.emit('update_tasks');
 
             // Push to all team members: interest = their userId string
             if (shouldNotify && users.length > 0) {
@@ -166,9 +165,12 @@ router.post('/add-task', async (req, res) => {
                 const interests = users
                     .filter(u => u.id !== selfId)
                     .map(u => String(u.id));
-                if (interests.length > 0) {
+if (interests.length > 0) {
                     await pushTaskNotification(interests, taskTitle, assignerName);
+                    notifyDesktop('tasks', { interests, taskTitle, assignerName });
                 }
+            } else {
+                notifyDesktop('tasks', {});
             }
 
             return res.json({ success: true });
@@ -195,8 +197,7 @@ router.post('/add-task', async (req, res) => {
                 [admin_id, taskTitle, description || null, (priority || 'MEDIUM').toUpperCase(), finalDate, assigned_by, who_assigned]
             );
 
-            req.io.emit('update_tasks');
-            notifyDesktop();
+req.io.emit('update_tasks');
 
             // Push: all users of this company except self + the admin interest
             if (shouldNotify) {
@@ -212,10 +213,12 @@ router.post('/add-task', async (req, res) => {
                 if (req.session.role !== 'admin') {
                     interests.push(`admin_${admin_id}`);
                 }
-
-                if (interests.length > 0) {
+if (interests.length > 0) {
                     await pushTaskNotification(interests, taskTitle, assignerName);
+                    notifyDesktop('tasks', { interests, taskTitle, assignerName });
                 }
+            } else {
+                notifyDesktop('tasks', {});
             }
 
             return res.json({ success: true, message: 'Task added successfully' });
@@ -235,8 +238,7 @@ router.post('/add-task', async (req, res) => {
             [admin_id, taskTitle, description || null, (priority || 'MEDIUM').toUpperCase(), finalDate, finalAssignedTo, assigned_by, who_assigned, sectionValue]
         );
 
-        req.io.emit('update_tasks');
-        notifyDesktop();
+    req.io.emit('update_tasks');
 
         // Push notification for single user assignment
         if (shouldNotify && assignedTo !== 'self') {
@@ -254,9 +256,14 @@ router.post('/add-task', async (req, res) => {
                 }
             }
 
-            if (interests.length > 0) {
+if (interests.length > 0) {
                 await pushTaskNotification(interests, taskTitle, assignerName);
+                notifyDesktop('tasks', { interests, taskTitle, assignerName });
+            } else {
+                notifyDesktop('tasks', {});
             }
+        } else {
+            notifyDesktop('tasks', {});
         }
 
         res.json({ success: true, message: 'Task added successfully' });
