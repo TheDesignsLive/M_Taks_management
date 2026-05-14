@@ -284,7 +284,24 @@ useEffect(() => {
       })
       .catch(() => {});
   });
-  return () => { socket.disconnect(); };
+
+  // Listen for push messages forwarded by Beams SW — show in-app toast when app is open
+  const handleSwMessage = (event) => {
+    if (!event.data || event.data.type !== 'BEAMS_PUSH_RECEIVED') return;
+    const { title, body } = event.data;
+    if (title) {
+      // Reuse existing toast system
+      const msg = body ? `${title}: ${body}` : title;
+      // dispatch a custom event so Layout's toast can pick it up
+      window.dispatchEvent(new CustomEvent('show-push-toast', { detail: msg }));
+    }
+  };
+  navigator.serviceWorker.addEventListener('message', handleSwMessage);
+
+  return () => {
+    socket.disconnect();
+    navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+  };
 }, []);
 
   const [taskOpen, setTaskOpen]       = useState(false);
@@ -341,10 +358,16 @@ useEffect(() => {
     setShowCal(false); setShowPri(false); setShowAssign(false);
   }
 
-  function showToast(msg) {
+function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(''), 2800);
   }
+
+  useEffect(() => {
+    const handler = (e) => showToast('🔔 ' + e.detail);
+    window.addEventListener('show-push-toast', handler);
+    return () => window.removeEventListener('show-push-toast', handler);
+  }, []);
 
   async function loadTeam(teamId) {
     if (teamMembers[teamId]) return;
