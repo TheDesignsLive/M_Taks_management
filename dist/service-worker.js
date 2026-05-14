@@ -1,4 +1,4 @@
-// public/service-worker.js — Mobile version
+// public/service-worker.js — Mobile version.
 importScripts('https://js.pusher.com/beams/service-worker.js');
 
 self.addEventListener('notificationclick', (event) => {
