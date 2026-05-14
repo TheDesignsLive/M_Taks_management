@@ -1,33 +1,46 @@
-// public/service-worker.js — Mobile version NEW FILE
+// public/service-worker.js — Mobile version
 importScripts('https://js.pusher.com/beams/service-worker.js');
 
-// Force show notification when app tab IS open
+const MOBILE_BASE = 'https://m-tms.thedesigns.live';
+const DESKTOP_BASE = 'https://tms.thedesigns.live';
+
+// ✅ Show notification when app IS open (foreground)
 self.addEventListener('push', (event) => {
     if (!event.data) return;
     try {
         const payload = event.data.json();
-        const notification = payload?.notification || payload?.data;
-        if (!notification || !notification.title) return;
+
+        // Beams sends { notification: { title, body, deep_link }, data: { ... } }
+        const n = payload?.notification || payload?.data;
+        if (!n || !n.title) return;
+
+        const url = n.deep_link || n.url || `${MOBILE_BASE}/home`;
 
         event.waitUntil(
-            self.registration.showNotification(notification.title, {
-                body: notification.body || '',
-                icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-                badge: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-                data: { url: notification.deep_link || 'https://m-tms.thedesigns.live/home' },
+            self.registration.showNotification(n.title, {
+                body: n.body || '',
+                // ✅ Use desktop server for logo — it's always accessible
+                icon: `${DESKTOP_BASE}/images/tms_logo.jpeg`,
+                badge: `${DESKTOP_BASE}/images/tms_logo.jpeg`,
+                image: `${DESKTOP_BASE}/images/tms_logo.jpeg`,
+                data: { url },
                 requireInteraction: false,
                 silent: false,
+                // ✅ vibrate helps Android show it even in background
+                vibrate: [200, 100, 200],
             })
         );
     } catch (e) {
-        // Beams handles its own format
+        // Beams handles its own FCM format — let it fall through
     }
 });
 
+// ✅ Handle notification tap — open or focus app
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+
     const url = (event.notification.data && event.notification.data.url)
-              || 'https://m-tms.thedesigns.live/home';
+              || `${MOBILE_BASE}/home`;
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {

@@ -1,4 +1,4 @@
-// layout.jsx
+// layout.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
 import { io as socketIO } from 'socket.io-client';
 import Home from './Home.jsx';
