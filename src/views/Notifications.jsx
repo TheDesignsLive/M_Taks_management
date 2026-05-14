@@ -145,7 +145,7 @@ useEffect(() => {
     }
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append("title", form.title);
@@ -161,7 +161,8 @@ useEffect(() => {
     const result = await res.json();
     if (result.success) {
       setModal({ show: false, type: "add", editId: null });
-      fetchNotifications();
+      // Do NOT call fetchNotifications() here — socket.on('new_announcement' / 'edit_announcement')
+      // already updates the list in real-time. Calling fetch too causes duplicates.
       setForm({ title: "", desc: "", teamId: "0", file: null });
     }
   };
