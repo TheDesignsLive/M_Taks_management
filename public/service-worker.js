@@ -1,45 +1,56 @@
 // public/service-worker.js — Mobile version
+// ✅ Beams handles ALL background (app closed) push automatically
 importScripts('https://js.pusher.com/beams/service-worker.js');
 
-// Handles FOREGROUND push (app open) — browsers suppress these by default so we show manually
+// ✅ FOREGROUND ONLY: Only show notification manually when app IS open
+// When app is closed, Beams service worker (above) handles it natively — do NOT interfere
 self.addEventListener('push', (event) => {
     if (!event.data) return;
-    try {
-        const payload = event.data.json();
 
-        // Beams wraps payload — try all possible locations
-        const n =
-            payload?.notification ||
-            payload?.data?.notification ||
-            payload?.fcm?.notification ||
-            payload?.data;
+    // Check if any app window is open/visible
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            const appIsOpen = windowClients.some(c =>
+                c.url.includes('m-tms.thedesigns.live') && c.visibilityState === 'visible'
+            );
 
-        if (!n || !n.title) return;
+            // ✅ App is CLOSED or hidden — let Beams handle it, do nothing
+            if (!appIsOpen) return;
 
-        const url =
-            payload?.data?.url ||
-            payload?.fcm?.data?.url ||
-            n.deep_link ||
-            n.url ||
-            'https://m-tms.thedesigns.live';
+            // ✅ App is OPEN — browser suppresses push UI, so show it manually
+            try {
+                const payload = event.data.json();
 
-        const icon = n.icon || n.image || 'https://tms.thedesigns.live/images/tms_logo.jpeg';
+                const n =
+                    payload?.notification ||
+                    payload?.data?.notification ||
+                    payload?.data;
 
-        event.waitUntil(
-            self.registration.showNotification(n.title, {
-                body: n.body || '',
-                icon: icon,
-                badge: icon,
-                tag: 'tms-push-' + Date.now(),   // unique tag so notifications stack, not replace
-                data: { url: url },
-                requireInteraction: false,
-                silent: false,
-                vibrate: [300, 100, 300],
-            })
-        );
-    } catch (e) {
-        // Beams FCM background format — ignore parse errors, Beams handles those
-    }
+                if (!n || !n.title) return;
+
+                const url =
+                    payload?.data?.url ||
+                    n.deep_link ||
+                    n.url ||
+                    'https://m-tms.thedesigns.live';
+
+                const icon = n.icon || n.image || 'https://tms.thedesigns.live/images/tms_logo.jpeg';
+
+                return self.registration.showNotification(n.title, {
+                    body: n.body || '',
+                    icon: icon,
+                    badge: icon,
+                    tag: 'tms-push-' + Date.now(),
+                    data: { url: url },
+                    requireInteraction: false,
+                    silent: false,
+                    vibrate: [300, 100, 300],
+                });
+            } catch (e) {
+                // ignore parse errors — Beams internal format
+            }
+        })
+    );
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -64,6 +75,6 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
-// Take control immediately
+// Take control immediately — no waiting for old SW to die
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
