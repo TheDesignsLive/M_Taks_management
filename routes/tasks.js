@@ -27,6 +27,27 @@ async function pushTaskNotification(interests, taskTitle, assignerName) {
                     deep_link: MOBILE_URL,
                 },
             },
+            fcm: {
+                notification: {
+                    title: '📋 New Task Assigned',
+                    body: `"${taskTitle}" — assigned by ${assignerName}`,
+                },
+                data: {
+                    url: MOBILE_URL,
+                    deep_link: MOBILE_URL,
+                    icon: TMS_ICON,
+                },
+                android: {
+                    priority: 'high',
+                    ttl: '86400s',
+                    notification: {
+                        sound: 'default',
+                        channelId: 'tms_tasks',
+                        priority: 'high',
+                        defaultSound: true,
+                    },
+                },
+            },
         });
         console.log('[Tasks] 🔔 Push sent to interests:', interests);
     } catch (err) {

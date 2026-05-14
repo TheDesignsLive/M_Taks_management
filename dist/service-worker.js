@@ -26,3 +26,24 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
+
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+    try {
+        const payload = event.data.json();
+        const n = payload?.notification || payload?.data;
+        if (!n || !n.title) return;
+
+        event.waitUntil(
+            self.registration.showNotification(n.title, {
+                body:               n.body || '',
+                icon:               'https://tms.thedesigns.live/images/tms_logo.jpeg',
+                badge:              'https://tms.thedesigns.live/images/tms_logo.jpeg',
+                tag:                'tms-' + Date.now(),
+                data:               { url: n.deep_link || 'https://m-tms.thedesigns.live' },
+                requireInteraction: false,
+                silent:             false,
+            })
+        );
+    } catch (e) {}
+});

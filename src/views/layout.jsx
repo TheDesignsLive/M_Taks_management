@@ -273,12 +273,6 @@ useEffect(() => {
 
 useEffect(() => {
   const socket = socketIO(BASE_URL, { withCredentials: true, transports: ['websocket', 'polling'] });
-  socket.on('task_notification', (data) => {
-    if (data && data.title) {
-      setToast(`📋 ${data.title} — by ${data.assignerName}`);
-      setTimeout(() => setToast(''), 2800);
-    }
-  });
   socket.on('update_profile', () => {
     fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
       .then(r => r.json())
