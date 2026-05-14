@@ -15,10 +15,10 @@ const TMS_ICON = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
 const MOBILE_URL = 'https://m-tms.thedesigns.live';
 
 // ─── Helper: send push to a list of Beams interest strings ───────────────────
-async function pushTaskNotification(interests, taskTitle, assignerName) {
-    if (!interests || interests.length === 0) return;
+async function pushTaskNotification(userIds, taskTitle, assignerName) {
+    if (!userIds || userIds.length === 0) return;
     try {
-        await beamsClient.publishToInterests(interests, {
+        const publishBody = {
             web: {
                 notification: {
                     title: '📋 New Task Assigned',
@@ -48,8 +48,15 @@ async function pushTaskNotification(interests, taskTitle, assignerName) {
                     },
                 },
             },
-        });
-        console.log('[Tasks] 🔔 Push sent to interests:', interests);
+        };
+
+        // publishToUsers supports max 1000 users per call — chunk if needed
+        const chunkSize = 100;
+        for (let i = 0; i < userIds.length; i += chunkSize) {
+            const chunk = userIds.slice(i, i + chunkSize);
+            await beamsClient.publishToUsers(chunk, publishBody);
+        }
+        console.log('[Tasks] 🔔 Push sent to users:', userIds);
     } catch (err) {
         console.error('[Tasks] ❌ Beams push failed:', err.message);
     }
