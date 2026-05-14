@@ -39,16 +39,17 @@ async function initMobileBeams(beamsUserId) {
         if (lastUser && lastUser !== beamsUserId) {
             try { await beamsClient.stop(); localStorage.removeItem('beams_subscribed_' + lastUser); localStorage.removeItem('beams_last_user'); } catch(e) {}
         }
-        const permission = Notification.permission;
+const permission = Notification.permission;
         if (permission === 'granted') {
+            // Always call subscribe on load — Beams SDK is idempotent, safe to call every time
             await subscribeMobileBeams(beamsClient, beamsUserId);
         } else if (permission === 'default') {
-            if (!localStorage.getItem('beams_subscribed_' + beamsUserId)) {
-                setTimeout(async () => {
-                    const perm = await Notification.requestPermission();
-                    if (perm === 'granted') await subscribeMobileBeams(beamsClient, beamsUserId);
-                }, 2000);
-            }
+            setTimeout(async () => {
+                const perm = await Notification.requestPermission();
+                if (perm === 'granted') await subscribeMobileBeams(beamsClient, beamsUserId);
+            }, 2000);
+        } else {
+            console.warn('[MobileBeams] Notifications blocked by user');
         }
     } catch(err) { console.warn('[MobileBeams] Init error:', err.message); }
 }
@@ -56,8 +57,8 @@ async function initMobileBeams(beamsUserId) {
 async function subscribeMobileBeams(beamsClient, beamsUserId) {
     try {
         await beamsClient.start();
+        console.log('[MobileBeams] SDK started, setting userId:', beamsUserId);
 
-        // ✅ TokenProvider with queryParam fallback so cross-origin session cookie works
         const tokenProvider = new window.PusherPushNotifications.TokenProvider({
             url: 'https://tms.thedesigns.live/beams-auth',
             credentials: 'include',
@@ -70,10 +71,18 @@ async function subscribeMobileBeams(beamsClient, beamsUserId) {
         });
 
         await beamsClient.setUserId(beamsUserId, tokenProvider);
+
+        // Verify subscription worked
+        const deviceId = await beamsClient.getDeviceId();
+        console.log('[MobileBeams] ✅ Subscribed as:', beamsUserId, '| Device ID:', deviceId);
+
         localStorage.setItem('beams_subscribed_' + beamsUserId, '1');
         localStorage.setItem('beams_last_user', beamsUserId);
-        console.log('[MobileBeams] ✅ Subscribed as:', beamsUserId);
-    } catch(err) { console.warn('[MobileBeams] Subscribe error:', err.message); }
+    } catch(err) {
+        console.warn('[MobileBeams] Subscribe error:', err.message, err);
+        // Clear stored flag so next load retries
+        localStorage.removeItem('beams_subscribed_' + beamsUserId);
+    }
 }
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────

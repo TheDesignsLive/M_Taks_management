@@ -31,19 +31,34 @@ self.addEventListener('push', (event) => {
     if (!event.data) return;
     try {
         const payload = event.data.json();
-        const n = payload?.notification || payload?.data;
+        const n = payload?.notification
+            || payload?.data?.notification
+            || payload?.data
+            || null;
         if (!n || !n.title) return;
 
         event.waitUntil(
-            self.registration.showNotification(n.title, {
-                body:               n.body || '',
-                icon:               'https://tms.thedesigns.live/images/tms_logo.jpeg',
-                badge:              'https://tms.thedesigns.live/images/tms_logo.jpeg',
-                tag:                'tms-' + Date.now(),
-                data:               { url: n.deep_link || 'https://m-tms.thedesigns.live' },
-                requireInteraction: false,
-                silent:             false,
-            })
+            Promise.all([
+                // 1. Always show the OS notification (works when app is background/closed)
+                self.registration.showNotification(n.title, {
+                    body: n.body || '',
+                    icon: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
+                    badge: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
+                    tag: 'tms-task-' + Date.now(),
+                    data: { url: n.deep_link || 'https://m-tms.thedesigns.live' },
+                    requireInteraction: false,
+                }),
+                // 2. Also forward to open windows for in-app toast
+                clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+                    windowClients.forEach(client => {
+                        client.postMessage({
+                            type: 'BEAMS_PUSH_RECEIVED',
+                            title: n.title,
+                            body: n.body || '',
+                        });
+                    });
+                }),
+            ])
         );
     } catch (e) {}
 });
