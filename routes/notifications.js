@@ -131,25 +131,53 @@ if (req.file) {
 
         if (req.io) req.io.emit('new_announcement', ann);
 
-        let interests = [];
+let interests = [];
 
-// ALL MEMBERS of same company/admin
-if (parseInt(role_id) === 0) {
-    interests.push(`admin-${req.session.adminId}`);
-}
+        // ALL MEMBERS — fetch every user of this admin + the admin themselves
+        if (parseInt(role_id) === 0) {
+            // Admin/Owner interest
+            interests.push(`admin_${req.session.adminId}`);
+            // All regular users of this admin
+            try {
+                const [allUsers] = await con.query(
+                    'SELECT id FROM users WHERE admin_id = ? AND status = "ACTIVE"',
+                    [req.session.adminId]
+                );
+                allUsers.forEach(u => interests.push(String(u.id)));
+            } catch (e) { console.error('[Beams] fetch users error:', e.message); }
+        }
 
-// SPECIFIC TEAM MEMBERS
-else {
-    interests.push(`admin-${req.session.adminId}-team-${role_id}`);
-}
+        // SPECIFIC TEAM — fetch only users in that team
+        else {
+            interests.push(`admin_${req.session.adminId}`);
+            try {
+                const [teamUsers] = await con.query(
+                    `SELECT u.id FROM users u
+                     JOIN roles r ON u.role_id = r.id
+                     WHERE r.team_id = ? AND u.status = "ACTIVE"`,
+                    [role_id]
+                );
+                teamUsers.forEach(u => interests.push(String(u.id)));
+            } catch (e) { console.error('[Beams] fetch team users error:', e.message); }
+        }
+
+        // Remove duplicates
+        interests = [...new Set(interests)];
+
+        // Beams max 100 interests per publish call — chunk if needed
+        const chunkSize = 100;
+        const interestChunks = [];
+        for (let i = 0; i < interests.length; i += chunkSize) {
+            interestChunks.push(interests.slice(i, i + chunkSize));
+        }
 // PUSH NOTIFICATION — web + fcm (Android) + apns (iOS) for app-closed delivery
         const pushTitle = ann.title || 'New Announcement';
         const pushBody  = ann.description || '';
         const pushIcon  = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
         const pushUrl   = 'https://m-tms.thedesigns.live';
 
-        try {
-            await beamsClient.publishToInterests(interests, {
+try {
+            const pushPayload = {
                 web: {
                     notification: {
                         title: pushTitle,
@@ -183,8 +211,13 @@ else {
                         type: 'announcement',
                     },
                 },
-            });
-            console.log('[Mobile] 🔔 Push sent for announcement:', ann.id);
+            };
+
+            for (const chunk of interestChunks) {
+                if (chunk.length === 0) continue;
+                await beamsClient.publishToInterests(chunk, pushPayload);
+            }
+            console.log('[Mobile] 🔔 Push sent for announcement:', ann.id, '→ interests:', interests);
         } catch (pushErr) {
             console.error('[Mobile] ❌ Beams push failed:', pushErr.message);
         }
