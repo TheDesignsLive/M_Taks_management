@@ -156,7 +156,7 @@ router.post('/add-task', async (req, res) => {
                 );
             }
 
-    req.io.emit('update_tasks');
+req.io.emit('update_tasks');
 
             // Push to all team members: interest = their userId string
             if (shouldNotify && users.length > 0) {
@@ -238,7 +238,7 @@ if (interests.length > 0) {
             [admin_id, taskTitle, description || null, (priority || 'MEDIUM').toUpperCase(), finalDate, finalAssignedTo, assigned_by, who_assigned, sectionValue]
         );
 
-    req.io.emit('update_tasks');
+req.io.emit('update_tasks');
 
         // Push notification for single user assignment
         if (shouldNotify && assignedTo !== 'self') {
