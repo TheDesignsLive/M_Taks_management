@@ -1,31 +1,45 @@
-// public/service-worker.js — Mobile version NEW FILE
+// public/service-worker.js — Mobile version
 importScripts('https://js.pusher.com/beams/service-worker.js');
 
-// Force show notification when app tab IS open
+// ✅ Beams handles background (app closed) push automatically via importScripts above
+// This push listener handles FOREGROUND (app open) — shows notification that browsers suppress
+
 self.addEventListener('push', (event) => {
     if (!event.data) return;
     try {
         const payload = event.data.json();
-        const notification = payload?.notification || payload?.data;
-        if (!notification || !notification.title) return;
+
+        // Beams wraps payload inside notification or data key
+        const n = payload?.notification || payload?.data;
+        if (!n || !n.title) return;
+
+        const url = n.deep_link || n.url || 'https://m-tms.thedesigns.live/home';
+
+        // ✅ icon must point to desktop server — mobile server images folder
+        // is same physical folder, but desktop URL is always reachable by FCM/browser
+        const icon = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
 
         event.waitUntil(
-            self.registration.showNotification(notification.title, {
-                body: notification.body || '',
-                icon: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-                badge: 'https://m-tms.thedesigns.live/images/tms_logo.jpeg',
-                data: { url: notification.deep_link || 'https://m-tms.thedesigns.live/home' },
+            self.registration.showNotification(n.title, {
+                body: n.body || '',
+                icon: icon,
+                badge: icon,
+                tag: 'tms-notification',          // ✅ replaces old notification instead of stacking
+                renotify: true,                   // ✅ still vibrate/sound even if same tag
+                data: { url: url },
                 requireInteraction: false,
                 silent: false,
+                vibrate: [300, 100, 300],         // ✅ forces sound+vibrate on Android
             })
         );
     } catch (e) {
-        // Beams handles its own format
+        // Beams handles its own FCM format — ignore parse errors here
     }
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+
     const url = (event.notification.data && event.notification.data.url)
               || 'https://m-tms.thedesigns.live/home';
 
@@ -44,5 +58,6 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
+// ✅ Take control immediately — no waiting for old SW to die
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));

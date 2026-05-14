@@ -56,10 +56,19 @@ async function initMobileBeams(beamsUserId) {
 async function subscribeMobileBeams(beamsClient, beamsUserId) {
     try {
         await beamsClient.start();
+
+        // ✅ TokenProvider with queryParam fallback so cross-origin session cookie works
         const tokenProvider = new window.PusherPushNotifications.TokenProvider({
             url: 'https://tms.thedesigns.live/beams-auth',
             credentials: 'include',
+            headers: {
+                'x-beams-user': beamsUserId,
+            },
+            queryParams: {
+                beamsUserId: beamsUserId,
+            },
         });
+
         await beamsClient.setUserId(beamsUserId, tokenProvider);
         localStorage.setItem('beams_subscribed_' + beamsUserId, '1');
         localStorage.setItem('beams_last_user', beamsUserId);
