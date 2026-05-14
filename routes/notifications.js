@@ -142,16 +142,52 @@ if (parseInt(role_id) === 0) {
 else {
     interests.push(`admin-${req.session.adminId}-team-${role_id}`);
 }
-        // PUSH NOTIFICATION
-await beamsClient.publishToInterests(interests, {
-        web: {
-        notification: {
-            title: ann.title,
-            body: ann.description,
-            deep_link: 'https://m-tms.thedesigns.live'
+// PUSH NOTIFICATION — web + fcm (Android) + apns (iOS) for app-closed delivery
+        const pushTitle = ann.title || 'New Announcement';
+        const pushBody  = ann.description || '';
+        const pushIcon  = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
+        const pushUrl   = 'https://m-tms.thedesigns.live';
+
+        try {
+            await beamsClient.publishToInterests(interests, {
+                web: {
+                    notification: {
+                        title: pushTitle,
+                        body: pushBody,
+                        icon: pushIcon,
+                        deep_link: pushUrl,
+                    },
+                },
+                fcm: {
+                    notification: {
+                        title: pushTitle,
+                        body: pushBody,
+                        image: pushIcon,
+                    },
+                    data: {
+                        url: pushUrl,
+                        type: 'announcement',
+                    },
+                },
+                apns: {
+                    aps: {
+                        alert: {
+                            title: pushTitle,
+                            body: pushBody,
+                        },
+                        sound: 'default',
+                        badge: 1,
+                    },
+                    data: {
+                        url: pushUrl,
+                        type: 'announcement',
+                    },
+                },
+            });
+            console.log('[Mobile] 🔔 Push sent for announcement:', ann.id);
+        } catch (pushErr) {
+            console.error('[Mobile] ❌ Beams push failed:', pushErr.message);
         }
-    }
-});
         fetch(`${DESKTOP_BASE_URL}/api/notify-announcement-add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
