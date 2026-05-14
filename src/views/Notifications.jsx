@@ -3,7 +3,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
 // 🟢 Desktop Server (Hub) se connect karo
-const socket = io("https://tms.thedesigns.live", { withCredentials: true });
+// const socket = io("https://tms.thedesigns.live", { withCredentials: true });
+const BASE_URL_NOTIF =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://m-tms.thedesigns.live';
+
+const socket = io(BASE_URL_NOTIF, { withCredentials: true });
 
 const BASE_URL =
   window.location.hostname === "localhost"

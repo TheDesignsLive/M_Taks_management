@@ -15,48 +15,61 @@ const TMS_ICON = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
 const MOBILE_URL = 'https://m-tms.thedesigns.live';
 
 // ─── Helper: send push to a list of Beams interest strings ───────────────────
-async function pushTaskNotification(userIds, taskTitle, assignerName) {
-    if (!userIds || userIds.length === 0) return;
-    try {
-        const publishBody = {
-            web: {
-                notification: {
-                    title: '📋 New Task Assigned',
-                    body: `"${taskTitle}" — assigned by ${assignerName}`,
-                    icon: TMS_ICON,
-                    deep_link: MOBILE_URL,
-                },
-            },
-            fcm: {
-                notification: {
-                    title: '📋 New Task Assigned',
-                    body: `"${taskTitle}" — assigned by ${assignerName}`,
-                },
-                data: {
-                    url: MOBILE_URL,
-                    deep_link: MOBILE_URL,
-                    icon: TMS_ICON,
-                },
-                android: {
-                    priority: 'high',
-                    ttl: '86400s',
-                    notification: {
-                        sound: 'default',
-                        channelId: 'tms_tasks',
-                        priority: 'high',
-                        defaultSound: true,
-                    },
-                },
-            },
-        };
+async function pushTaskNotification(ids, taskTitle, assignerName) {
+    if (!ids || ids.length === 0) return;
 
-        // publishToUsers supports max 1000 users per call — chunk if needed
-        const chunkSize = 100;
-        for (let i = 0; i < userIds.length; i += chunkSize) {
-            const chunk = userIds.slice(i, i + chunkSize);
-            await beamsClient.publishToUsers(chunk, publishBody);
+    const publishBody = {
+        web: {
+            notification: {
+                title: '📋 New Task Assigned',
+                body: `"${taskTitle}" — assigned by ${assignerName}`,
+                icon: TMS_ICON,
+                deep_link: MOBILE_URL,
+            },
+        },
+        fcm: {
+            notification: {
+                title: '📋 New Task Assigned',
+                body: `"${taskTitle}" — assigned by ${assignerName}`,
+            },
+            data: {
+                url: MOBILE_URL,
+                deep_link: MOBILE_URL,
+                icon: TMS_ICON,
+            },
+            android: {
+                priority: 'high',
+                ttl: '86400s',
+                notification: {
+                    sound: 'default',
+                    channelId: 'tms_tasks',
+                    priority: 'high',
+                    defaultSound: true,
+                },
+            },
+        },
+    };
+
+    // Separate admin interests (e.g. "admin_29") from regular user IDs (e.g. "85")
+    const adminInterests = ids.filter(id => String(id).startsWith('admin_'));
+    const userIds = ids.filter(id => !String(id).startsWith('admin_'));
+
+    try {
+        // Regular users → publishToUsers (they subscribed via setUserId)
+        if (userIds.length > 0) {
+            const chunkSize = 100;
+            for (let i = 0; i < userIds.length; i += chunkSize) {
+                const chunk = userIds.slice(i, i + chunkSize);
+                await beamsClient.publishToUsers(chunk, publishBody);
+            }
+            console.log('[Tasks] 🔔 Push sent to users:', userIds);
         }
-        console.log('[Tasks] 🔔 Push sent to users:', userIds);
+
+        // Admin → publishToInterests (admin subscribed via interest, not setUserId)
+        if (adminInterests.length > 0) {
+            await beamsClient.publishToInterests(adminInterests, publishBody);
+            console.log('[Tasks] 🔔 Push sent to admin interests:', adminInterests);
+        }
     } catch (err) {
         console.error('[Tasks] ❌ Beams push failed:', err.message);
     }
@@ -91,6 +104,7 @@ router.get('/get-teams', async (req, res) => {
         res.json({ success: false });
     }
 });
+
 
 // ==============================
 // GET TEAM MEMBERS
@@ -458,5 +472,6 @@ router.post('/delete-completed-tasks', async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });
+
 
 export default router;
