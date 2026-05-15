@@ -167,13 +167,6 @@ if (sessionData.loggedIn) {
         );
     }
 
-    // Individual interest — sender exclude karne ke liye
-    if (sessionData.role === 'admin') {
-        await beamsClient.addDeviceInterest(`sender-admin-${sessionData.adminId}`);
-    } else if (sessionData.userId) {
-        await beamsClient.addDeviceInterest(`sender-user-${sessionData.userId}`);
-    }
-
     window.__beamsClient = beamsClient;
     console.log('[Beams] Subscribed for adminId:', sessionData.adminId);
 }

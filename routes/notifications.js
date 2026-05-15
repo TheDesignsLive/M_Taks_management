@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
             deletionRequests = dReqs;
         }
 
-        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers });
+        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers, userRoleId: role_id || null });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
@@ -133,27 +133,18 @@ if (req.file) {
 
 let interests = [];
 
-        if (parseInt(role_id) === 0) {
-    // All Members — company-wide interest
+if (parseInt(role_id) === 0) {
+    // All members — company scoped
     interests.push(`company-${req.session.adminId}-all`);
 } else {
-    // Specific team — sirf us team ka interest
+    // Specific team only
     interests.push(`company-${req.session.adminId}-team-${role_id}`);
 }
 
-// Sender ka individual interest — exclude karo
-const senderExclude = req.session.role === 'admin'
-    ? `sender-admin-${req.session.adminId}`
-    : `sender-user-${req.session.userId}`;
-
-// Remove duplicates
 interests = [...new Set(interests)];
 
-// Sender ko filter out karo
-interests = interests.filter(i => i !== senderExclude);
 
 console.log('[Beams] Sending to interests:', interests);
-
         // Beams max 100 interests per publish call — chunk if needed
         const chunkSize = 100;
         const interestChunks = [];

@@ -85,7 +85,8 @@ const Notifications = () => {
     teams: [],
     canManageAnnounce: false,
     canManageMembers: false,
-  });
+    userRoleId: null,
+});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("announce");
   const swipeStartX = useRef(null);
@@ -98,12 +99,21 @@ useEffect(() => {
     fetchNotifications();
 
     // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
-    socket.on('new_announcement', (newAnn) => {
-        setData(prev => ({
-            ...prev,
-            announcements: [newAnn, ...prev.announcements]
-        }));
+   socket.on('new_announcement', (newAnn) => {
+    setData(prev => {
+        // Admin/owner/manager — sab dekh sakte hain
+        if (prev.canManageAnnounce) {
+            return { ...prev, announcements: [newAnn, ...prev.announcements] };
+        }
+        // Regular user — sirf apni team ya all-member announcement
+        const isAllMembers = parseInt(newAnn.role_id) === 0;
+        const isMyTeam = prev.userRoleId && String(newAnn.role_id) === String(prev.userRoleId);
+        if (isAllMembers || isMyTeam) {
+            return { ...prev, announcements: [newAnn, ...prev.announcements] };
+        }
+        return prev; // Is user ke liye nahi — ignore karo
     });
+});
 
     socket.on('delete_announcement', (deletedId) => {
         setData(prev => ({
