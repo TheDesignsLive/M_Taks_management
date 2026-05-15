@@ -206,41 +206,129 @@ router.post('/add-task', async (req, res) => {
             assignerName = await getAssignerName(req.session);
         }
 
-        // ── TEAM ASSIGNMENT ──────────────────────────────────────────────────
 // ── TEAM ASSIGNMENT ──────────────────────────────────────────────────
-        if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
-            const teamId = assignedTo.split('_')[1];
-            const [users] = await db.execute(`
-                SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id WHERE r.team_id = ?
-            `, [teamId]);
+if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
 
-            for (const user of users) {
-                await db.execute(
-                    `INSERT INTO tasks (admin_id, title, description, priority, due_date, assigned_to, assigned_by, who_assigned, section, status)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OTHERS', 'OPEN')`,
-                    [admin_id, taskTitle, description || null, (priority || 'MEDIUM').toUpperCase(), finalDate, user.id, assigned_by, who_assigned]
-                );
-            }
+    const teamId = assignedTo.split('_')[1];
 
-         req.io.emit('update_tasks');
+    // ✅ verify admin exists
+    const [adminRows] = await db.execute(
+        'SELECT id FROM admins WHERE id = ?',
+        [admin_id]
+    );
 
-            // Push to all team members: interest = their userId string
-            if (shouldNotify && users.length > 0) {
-                // exclude self from notification
-                const selfId = req.session.role === 'admin' ? null : req.session.userId;
-                const interests = users
-                    .filter(u => u.id !== selfId)
-                    .map(u => String(u.id));
-                if (interests.length > 0) {
-                    pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
-                    notifyDesktop('tasks', { interests, taskTitle, assignerName });
-                }
-            } else {
-                notifyDesktop('tasks', {});
-            }
+    if (adminRows.length === 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid admin id'
+        });
+    }
 
-            return res.json({ success: true });
+    // ✅ get all users from selected team
+    const [users] = await db.execute(`
+        SELECT u.id
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.team_id = ?
+    `, [teamId]);
+
+    if (users.length === 0) {
+        return res.json({
+            success: false,
+            message: 'No users found in team'
+        });
+    }
+
+    // ✅ insert task for every team member
+    for (const user of users) {
+
+        // skip self task for normal user
+        if (
+            req.session.role !== 'admin' &&
+            parseInt(user.id) === parseInt(req.session.userId)
+        ) {
+            continue;
         }
+
+        await db.execute(
+            `INSERT INTO tasks
+            (
+                admin_id,
+                title,
+                description,
+                priority,
+                due_date,
+                assigned_to,
+                assigned_by,
+                who_assigned,
+                section,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OTHERS', 'OPEN')`,
+            [
+                admin_id,
+                taskTitle,
+                description || null,
+                (priority || 'MEDIUM').toUpperCase(),
+                finalDate,
+                user.id,
+                assigned_by,
+                who_assigned
+            ]
+        );
+    }
+
+    req.io.emit('update_tasks');
+
+    // ✅ TEAM notification
+    if (shouldNotify) {
+
+        let notifyIds = users
+            .map(u => String(u.id));
+
+        // remove self notification
+        if (req.session.role !== 'admin') {
+            notifyIds = notifyIds.filter(
+                id => parseInt(id) !== parseInt(req.session.userId)
+            );
+        }
+
+        // if user assigned task → also notify admin
+        if (
+            req.session.role !== 'admin' &&
+            req.session.role !== 'owner'
+        ) {
+            notifyIds.push(`admin_${admin_id}`);
+        }
+
+        // remove duplicate ids
+        notifyIds = [...new Set(notifyIds)];
+
+        if (notifyIds.length > 0) {
+
+            console.log('[Tasks] Team notify ids:', notifyIds);
+
+            pushTaskNotification(
+                notifyIds,
+                taskTitle,
+                assignerName
+            ).catch(console.error);
+
+            notifyDesktop('tasks', {
+                interests: notifyIds,
+                taskTitle,
+                assignerName
+            });
+        }
+    } else {
+        notifyDesktop('tasks', {});
+    }
+
+    return res.json({
+        success: true,
+        message: 'Team task assigned successfully'
+    });
+}
 
         // ── ALL MEMBERS ──────────────────────────────────────────────────────
         if (assignedTo === 'all') {
