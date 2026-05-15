@@ -111,7 +111,6 @@ router.post("/login", async (req, res) => {
             req.session.userId = rows[0].id;
             req.session.adminId = rows[0].admin_id;
             req.session.role_id = rows[0].role_id;
-            req.session.team_id=rows[0].team_id;
             req.session.userName = rows[0].name;
             req.session.control_type = rows[0].control_type;
             
@@ -147,8 +146,6 @@ router.get("/session", (req, res) => {
             userId:   req.session.userId  || null,
             adminId:  req.session.adminId || null,
             userName: req.session.userName || null,
-            role_id : req.session.role_id || null,
-            team_id :   res.session.team_id || null,
             redirect: '/home' 
         });
     }
