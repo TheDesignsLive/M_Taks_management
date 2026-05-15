@@ -73,21 +73,17 @@ const pushTitle = '📋 New Task Assigned';
     const adminInterests = ids.filter(id => String(id).startsWith('admin_'));
     const userIds = ids.filter(id => !String(id).startsWith('admin_'));
 
-    try {
-        // Regular users → publishToUsers (they subscribed via setUserId)
-        if (userIds.length > 0) {
+try {
+        // All IDs (users + admin interests) → publishToInterests
+        // Users subscribe via setUserId which maps to interest string matching their userId
+        const allInterests = [...userIds, ...adminInterests];
+        if (allInterests.length > 0) {
             const chunkSize = 100;
-            for (let i = 0; i < userIds.length; i += chunkSize) {
-                const chunk = userIds.slice(i, i + chunkSize);
-                await beamsClient.publishToUsers(chunk, publishBody);
+            for (let i = 0; i < allInterests.length; i += chunkSize) {
+                const chunk = allInterests.slice(i, i + chunkSize);
+                await beamsClient.publishToInterests(chunk, publishBody);
             }
-            console.log('[Tasks] 🔔 Push sent to users:', userIds);
-        }
-
-        // Admin → publishToInterests (admin subscribed via interest, not setUserId)
-        if (adminInterests.length > 0) {
-            await beamsClient.publishToInterests(adminInterests, publishBody);
-            console.log('[Tasks] 🔔 Push sent to admin interests:', adminInterests);
+            console.log('[Tasks] 🔔 Push sent to interests:', allInterests);
         }
     } catch (err) {
         console.error('[Tasks] ❌ Beams push failed:', err.message);
