@@ -251,22 +251,21 @@ router.get("/beams-auth", async (req, res) => {
         return res.status(401).json({ error: 'Not authenticated' });
     }
 
-if (beamsUserId !== expectedId) {
-        console.error('[BeamsAuth] ❌ Mismatch — expected:', expectedId, '| got:', beamsUserId);
+    if (beamsUserId !== expectedId) {
         return res.status(403).json({ error: 'Beams user ID mismatch' });
     }
-    console.log('[BeamsAuth] ✅ Auth check passed for:', beamsUserId);
 
-try {
-        const beamsClient = new (await import('@pusher/push-notifications-server')).default({
+    try {
+        // Import PushNotifications for token generation
+        const PushNotifications = (await import('@pusher/push-notifications-server')).default;
+        const beamsClient = new PushNotifications({
             instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
             secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
         });
-        const token = beamsClient.generateToken(String(beamsUserId));
-        console.log('[BeamsAuth] ✅ Token generated for:', beamsUserId);
+        const token = beamsClient.generateToken(beamsUserId);
         return res.json(token);
     } catch (err) {
-        console.error('[BeamsAuth] ❌ Error:', err.message);
+        console.error('[BeamsAuth] Error:', err);
         return res.status(500).json({ error: 'Token generation failed' });
     }
 });

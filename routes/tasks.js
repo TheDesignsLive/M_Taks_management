@@ -334,12 +334,11 @@ req.io.emit('update_tasks');
             console.log('[Tasks] Admin role check:', req.session.role, '| interests before push:', interests);
             }
 
-if (interests.length > 0) {
-                console.log('[Tasks] Single-user notify ids:', interests, '| shouldNotify:', shouldNotify, '| role:', req.session.role);
-                pushTaskNotification(interests, taskTitle, assignerName).catch((e) => console.error('[Tasks] push error:', e.message));
+            if (interests.length > 0) {
+                console.log('[Tasks] Single-user notify ids:', interests);
+                pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
                 notifyDesktop('tasks', { interests, taskTitle, assignerName });
             } else {
-                console.log('[Tasks] No interests — skipping push | shouldNotify:', shouldNotify, '| assignedTo:', assignedTo, '| role:', req.session.role);
                 notifyDesktop('tasks', {});
             }
         } else {
