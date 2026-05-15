@@ -86,9 +86,9 @@ router.post("/login", async (req, res) => {
     }
 
     try {
-        let query = login_type === "admin" 
+let query = login_type === "admin" 
             ? "SELECT * FROM admins WHERE email=?" 
-            : "SELECT u.*, r.control_type, u.team_id FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email=? AND u.status='ACTIVE'";
+            : "SELECT u.*, r.control_type FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email=? AND u.status='ACTIVE'";
         const [rows] = await con.query(query, [email]);
 
         if (rows.length === 0) {
@@ -110,7 +110,7 @@ router.post("/login", async (req, res) => {
             req.session.userId = rows[0].id;
             req.session.adminId = rows[0].admin_id;
             req.session.role_id = rows[0].role_id;
-            req.session.team_id = rows[0].team_id; 
+      
             req.session.userName = rows[0].name;
             req.session.control_type = rows[0].control_type;
             
@@ -210,7 +210,9 @@ router.post("/forgot-password/reset", async (req, res) => {
             await con.query("UPDATE admins SET password=? WHERE id=?", [hashedPassword, admin[0].id]);
             return res.json({ status: 'success', message: "Password updated!" });
         }
-
+let query = login_type === "admin" 
+            ? "SELECT * FROM admins WHERE email=?" 
+            : "SELECT u.*, r.control_type FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email=? AND u.status='ACTIVE'";
         // 2. Check and Update in Users
         const [user] = await con.query("SELECT id FROM users WHERE email=? OR phone=?", [contact, contact]);
         if (user.length > 0) {
