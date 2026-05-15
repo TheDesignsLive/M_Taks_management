@@ -27,11 +27,62 @@ const TMS_ICON = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
 const MOBILE_URL = 'https://m-tms.thedesigns.live';
 
 // ─── Helper: send push to a list of Beams interest strings ───────────────────
-async function pushTaskNotification(ids, taskTitle, assignerName) {
+async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
+
     if (!ids || ids.length === 0) return;
 
-const pushTitle = '📋 New Task Assigned';
-    const pushBody  = `"${taskTitle}" — assigned by ${assignerName}`;
+    // remove duplicate ids
+    ids = [...new Set(ids)];
+
+    // get only valid users of same company
+    const validUserIds = [];
+    const validAdminIds = [];
+
+    for (const id of ids) {
+
+        // admin notification — verify admin belongs to same company
+        if (String(id).startsWith('admin_')) {
+
+            const adminDbId = String(id).replace('admin_', '');
+
+            // only allow if this admin is the company admin (same adminId)
+            if (parseInt(adminDbId) === parseInt(adminId)) {
+                const [adminRows] = await db.execute(
+                    'SELECT id FROM admins WHERE id = ?',
+                    [adminDbId]
+                );
+                if (adminRows.length > 0) {
+                    validAdminIds.push(`admin_${adminDbId}`);
+                }
+            }
+
+            continue;
+        }
+
+        // normal user notification — must belong to same company (admin_id match)
+        const [userRows] = await db.execute(
+            'SELECT id FROM users WHERE id = ? AND admin_id = ?',
+            [id, adminId]
+        );
+
+        if (userRows.length > 0) {
+            validUserIds.push(String(id));
+        }
+    }
+
+    const finalIds = [
+        ...validUserIds,
+        ...validAdminIds
+    ];
+
+    if (finalIds.length === 0) {
+        console.log('[Tasks] No valid company users found for adminId:', adminId);
+        return;
+    }
+
+    const pushTitle = '📋 New Task Assigned';
+
+    const pushBody = `"${taskTitle}" — assigned by ${assignerName}`;
 
     const publishBody = {
         web: {
@@ -42,21 +93,25 @@ const pushTitle = '📋 New Task Assigned';
                 deep_link: MOBILE_URL,
             },
         },
+
         fcm: {
             notification: {
                 title: pushTitle,
                 body: pushBody,
                 image: TMS_ICON,
             },
+
             data: {
                 url: MOBILE_URL,
                 deep_link: MOBILE_URL,
                 icon: TMS_ICON,
                 type: 'task',
             },
+
             android: {
                 priority: 'high',
                 ttl: '86400s',
+
                 notification: {
                     sound: 'default',
                     channelId: 'tms_tasks',
@@ -65,15 +120,18 @@ const pushTitle = '📋 New Task Assigned';
                 },
             },
         },
+
         apns: {
             aps: {
                 alert: {
                     title: pushTitle,
                     body: pushBody,
                 },
+
                 sound: 'default',
                 badge: 1,
             },
+
             data: {
                 url: MOBILE_URL,
                 type: 'task',
@@ -81,20 +139,28 @@ const pushTitle = '📋 New Task Assigned';
         },
     };
 
-// ALL go through publishToUsers — both users ("85") and admins ("admin_29")
-    // because both now subscribe via setUserId in App.jsx
-    const allUserIds = ids.map(id => String(id));
     try {
-        if (allUserIds.length > 0) {
-            const chunkSize = 100;
-            for (let i = 0; i < allUserIds.length; i += chunkSize) {
-                const chunk = allUserIds.slice(i, i + chunkSize);
-                await beamsClient.publishToUsers(chunk, publishBody);
-            }
-            console.log('[Tasks] 🔔 Push sent to:', allUserIds);
+
+        const chunkSize = 100;
+
+        for (let i = 0; i < finalIds.length; i += chunkSize) {
+
+            const chunk = finalIds.slice(i, i + chunkSize);
+
+            await beamsClient.publishToUsers(
+                chunk,
+                publishBody
+            );
         }
+
+        console.log('[Tasks] 🔔 Push sent only to valid company users:', finalIds);
+
     } catch (err) {
-        console.error('[Tasks] ❌ Beams push failed:', err.message);
+
+        console.error(
+            '[Tasks] ❌ Beams push failed:',
+            err.message
+        );
     }
 }
 
@@ -147,44 +213,84 @@ router.get('/get-team-members/:teamId', async (req, res) => {
     }
 });
 
-// ==============================
-// GET OTHER EMPLOYEES
-// ==============================
-router.get('/get-other-employees', async (req, res) => {
-    try {
-        if (!req.session.role) return res.json({ success: false, message: 'Unauthorized' });
-        const adminId = req.session.adminId;
-        const [rows] = await db.execute(`
-            SELECT u.id, u.name FROM users u JOIN roles r ON u.role_id = r.id
-            WHERE u.admin_id = ? AND r.team_id IS NULL AND u.id != ?
-        `, [adminId, req.session.userId || 0]);
-        res.json({ success: true, members: rows });
-    } catch (err) {
-        console.error(err);
-        res.json({ success: false });
-    }
-});
+        // ==============================
+        // GET OTHER EMPLOYEES
+        // ==============================
+        router.get('/get-other-employees', async (req, res) => {
+            try {
+                if (!req.session.role) return res.json({ success: false, message: 'Unauthorized' });
+                const adminId = req.session.adminId;
+                const [rows] = await db.execute(`
+                    SELECT u.id, u.name FROM users u JOIN roles r ON u.role_id = r.id
+                    WHERE u.admin_id = ? AND r.team_id IS NULL AND u.id != ?
+                `, [adminId, req.session.userId || 0]);
+                res.json({ success: true, members: rows });
+            } catch (err) {
+                console.error(err);
+                res.json({ success: false });
+            }
+        });
 
-// ==============================
-// ADD TASK
-// ==============================
-router.post('/add-task', async (req, res) => {
-    try {
-        if (!req.session.role) return res.json({ success: false, message: 'Unauthorized' });
+        // ==============================
+        // ADD TASK
+        // ==============================
+        router.post('/add-task', async (req, res) => {
+            try {
+                if (!req.session.role) return res.json({ success: false, message: 'Unauthorized' });
 
-        const { title, description, date, priority, assignedTo, notifyUser } = req.body;
-        const shouldNotify = notifyUser === true || notifyUser === 'true';
+                const { title, description, date, priority, assignedTo, notifyUser } = req.body;
+                const shouldNotify = notifyUser === true || notifyUser === 'true';
 
-        const assigned_by = req.session.role === 'admin' ? req.session.adminId : req.session.userId;
-        const who_assigned = req.session.role;
+                const assigned_by = req.session.role === 'admin' ? req.session.adminId : req.session.userId;
+                const who_assigned = req.session.role;
 
-        let admin_id;
+let admin_id;
         if (req.session.role === 'admin') {
-            admin_id = req.session.adminId;
+
+            admin_id = parseInt(req.session.adminId);
+
         } else {
-            const [rows] = await db.execute('SELECT admin_id FROM users WHERE id=?', [req.session.userId]);
-            if (rows.length === 0) return res.status(400).json({ success: false, message: 'User not found' });
-            admin_id = rows[0].admin_id;
+
+            // For owner/user: always re-fetch admin_id fresh from DB (session value can be stale)
+            const [rows] = await db.execute(
+                'SELECT admin_id FROM users WHERE id = ?',
+                [req.session.userId]
+            );
+
+            if (rows.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            admin_id = parseInt(rows[0].admin_id);
+
+            // If DB admin_id is 0 or null, fall back to session adminId
+            if (!admin_id && req.session.adminId) {
+                admin_id = parseInt(req.session.adminId);
+            }
+        }
+
+        // FINAL VALIDATION — confirm admin exists
+        if (!admin_id || isNaN(admin_id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Could not resolve admin'
+            });
+        }
+
+        const [adminCheck] = await db.execute(
+            'SELECT id FROM admins WHERE id = ?',
+            [admin_id]
+        );
+
+        if (adminCheck.length === 0) {
+            console.log('[Tasks] ❌ admin not found for id:', admin_id, '| role:', req.session.role, '| userId:', req.session.userId);
+            return res.status(400).json({
+                success: false,
+                message: 'Admin not found. Please re-login.'
+            });
         }
 
         let finalAssignedTo = assignedTo;
@@ -225,12 +331,13 @@ if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
     }
 
     // ✅ get all users from selected team
-    const [users] = await db.execute(`
-        SELECT u.id
-        FROM users u
-        JOIN roles r ON u.role_id = r.id
-        WHERE r.team_id = ?
-    `, [teamId]);
+const [users] = await db.execute(`
+    SELECT u.id
+    FROM users u
+    JOIN roles r ON u.role_id = r.id
+    WHERE r.team_id = ?
+    AND u.admin_id = ?
+`, [teamId, admin_id]);
 
     if (users.length === 0) {
         return res.json({
@@ -280,42 +387,42 @@ if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
 
     req.io.emit('update_tasks');
 
-    // ✅ TEAM notification
+// TEAM notification
     if (shouldNotify) {
 
+        // only notify team members of this company, exclude self
         let notifyIds = users
-            .map(u => String(u.id));
+            .map(u => String(u.id))
+            .filter(id => {
+                // exclude self (user assigning the task)
+                if (req.session.role !== 'admin' && parseInt(id) === parseInt(req.session.userId)) return false;
+                return true;
+            });
 
-        // remove self notification
-        if (req.session.role !== 'admin') {
-            notifyIds = notifyIds.filter(
-                id => parseInt(id) !== parseInt(req.session.userId)
-            );
-        }
-
-        // if user assigned task → also notify admin
-        if (
-            req.session.role !== 'admin' &&
-            req.session.role !== 'owner'
-        ) {
+        // if a regular user (not admin/owner) assigned team task → also notify admin
+        if (req.session.role !== 'admin' && req.session.role !== 'owner') {
             notifyIds.push(`admin_${admin_id}`);
         }
 
-        // remove duplicate ids
+        // remove duplicates
         notifyIds = [...new Set(notifyIds)];
 
         if (notifyIds.length > 0) {
 
             console.log('[Tasks] Team notify ids:', notifyIds);
 
+            // push to mobile (Beams — only valid company users)
             pushTaskNotification(
                 notifyIds,
                 taskTitle,
-                assignerName
+                assignerName,
+                admin_id
             ).catch(console.error);
 
+            // push to desktop — only user ids (not admin_ prefix ones, desktop uses interests)
+            const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
             notifyDesktop('tasks', {
-                interests: notifyIds,
+                interests: desktopInterests.length > 0 ? desktopInterests : notifyIds,
                 taskTitle,
                 assignerName
             });
@@ -356,22 +463,34 @@ req.io.emit('update_tasks');
 if (shouldNotify) {
                 const notifyIds = [];
 
-                // Admin has no row in users table — selfUserId is null for admin/owner
-                // so ALL users in the company get notified (admin assigned to all)
+                // notify all users of this company, skip self
                 for (const user of users) {
-                    if (selfUserId !== null && user.id === selfUserId) continue;
+                    // selfUserId is null for admin (admin has no row in users table)
+                    if (selfUserId !== null && parseInt(user.id) === parseInt(selfUserId)) continue;
                     notifyIds.push(String(user.id));
                 }
 
-                // If a regular user assigned all-members, also notify admin
+                // if a regular user (not admin/owner) assigned to all → also notify admin
                 if (req.session.role !== 'admin' && req.session.role !== 'owner') {
                     notifyIds.push(`admin_${admin_id}`);
                 }
 
                 if (notifyIds.length > 0) {
                     console.log('[Tasks] All-members notify ids:', notifyIds);
-                    pushTaskNotification(notifyIds, taskTitle, assignerName).catch(() => {});
-                    notifyDesktop('tasks', { interests: notifyIds, taskTitle, assignerName });
+                    // mobile push (Beams publishToUsers — company-isolated)
+                    pushTaskNotification(
+                        notifyIds,
+                        taskTitle,
+                        assignerName,
+                        admin_id
+                    ).catch(() => {});
+                    // desktop push — send only numeric user ids as interests
+                    const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
+                    notifyDesktop('tasks', {
+                        interests: desktopInterests.length > 0 ? desktopInterests : notifyIds,
+                        taskTitle,
+                        assignerName
+                    });
                 }
             } else {
                 notifyDesktop('tasks', {});
@@ -401,31 +520,58 @@ req.io.emit('update_tasks');
             let interests = [];
 
             if (assignedTo === 'admin') {
-                // User assigning to admin — notify admin
+                // user assigning task to admin — notify only this company's admin
                 interests = [`admin_${admin_id}`];
-            } else if (!isNaN(parseInt(assignedTo))) {
-                // Assigned to a specific user by numeric ID
-                const targetId = parseInt(assignedTo);
-                // Admin/owner has no row in users table so selfUserId = null
-                // meaning admin can always notify the target user
-                const selfUserId = (req.session.role === 'admin' || req.session.role === 'owner')
-                ? null
-                : req.session.userId;
-            if (selfUserId === null || targetId !== selfUserId) {
-                interests = [String(targetId)];
-            }
-            // If a regular user assigned to someone else, also notify admin
-            if (req.session.role !== 'admin' && req.session.role !== 'owner' && interests.length > 0) {
-                interests.push(`admin_${admin_id}`);
-            }
 
-            console.log('[Tasks] Admin role check:', req.session.role, '| interests before push:', interests);
+            } else if (!isNaN(parseInt(assignedTo))) {
+                // assigned to a specific user by numeric ID
+                const targetId = parseInt(assignedTo);
+
+                // selfUserId: admin/owner have no row in users table so null (they can always notify)
+                const selfUserId = (req.session.role === 'admin' || req.session.role === 'owner')
+                    ? null
+                    : req.session.userId;
+
+                // only notify if not notifying yourself
+                if (selfUserId === null || targetId !== parseInt(selfUserId)) {
+                    // verify target user belongs to this company before adding
+                    const [targetCheck] = await db.execute(
+                        'SELECT id FROM users WHERE id = ? AND admin_id = ?',
+                        [targetId, admin_id]
+                    );
+                    if (targetCheck.length > 0) {
+                        interests = [String(targetId)];
+                    }
+                }
+
+                // if a regular user assigned to someone else → also notify admin (not self)
+                if (
+                    req.session.role !== 'admin' &&
+                    req.session.role !== 'owner' &&
+                    interests.length > 0
+                ) {
+                    interests.push(`admin_${admin_id}`);
+                }
+
+                console.log('[Tasks] Single-user role:', req.session.role, '| notify ids:', interests);
             }
 
             if (interests.length > 0) {
                 console.log('[Tasks] Single-user notify ids:', interests);
-                pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
-                notifyDesktop('tasks', { interests, taskTitle, assignerName });
+                // mobile push (Beams publishToUsers — only exact persons)
+                pushTaskNotification(
+                    interests,
+                    taskTitle,
+                    assignerName,
+                    admin_id
+                ).catch(() => {});
+                // desktop push
+                const desktopInterests = interests.filter(id => !String(id).startsWith('admin_'));
+                notifyDesktop('tasks', {
+                    interests: desktopInterests.length > 0 ? desktopInterests : interests,
+                    taskTitle,
+                    assignerName
+                });
             } else {
                 notifyDesktop('tasks', {});
             }
