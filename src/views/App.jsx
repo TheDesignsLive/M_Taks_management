@@ -175,26 +175,35 @@ export default function App() {
 
         const sessionData = await sessionRes.json();
 
-if (sessionData.loggedIn) {
-          // Build beamsUserId — must match what tasks.js sends to publishToUsers
-          let beamsUserId;
-          if (sessionData.role === "admin" || sessionData.role === "owner") {
-            beamsUserId = "admin_" + sessionData.adminId;
+        if (sessionData.loggedIn) {
+          // Pehle sabhi purani interests clear karo
+          await beamsClient.clearDeviceInterests();
+
+          if (sessionData.role === "user") {
+            // Regular members — company-wide + team interest
+            await beamsClient.addDeviceInterest(
+              `company-${sessionData.adminId}-all`,
+            );
+            if (sessionData.team_id) {
+              await beamsClient.addDeviceInterest(
+                `company-${sessionData.adminId}-team-${sessionData.team_id}`,
+              );
+            }
+            console.log("[Beams] Member subscribed to interests");
           } else {
-            beamsUserId = String(sessionData.userId);
+            // Admin / Owner — company-scoped admin channel subscribe karo
+            await beamsClient.addDeviceInterest(
+              `admin-${sessionData.adminId}-admins`,
+            );
+            console.log(
+              "[Beams] Admin/Owner subscribed to:",
+              `admin-${sessionData.adminId}-admins`,
+            );
           }
-
-          const tokenProvider = new PusherPushNotifications.TokenProvider({
-            url: `${BASE_URL}/api/auth/beams-auth`,
-            credentials: "include",
-            headers: { "x-beams-user": beamsUserId },
-            queryParams: { beamsUserId: beamsUserId },
-          });
-
-          await beamsClient.setUserId(beamsUserId, tokenProvider);
+          // Admin/Owner koi interest subscribe nahi karte — sirf publishToUsers se milega
 
           window.__beamsClient = beamsClient;
-          console.log("[Beams] setUserId done for:", beamsUserId, "| role:", sessionData.role);
+          console.log("[Beams] Setup done, role:", sessionData.role);
         }
       })
       .then(() => console.log("Subscribed"))
