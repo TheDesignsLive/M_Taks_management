@@ -1,7 +1,7 @@
 //Real App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-// Beams is initialized in layout.jsx after login — no need to import here
+import * as PusherPushNotifications from "@pusher/push-notifications-web";
 // 1. Apni doosri file ko yahan import karein
 import Layout from './layout.jsx';
 // ─── BASE URL ───────────────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ export default function App() {
   // ── Success State (This decides which JSX to show) ──
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-// removed — Beams handled in layout.jsx
+const beamsRef = useRef(null);
 
   // ── UI State ──
   const [activeTab, setActiveTab] = useState(0);   // 0=Login, 1=Signup
@@ -132,6 +132,50 @@ export default function App() {
             .then(() => console.log('Service Worker Registered'));
     }
 
+    // ✅ PUSHER BEAMS
+const beamsClient = new PusherPushNotifications.Client({
+    instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+});
+
+beamsRef.current = beamsClient;
+
+beamsClient.start()
+
+    .then(async () => {
+        console.log('Pusher Beams Started');
+
+        return Notification.requestPermission();
+    })
+    .then(async () => {
+        const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
+    credentials: 'include'
+});
+
+const sessionData = await sessionRes.json();
+
+if (sessionData.loggedIn) {
+    // Build beamsUserId — must match what tasks.js sends to publishToUsers
+    let beamsUserId;
+    if (sessionData.role === 'admin' || sessionData.role === 'owner') {
+        beamsUserId = 'admin_' + sessionData.adminId;
+    } else {
+        beamsUserId = String(sessionData.userId);
+    }
+
+    const tokenProvider = new PusherPushNotifications.TokenProvider({
+        url: 'https://tms.thedesigns.live/beams-auth',
+        credentials: 'include',
+        queryParams: { beamsUserId },
+    });
+
+    await beamsClient.setUserId(beamsUserId, tokenProvider);
+
+    window.__beamsClient = beamsClient;
+    console.log('[Beams] setUserId done for:', beamsUserId);
+}
+    })
+    .then(() => console.log('Subscribed'))
+    .catch(console.error);
 const socket = io(BASE_URL, {
     withCredentials: true
 });
