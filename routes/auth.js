@@ -88,8 +88,8 @@ router.post("/login", async (req, res) => {
     try {
 let query = login_type === "admin" 
             ? "SELECT * FROM admins WHERE email=?" 
-            : "SELECT u.*, r.control_type FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email=? AND u.status='ACTIVE'";
-        const [rows] = await con.query(query, [email]);
+            : "SELECT u.*, r.control_type, r.team_id FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email=? AND u.status='ACTIVE'";      
+            const [rows] = await con.query(query, [email]);
 
         if (rows.length === 0) {
             return res.status(401).json({ status: 'error', message: `Invalid ${login_type} credentials or account inactive ❌` });
