@@ -74,24 +74,17 @@ const pushTitle = '📋 New Task Assigned';
         },
     };
 
-    // Separate admin interests (e.g. "admin_29") from regular user IDs (e.g. "85")
-    const adminInterests = ids.filter(id => String(id).startsWith('admin_'));
-    const userIds = ids.filter(id => !String(id).startsWith('admin_'));
-try {
-        // Regular users → publishToUsers (matches setUserId subscription)
-        if (userIds.length > 0) {
+// ALL go through publishToUsers — both users ("85") and admins ("admin_29")
+    // because both now subscribe via setUserId in App.jsx
+    const allUserIds = ids.map(id => String(id));
+    try {
+        if (allUserIds.length > 0) {
             const chunkSize = 100;
-            for (let i = 0; i < userIds.length; i += chunkSize) {
-                const chunk = userIds.slice(i, i + chunkSize);
+            for (let i = 0; i < allUserIds.length; i += chunkSize) {
+                const chunk = allUserIds.slice(i, i + chunkSize);
                 await beamsClient.publishToUsers(chunk, publishBody);
             }
-            console.log('[Tasks] 🔔 Push sent to users:', userIds);
-        }
-
-        // Admin → publishToInterests (admin subscribed via interest "admin_X")
-        if (adminInterests.length > 0) {
-            await beamsClient.publishToInterests(adminInterests, publishBody);
-            console.log('[Tasks] 🔔 Push sent to admin interests:', adminInterests);
+            console.log('[Tasks] 🔔 Push sent to:', allUserIds);
         }
     } catch (err) {
         console.error('[Tasks] ❌ Beams push failed:', err.message);
@@ -231,7 +224,8 @@ req.io.emit('update_tasks');
                     .filter(u => u.id !== selfId)
                     .map(u => String(u.id));
 if (interests.length > 0) {
-                    await pushTaskNotification(interests, taskTitle, assignerName);
+                    // Fire-and-forget — don't block response
+                    pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
                     notifyDesktop('tasks', { interests, taskTitle, assignerName });
                 }
             } else {
@@ -264,23 +258,24 @@ if (interests.length > 0) {
 
 req.io.emit('update_tasks');
 
-            // Push: all users of this company except self + the admin interest
-            if (shouldNotify) {
-                const interests = [];
+if (shouldNotify) {
+                const notifyIds = [];
 
-                // All users except the person who assigned
+                // All users except self
                 for (const user of users) {
-                    if (selfUserId && user.id === selfUserId) continue; // skip self (if user role)
-                    interests.push(String(user.id));
+                    if (selfUserId && user.id === selfUserId) continue;
+                    notifyIds.push(String(user.id));
                 }
 
-                // Also notify admin if assigner is NOT admin
+                // Also notify admin if assigner is NOT admin (admin_id as setUserId string)
                 if (req.session.role !== 'admin') {
-                    interests.push(`admin_${admin_id}`);
+                    notifyIds.push(`admin_${admin_id}`);
                 }
-if (interests.length > 0) {
-                    await pushTaskNotification(interests, taskTitle, assignerName);
-                    notifyDesktop('tasks', { interests, taskTitle, assignerName });
+
+                if (notifyIds.length > 0) {
+                    // Fire-and-forget so task insert response is instant
+                    pushTaskNotification(notifyIds, taskTitle, assignerName).catch(() => {});
+                    notifyDesktop('tasks', { interests: notifyIds, taskTitle, assignerName });
                 }
             } else {
                 notifyDesktop('tasks', {});
@@ -322,7 +317,8 @@ req.io.emit('update_tasks');
             }
 
 if (interests.length > 0) {
-                await pushTaskNotification(interests, taskTitle, assignerName);
+                // Fire-and-forget — don't block response
+                pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
                 notifyDesktop('tasks', { interests, taskTitle, assignerName });
             } else {
                 notifyDesktop('tasks', {});

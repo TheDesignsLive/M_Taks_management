@@ -1,4 +1,4 @@
-//App.jsx mobile version
+//Real App.jsx mobile version
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import * as PusherPushNotifications from "@pusher/push-notifications-web";
@@ -154,21 +154,24 @@ beamsClient.start()
 const sessionData = await sessionRes.json();
 
 if (sessionData.loggedIn) {
-    // Pehle sabhi purani interests hata do — fresh start
-    await beamsClient.clearDeviceInterests();
-
-    // Har user company-wide interest subscribe karta hai
-    await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
-
-    // Team member apni team ka interest bhi subscribe karta hai
-    if (sessionData.role_id) {
-        await beamsClient.addDeviceInterest(
-            `company-${sessionData.adminId}-team-${sessionData.role_id}`
-        );
+    // Build beamsUserId — must match what tasks.js sends to publishToUsers
+    let beamsUserId;
+    if (sessionData.role === 'admin' || sessionData.role === 'owner') {
+        beamsUserId = 'admin_' + sessionData.adminId;
+    } else {
+        beamsUserId = String(sessionData.userId);
     }
 
+    const tokenProvider = new PusherPushNotifications.TokenProvider({
+        url: 'https://tms.thedesigns.live/beams-auth',
+        credentials: 'include',
+        queryParams: { beamsUserId },
+    });
+
+    await beamsClient.setUserId(beamsUserId, tokenProvider);
+
     window.__beamsClient = beamsClient;
-    console.log('[Beams] Subscribed for adminId:', sessionData.adminId);
+    console.log('[Beams] setUserId done for:', beamsUserId);
 }
     })
     .then(() => console.log('Subscribed'))
