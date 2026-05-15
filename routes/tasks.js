@@ -91,10 +91,10 @@ const pushTitle = '📋 New Task Assigned';
     }
 }
 
-// ─── Helper: get assigner display name ──────────────────────────────────────
+// ─── Helper: get assigner display name ───────────────────────────────────────
 async function getAssignerName(session) {
     try {
-        if (session.role === 'admin' || session.role === 'owner') {
+        if (session.role === 'admin') {
             const [rows] = await db.execute('SELECT name FROM admins WHERE id=?', [session.adminId]);
             return rows[0]?.name || 'Admin';
         } else {
@@ -199,7 +199,7 @@ router.post('/add-task', async (req, res) => {
             assignerName = await getAssignerName(req.session);
         }
 
-// ── TEAM ASSIGNMENT ──────────────────────────────────────────────────
+        // ── TEAM ASSIGNMENT ──────────────────────────────────────────────────
         if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
             const teamId = assignedTo.split('_')[1];
             const [users] = await db.execute(`
@@ -214,19 +214,17 @@ router.post('/add-task', async (req, res) => {
                 );
             }
 
-            req.io.emit('update_tasks');
+         req.io.emit('update_tasks');
 
             // Push to all team members
             if (shouldNotify && users.length > 0) {
-                // For admin: notify all team members (no self to exclude from users table)
-                // For user: notify all team members except self, plus notify admin
-                const selfUserId = req.session.role === 'admin' ? null : req.session.userId;
+                const selfId = req.session.role === 'admin' ? null : req.session.userId;
                 const notifyIds = users
-                    .filter(u => selfUserId === null ? true : u.id !== selfUserId)
+                    .filter(u => selfId === null ? true : u.id !== selfId)
                     .map(u => String(u.id));
 
-                // If assigner is a regular user, also notify the admin
-                if (req.session.role !== 'admin' && req.session.role !== 'owner') {
+                // If a user assigned the team, also notify admin
+                if (req.session.role !== 'admin' && notifyIds.length > 0) {
                     notifyIds.push(`admin_${admin_id}`);
                 }
 
@@ -267,14 +265,14 @@ req.io.emit('update_tasks');
 if (shouldNotify) {
                 const notifyIds = [];
 
-                // All users except self (selfUserId is null for admin)
+                // All users except self
                 for (const user of users) {
-                    if (selfUserId !== null && user.id === selfUserId) continue;
+                    if (selfUserId && user.id === selfUserId) continue;
                     notifyIds.push(String(user.id));
                 }
 
-                // If assigner is a regular user (not admin/owner), also notify the admin
-                if (req.session.role !== 'admin' && req.session.role !== 'owner') {
+                // Also notify admin if assigner is NOT admin (admin_id as setUserId string)
+                if (req.session.role !== 'admin') {
                     notifyIds.push(`admin_${admin_id}`);
                 }
 
@@ -311,18 +309,18 @@ req.io.emit('update_tasks');
             let interests = [];
 
             if (assignedTo === 'admin') {
-                // User assigning to admin — notify admin
+                // Assigned to admin
                 interests = [`admin_${admin_id}`];
             } else if (!isNaN(parseInt(assignedTo))) {
                 // Assigned to a specific user by ID
                 const targetId = parseInt(assignedTo);
                 const selfUserId = req.session.role === 'admin' ? null : req.session.userId;
-                // Notify the target user (skip only if user is assigning to themselves)
+                // Only notify if not assigning to yourself
                 if (selfUserId === null || targetId !== selfUserId) {
                     interests = [String(targetId)];
                 }
-                // If assigner is a regular user (not admin/owner), also notify admin
-                if (req.session.role !== 'admin' && req.session.role !== 'owner' && interests.length > 0) {
+                // If a regular user assigned to someone else, also notify admin
+                if (req.session.role !== 'admin' && interests.length > 0) {
                     interests.push(`admin_${admin_id}`);
                 }
             }
