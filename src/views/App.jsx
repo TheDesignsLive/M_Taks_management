@@ -154,27 +154,28 @@ beamsClient.start()
 const sessionData = await sessionRes.json();
 
 if (sessionData.loggedIn) {
+    // Pehle sabhi purani interests hata do — fresh start
+    await beamsClient.clearDeviceInterests();
 
-    // ADMIN ONLY → receive all notifications
-if (
-    sessionData.role === 'admin' ||
-    sessionData.control_type === 'ADMIN' ||
-    sessionData.control_type === 'OWNER'
-) {
+    // Har user company-wide interest subscribe karta hai
+    await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
 
-    await beamsClient.addDeviceInterest(
-        `admin-${sessionData.adminId}`
-    );
-}
+    // Team member apni team ka interest bhi subscribe karta hai
+    if (sessionData.role_id) {
+        await beamsClient.addDeviceInterest(
+            `company-${sessionData.adminId}-team-${sessionData.role_id}`
+        );
+    }
 
-// TEAM MEMBER → only team notifications
-if (sessionData.role_id) {
+    // Individual interest — sender exclude karne ke liye
+    if (sessionData.role === 'admin') {
+        await beamsClient.addDeviceInterest(`sender-admin-${sessionData.adminId}`);
+    } else if (sessionData.userId) {
+        await beamsClient.addDeviceInterest(`sender-user-${sessionData.userId}`);
+    }
 
-    await beamsClient.addDeviceInterest(
-        `admin-${sessionData.adminId}-team-${sessionData.role_id}`
-    );
-}
-
+    window.__beamsClient = beamsClient;
+    console.log('[Beams] Subscribed for adminId:', sessionData.adminId);
 }
     })
     .then(() => console.log('Subscribed'))
@@ -183,42 +184,7 @@ const socket = io(BASE_URL, {
     withCredentials: true
 });
 // ✅ SOCKET REALTIME POPUP + SYSTEM NOTIFICATION
-socket.on('new_announcement', (data) => {
 
-    // WEB POPUP
-    showAlert(
-        'New Announcement',
-        data.title || 'New Announcement Added',
-        true
-    );
-
-    // SYSTEM NOTIFICATION
-    if (Notification.permission === 'granted') {
-
-        navigator.serviceWorker.getRegistration()
-            .then((registration) => {
-
-                if (registration) {
-                    registration.showNotification(
-                        data.title || 'TMS Notification',
-                        {
-                            body: data.description || 'New update received',
-                            icon: '/images/tms_logo.jpeg',
-                            badge: '/images/tms_logo.jpeg',
-                            vibrate: [200, 100, 200],
-
-                            data: {
-                                url: '/'
-                            }
-                        }
-                    );
-                }
-
-            });
-
-    }
-
-});
 
 }, []);
 
