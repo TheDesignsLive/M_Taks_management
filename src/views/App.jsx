@@ -156,25 +156,24 @@ const sessionData = await sessionRes.json();
 if (sessionData.loggedIn) {
 
     // ADMIN ONLY → receive all notifications
-// Sabhi users — All Members announcements ke liye
-// Company-wide interest
-await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
+if (
+    sessionData.role === 'admin' ||
+    sessionData.control_type === 'ADMIN' ||
+    sessionData.control_type === 'OWNER'
+) {
 
-// Team specific interest
-if (sessionData.role_id) {
     await beamsClient.addDeviceInterest(
-        `company-${sessionData.adminId}-team-${sessionData.role_id}`
+        `admin-${sessionData.adminId}`
     );
 }
 
-// Individual interest — taaki backend exclude kar sake
-if (sessionData.role === 'admin') {
-    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
-} else {
-    await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-}
+// TEAM MEMBER → only team notifications
+if (sessionData.role_id) {
 
-window.__beamsClient = beamsClient;
+    await beamsClient.addDeviceInterest(
+        `admin-${sessionData.adminId}-team-${sessionData.role_id}`
+    );
+}
 
 }
     })
@@ -182,6 +181,43 @@ window.__beamsClient = beamsClient;
     .catch(console.error);
 const socket = io(BASE_URL, {
     withCredentials: true
+});
+// ✅ SOCKET REALTIME POPUP + SYSTEM NOTIFICATION
+socket.on('new_announcement', (data) => {
+
+    // WEB POPUP
+    showAlert(
+        'New Announcement',
+        data.title || 'New Announcement Added',
+        true
+    );
+
+    // SYSTEM NOTIFICATION
+    if (Notification.permission === 'granted') {
+
+        navigator.serviceWorker.getRegistration()
+            .then((registration) => {
+
+                if (registration) {
+                    registration.showNotification(
+                        data.title || 'TMS Notification',
+                        {
+                            body: data.description || 'New update received',
+                            icon: '/images/tms_logo.jpeg',
+                            badge: '/images/tms_logo.jpeg',
+                            vibrate: [200, 100, 200],
+
+                            data: {
+                                url: '/'
+                            }
+                        }
+                    );
+                }
+
+            });
+
+    }
+
 });
 
 }, []);

@@ -133,34 +133,37 @@ if (req.file) {
 
 let interests = [];
 
-  // Sender ki info
-const senderRole = req.session.role;
-const senderId = senderRole === 'admin' ? req.session.adminId : req.session.userId;
-const senderInterestSuffix = senderRole === 'admin' ? `admin-${senderId}` : `user-${senderId}`;
+        // ALL MEMBERS — fetch every user of this admin + the admin themselves
+        if (parseInt(role_id) === 0) {
+            // Admin/Owner interest
+            interests.push(`admin_${req.session.adminId}`);
+            // All regular users of this admin
+            try {
+                const [allUsers] = await con.query(
+                    'SELECT id FROM users WHERE admin_id = ? AND status = "ACTIVE"',
+                    [req.session.adminId]
+                );
+                allUsers.forEach(u => interests.push(String(u.id)));
+            } catch (e) { console.error('[Beams] fetch users error:', e.message); }
+        }
 
-if (parseInt(role_id) === 0) {
-    interests.push(`company-${req.session.adminId}-all`);
-}
-else {
-    interests.push(`company-${req.session.adminId}-team-${role_id}`);
-}
+        // SPECIFIC TEAM — fetch only users in that team
+        else {
+            interests.push(`admin_${req.session.adminId}`);
+            try {
+                const [teamUsers] = await con.query(
+                    `SELECT u.id FROM users u
+                     JOIN roles r ON u.role_id = r.id
+                     WHERE r.team_id = ? AND u.status = "ACTIVE"`,
+                    [role_id]
+                );
+                teamUsers.forEach(u => interests.push(String(u.id)));
+            } catch (e) { console.error('[Beams] fetch team users error:', e.message); }
+        }
 
-// Sender ko exclude karo — uska interest remove karo
-interests = interests.filter(i => i !== senderInterestSuffix);
+        // Remove duplicates
+        interests = [...new Set(interests)];
 
-      // Remove duplicates
-interests = [...new Set(interests)];
-
-// Sender ko exclude karo
-const senderRole = req.session.role;
-const senderId = senderRole === 'admin' ? req.session.adminId : req.session.userId;
-const senderInterest = senderRole === 'admin'
-    ? `admin-${senderId}`
-    : `user-${senderId}`;
-
-interests = interests.filter(i => i !== senderInterest);
-
-console.log('[Beams] Final interests after sender exclusion:', interests);
         // Beams max 100 interests per publish call — chunk if needed
         const chunkSize = 100;
         const interestChunks = [];
