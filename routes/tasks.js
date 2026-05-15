@@ -390,28 +390,31 @@ const [users] = await db.execute(`
 // TEAM notification
     if (shouldNotify) {
 
-        // only notify team members of this company, exclude self
+        // notify all team members, exclude self
         let notifyIds = users
             .map(u => String(u.id))
             .filter(id => {
-                // exclude self (user assigning the task)
-                if (req.session.role !== 'admin' && parseInt(id) === parseInt(req.session.userId)) return false;
+                // exclude self only for non-admin roles (owner and user have a userId)
+                if (
+                    (req.session.role === 'owner' || req.session.role === 'user') &&
+                    parseInt(id) === parseInt(req.session.userId)
+                ) return false;
                 return true;
             });
 
-        // if a regular user (not admin/owner) assigned team task → also notify admin
-        if (req.session.role !== 'admin' && req.session.role !== 'owner') {
+        // owner or regular user assigned team task → also notify admin
+        if (req.session.role === 'owner' || req.session.role === 'user') {
             notifyIds.push(`admin_${admin_id}`);
         }
+        // admin assigned team task → do NOT add admin_ (admin doesn't notify themselves)
 
         // remove duplicates
         notifyIds = [...new Set(notifyIds)];
 
         if (notifyIds.length > 0) {
-
             console.log('[Tasks] Team notify ids:', notifyIds);
 
-            // push to mobile (Beams — only valid company users)
+            // mobile push (Beams publishToUsers)
             pushTaskNotification(
                 notifyIds,
                 taskTitle,
@@ -419,13 +422,15 @@ const [users] = await db.execute(`
                 admin_id
             ).catch(console.error);
 
-            // push to desktop — only user ids (not admin_ prefix ones, desktop uses interests)
+            // desktop socket refresh — always trigger so users don't need to refresh
             const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
             notifyDesktop('tasks', {
-                interests: desktopInterests.length > 0 ? desktopInterests : notifyIds,
+                interests: desktopInterests,
                 taskTitle,
                 assignerName
             });
+        } else {
+            notifyDesktop('tasks', {});
         }
     } else {
         notifyDesktop('tasks', {});
@@ -470,10 +475,11 @@ if (shouldNotify) {
                     notifyIds.push(String(user.id));
                 }
 
-                // if a regular user (not admin/owner) assigned to all → also notify admin
-                if (req.session.role !== 'admin' && req.session.role !== 'owner') {
+                // owner or regular user assigned to all → also notify admin
+                if (req.session.role === 'owner' || req.session.role === 'user') {
                     notifyIds.push(`admin_${admin_id}`);
                 }
+                // admin assigned to all → do NOT add admin_ (admin doesn't notify themselves)
 
                 if (notifyIds.length > 0) {
                     console.log('[Tasks] All-members notify ids:', notifyIds);
@@ -484,13 +490,15 @@ if (shouldNotify) {
                         assignerName,
                         admin_id
                     ).catch(() => {});
-                    // desktop push — send only numeric user ids as interests
+                    // desktop socket refresh — always send numeric user ids
                     const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
                     notifyDesktop('tasks', {
-                        interests: desktopInterests.length > 0 ? desktopInterests : notifyIds,
+                        interests: desktopInterests,
                         taskTitle,
                         assignerName
                     });
+                } else {
+                    notifyDesktop('tasks', {});
                 }
             } else {
                 notifyDesktop('tasks', {});
@@ -520,21 +528,25 @@ req.io.emit('update_tasks');
             let interests = [];
 
             if (assignedTo === 'admin') {
-                // user assigning task to admin — notify only this company's admin
-                interests = [`admin_${admin_id}`];
+                // owner/user assigning task to admin — notify only this company's admin
+                // admin assigning to themselves (admin) — skip notification
+                if (req.session.role !== 'admin') {
+                    interests = [`admin_${admin_id}`];
+                }
 
             } else if (!isNaN(parseInt(assignedTo))) {
                 // assigned to a specific user by numeric ID
                 const targetId = parseInt(assignedTo);
 
-                // selfUserId: admin/owner have no row in users table so null (they can always notify)
-                const selfUserId = (req.session.role === 'admin' || req.session.role === 'owner')
+                // for owner/user: selfUserId is their own userId — skip notifying self
+                // for admin: selfUserId is null (admin has no row in users table)
+                const selfUserId = req.session.role === 'admin'
                     ? null
                     : req.session.userId;
 
-                // only notify if not notifying yourself
+                // only notify if target is not the assigner themselves
                 if (selfUserId === null || targetId !== parseInt(selfUserId)) {
-                    // verify target user belongs to this company before adding
+                    // verify target user belongs to this company
                     const [targetCheck] = await db.execute(
                         'SELECT id FROM users WHERE id = ? AND admin_id = ?',
                         [targetId, admin_id]
@@ -544,14 +556,16 @@ req.io.emit('update_tasks');
                     }
                 }
 
-                // if a regular user assigned to someone else → also notify admin (not self)
+                // owner or regular user assigned to someone → also notify admin
                 if (
-                    req.session.role !== 'admin' &&
-                    req.session.role !== 'owner' &&
-                    interests.length > 0
+                    req.session.role === 'owner' ||
+                    req.session.role === 'user'
                 ) {
-                    interests.push(`admin_${admin_id}`);
+                    if (interests.length > 0) {
+                        interests.push(`admin_${admin_id}`);
+                    }
                 }
+                // admin assigned to someone → do NOT add admin_ (admin doesn't notify themselves)
 
                 console.log('[Tasks] Single-user role:', req.session.role, '| notify ids:', interests);
             }
@@ -565,14 +579,15 @@ req.io.emit('update_tasks');
                     assignerName,
                     admin_id
                 ).catch(() => {});
-                // desktop push
+                // desktop socket refresh — numeric user ids only
                 const desktopInterests = interests.filter(id => !String(id).startsWith('admin_'));
                 notifyDesktop('tasks', {
-                    interests: desktopInterests.length > 0 ? desktopInterests : interests,
+                    interests: desktopInterests,
                     taskTitle,
                     assignerName
                 });
             } else {
+                // still trigger desktop socket so assigned user's screen refreshes
                 notifyDesktop('tasks', {});
             }
         } else {
