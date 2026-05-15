@@ -161,28 +161,42 @@ useEffect(() => {
     }
   };
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("title", form.title);
-    formData.append("description", form.desc);
-    formData.append("role_id", form.teamId);
-    if (form.file) formData.append("attachment", form.file);
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-    const url =
-      modal.type === "add"
-        ? `${BASE_URL}/api/notifications/add-announcement`
-        : `${BASE_URL}/api/notifications/edit-announcement/${modal.editId}`;
-    const res = await fetch(url, { method: "POST", body: formData, credentials: "include" });
-    const result = await res.json();
-    if (result.success) {
-      setModal({ show: false, type: "add", editId: null });
-      // Do NOT call fetchNotifications() here — socket.on('new_announcement' / 'edit_announcement')
-      // already updates the list in real-time. Calling fetch too causes duplicates.
-      setForm({ title: "", desc: "", teamId: "0", file: null });
-    }
-  };
+  const formData = new FormData();
+  formData.append("title", form.title);
+  formData.append("description", form.desc);
+  formData.append("role_id", form.teamId);
+  if (form.file) formData.append("attachment", form.file);
 
+  const url = modal.type === "add"
+    ? `${BASE_URL}/api/notifications/add-announcement`
+    : `${BASE_URL}/api/notifications/edit-announcement/${modal.editId}`;
+
+  // ✅ 1. Immediately close modal
+  setModal({ show: false, type: "add", editId: null });
+
+  // ✅ 2. Reset form instantly
+  setForm({ title: "", desc: "", teamId: "0", file: null });
+
+  // ✅ 3. Run API in background (no await)
+  fetch(url, {
+    method: "POST",
+    body: formData,
+    credentials: "include"
+  })
+    .then(res => res.json())
+    .then(result => {
+      if (!result.success) {
+        alert("Failed to save");
+      }
+      // success → socket already handle karega
+    })
+    .catch(() => {
+      alert("Network error");
+    });
+};
   const handleAction = async (action, id) => {
     try {
       const res = await fetch(`${BASE_URL}/api/notifications/${action}/${id}`, { credentials: "include" });
