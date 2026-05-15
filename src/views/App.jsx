@@ -158,13 +158,17 @@ if (sessionData.loggedIn) {
     await beamsClient.clearDeviceInterests();
 
     if (sessionData.role === 'user') {
-        // Members sirf interest subscribe karte hain
-        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
-        if (sessionData.team_id) {
-            await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
-        }
-        console.log('[Beams] Member subscribed to interests');
+    // Regular members — company-wide + team interest
+    await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
+    if (sessionData.team_id) {
+        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
     }
+    console.log('[Beams] Member subscribed to interests');
+} else {
+    // Admin / Owner — company-scoped admin channel subscribe karo
+    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-admins`);
+    console.log('[Beams] Admin/Owner subscribed to:', `admin-${sessionData.adminId}-admins`);
+}
     // Admin/Owner koi interest subscribe nahi karte — sirf publishToUsers se milega
 
     window.__beamsClient = beamsClient;

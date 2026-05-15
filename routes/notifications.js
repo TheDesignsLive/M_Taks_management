@@ -198,17 +198,12 @@ try {
                 if (chunk.length === 0) continue;
                 await beamsClient.publishToInterests(chunk, pushPayload);
             }
+            
             // Admin/Owner ko user-based send karo (self exclude)
-// Sirf same company ke admins ko — sender ko nahi
-const [otherAdmins] = await con.query(
-    'SELECT id FROM admins WHERE id != ?',
-    [req.session.adminId]
-);
-const adminUserIds = otherAdmins.map(a => `admin_${a.id}`);
-if (adminUserIds.length > 0) {
-    await beamsClient.publishToUsers(adminUserIds, pushPayload);
-    console.log('[Beams] Admins notified:', adminUserIds);
-}
+
+const companyAdminInterest = `admin-${req.session.adminId}-admins`;
+await beamsClient.publishToInterests([companyAdminInterest], pushPayload);
+console.log('[Beams] Company admins notified via:', companyAdminInterest);
             console.log('[Mobile] 🔔 Push sent for announcement:', ann.id, '→ interests:', interests);
         } catch (pushErr) {
             console.error('[Mobile] ❌ Beams push failed:', pushErr.message);
