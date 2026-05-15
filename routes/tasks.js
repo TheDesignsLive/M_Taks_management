@@ -231,8 +231,7 @@ router.post('/add-task', async (req, res) => {
                 const interests = users
                     .filter(u => u.id !== selfId)
                     .map(u => String(u.id));
-if (interests.length > 0) {
-                    // Fire-and-forget — don't block response
+                if (interests.length > 0) {
                     pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
                     notifyDesktop('tasks', { interests, taskTitle, assignerName });
                 }
@@ -322,15 +321,17 @@ req.io.emit('update_tasks');
                 // Admin/owner has no row in users table so selfUserId = null
                 // meaning admin can always notify the target user
                 const selfUserId = (req.session.role === 'admin' || req.session.role === 'owner')
-                    ? null
-                    : req.session.userId;
-                if (selfUserId === null || targetId !== selfUserId) {
-                    interests = [String(targetId)];
-                }
-                // If a regular user assigned to someone else, also notify admin
-                if (req.session.role !== 'admin' && req.session.role !== 'owner' && interests.length > 0) {
-                    interests.push(`admin_${admin_id}`);
-                }
+                ? null
+                : req.session.userId;
+            if (selfUserId === null || targetId !== selfUserId) {
+                interests = [String(targetId)];
+            }
+            // If a regular user assigned to someone else, also notify admin
+            if (req.session.role !== 'admin' && req.session.role !== 'owner' && interests.length > 0) {
+                interests.push(`admin_${admin_id}`);
+            }
+
+            console.log('[Tasks] Admin role check:', req.session.role, '| interests before push:', interests);
             }
 
             if (interests.length > 0) {

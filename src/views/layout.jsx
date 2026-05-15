@@ -59,16 +59,16 @@ async function subscribeMobileBeams(beamsClient, beamsUserId) {
         await beamsClient.start();
         console.log('[MobileBeams] SDK started, setting userId:', beamsUserId);
 
-        const tokenProvider = new window.PusherPushNotifications.TokenProvider({
-            url: 'https://tms.thedesigns.live/beams-auth',
-            credentials: 'include',
-            headers: {
-                'x-beams-user': beamsUserId,
-            },
-            queryParams: {
-                beamsUserId: beamsUserId,
-            },
-        });
+const tokenProvider = new window.PusherPushNotifications.TokenProvider({
+    url: `${BASE_URL}/api/auth/beams-auth`,
+    credentials: 'include',
+    headers: {
+        'x-beams-user': beamsUserId,
+    },
+    queryParams: {
+        beamsUserId: beamsUserId,
+    },
+});
 
 await beamsClient.setUserId(beamsUserId, tokenProvider);
 

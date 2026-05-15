@@ -111,6 +111,7 @@ router.post("/login", async (req, res) => {
             req.session.userId = rows[0].id;
             req.session.adminId = rows[0].admin_id;
             req.session.role_id = rows[0].role_id;
+            req.session.team_id=rows[0].team_id;
             req.session.userName = rows[0].name;
             req.session.control_type = rows[0].control_type;
             
@@ -146,6 +147,8 @@ router.get("/session", (req, res) => {
             userId:   req.session.userId  || null,
             adminId:  req.session.adminId || null,
             userName: req.session.userName || null,
+            role_id : req.session.role_id || null,
+            team_id :   res.session.team_id || null,
             redirect: '/home' 
         });
     }
@@ -233,6 +236,41 @@ router.post("/forgot-password/send-otp", async (req, res) => {
     } catch (err) {
         console.error("Mailer Error:", err);
         return res.status(500).json({ status: 'error', message: "Failed to send email" });
+    }
+});
+
+// ================= BEAMS AUTH ====================
+router.get("/beams-auth", async (req, res) => {
+    const beamsUserId = req.query.beamsUserId || req.headers['x-beams-user'];
+    if (!beamsUserId) return res.status(400).json({ error: 'Missing beamsUserId' });
+
+    // Verify the requesting session matches the beamsUserId
+    let expectedId;
+    if (req.session.role === 'admin' || req.session.role === 'owner') {
+        expectedId = 'admin_' + req.session.adminId;
+    } else if (req.session.userId) {
+        expectedId = String(req.session.userId);
+    } else {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+if (beamsUserId !== expectedId) {
+        console.error('[BeamsAuth] ❌ Mismatch — expected:', expectedId, '| got:', beamsUserId);
+        return res.status(403).json({ error: 'Beams user ID mismatch' });
+    }
+    console.log('[BeamsAuth] ✅ Auth check passed for:', beamsUserId);
+
+try {
+        const beamsClient = new (await import('@pusher/push-notifications-server')).default({
+            instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+            secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
+        });
+        const token = beamsClient.generateToken(String(beamsUserId));
+        console.log('[BeamsAuth] ✅ Token generated for:', beamsUserId);
+        return res.json(token);
+    } catch (err) {
+        console.error('[BeamsAuth] ❌ Error:', err.message);
+        return res.status(500).json({ error: 'Token generation failed' });
     }
 });
 
