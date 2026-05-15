@@ -134,32 +134,14 @@ if (req.file) {
 let interests = [];
 
         // ALL MEMBERS — fetch every user of this admin + the admin themselves
-        if (parseInt(role_id) === 0) {
-            // Admin/Owner interest
-            interests.push(`admin_${req.session.adminId}`);
-            // All regular users of this admin
-            try {
-                const [allUsers] = await con.query(
-                    'SELECT id FROM users WHERE admin_id = ? AND status = "ACTIVE"',
-                    [req.session.adminId]
-                );
-                allUsers.forEach(u => interests.push(String(u.id)));
-            } catch (e) { console.error('[Beams] fetch users error:', e.message); }
-        }
-
-        // SPECIFIC TEAM — fetch only users in that team
-        else {
-            interests.push(`admin_${req.session.adminId}`);
-            try {
-                const [teamUsers] = await con.query(
-                    `SELECT u.id FROM users u
-                     JOIN roles r ON u.role_id = r.id
-                     WHERE r.team_id = ? AND u.status = "ACTIVE"`,
-                    [role_id]
-                );
-                teamUsers.forEach(u => interests.push(String(u.id)));
-            } catch (e) { console.error('[Beams] fetch team users error:', e.message); }
-        }
+       if (parseInt(role_id) === 0) {
+    // All Members — sirf ek interest, company-scoped
+    interests.push(`company-${req.session.adminId}-all`);
+}
+else {
+    // Specific team — sirf us team ka interest
+    interests.push(`company-${req.session.adminId}-team-${role_id}`);
+}
 
         // Remove duplicates
         interests = [...new Set(interests)];

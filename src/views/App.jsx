@@ -156,22 +156,13 @@ const sessionData = await sessionRes.json();
 if (sessionData.loggedIn) {
 
     // ADMIN ONLY → receive all notifications
-if (
-    sessionData.role === 'admin' ||
-    sessionData.control_type === 'ADMIN' ||
-    sessionData.control_type === 'OWNER'
-) {
+// Sabhi users — All Members announcements ke liye
+await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
 
-    await beamsClient.addDeviceInterest(
-        `admin-${sessionData.adminId}`
-    );
-}
-
-// TEAM MEMBER → only team notifications
+// Team member — sirf apni team ki announcements ke liye
 if (sessionData.role_id) {
-
     await beamsClient.addDeviceInterest(
-        `admin-${sessionData.adminId}-team-${sessionData.role_id}`
+        `company-${sessionData.adminId}-team-${sessionData.role_id}`
     );
 }
 
