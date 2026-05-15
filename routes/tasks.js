@@ -214,19 +214,23 @@ router.post('/add-task', async (req, res) => {
                 );
             }
 
-req.io.emit('update_tasks');
+         req.io.emit('update_tasks');
 
-            // Push to all team members: interest = their userId string
+            // Push to all team members
             if (shouldNotify && users.length > 0) {
-                // exclude self from notification
                 const selfId = req.session.role === 'admin' ? null : req.session.userId;
-                const interests = users
-                    .filter(u => u.id !== selfId)
+                const notifyIds = users
+                    .filter(u => selfId === null ? true : u.id !== selfId)
                     .map(u => String(u.id));
-if (interests.length > 0) {
-                    // Fire-and-forget — don't block response
-                    pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
-                    notifyDesktop('tasks', { interests, taskTitle, assignerName });
+
+                // If a user assigned the team, also notify admin
+                if (req.session.role !== 'admin' && notifyIds.length > 0) {
+                    notifyIds.push(`admin_${admin_id}`);
+                }
+
+                if (notifyIds.length > 0) {
+                    pushTaskNotification(notifyIds, taskTitle, assignerName).catch(() => {});
+                    notifyDesktop('tasks', { interests: notifyIds, taskTitle, assignerName });
                 }
             } else {
                 notifyDesktop('tasks', {});
@@ -300,7 +304,7 @@ if (shouldNotify) {
 
 req.io.emit('update_tasks');
 
-        // Push notification for single user assignment
+// Push notification for single user assignment
         if (shouldNotify && assignedTo !== 'self') {
             let interests = [];
 
@@ -310,13 +314,18 @@ req.io.emit('update_tasks');
             } else if (!isNaN(parseInt(assignedTo))) {
                 // Assigned to a specific user by ID
                 const targetId = parseInt(assignedTo);
-                const selfId = req.session.role === 'admin' ? null : req.session.userId;
-                if (targetId !== selfId) {
+                const selfUserId = req.session.role === 'admin' ? null : req.session.userId;
+                // Only notify if not assigning to yourself
+                if (selfUserId === null || targetId !== selfUserId) {
                     interests = [String(targetId)];
+                }
+                // If a regular user assigned to someone else, also notify admin
+                if (req.session.role !== 'admin' && interests.length > 0) {
+                    interests.push(`admin_${admin_id}`);
                 }
             }
 
-if (interests.length > 0) {
+            if (interests.length > 0) {
                 // Fire-and-forget — don't block response
                 pushTaskNotification(interests, taskTitle, assignerName).catch(() => {});
                 notifyDesktop('tasks', { interests, taskTitle, assignerName });
