@@ -514,7 +514,7 @@ if (shouldNotify) {
             // self-assign → no notification needed
         }
 
-        // ── NORMAL INSERT (single user or admin) ─────────────────────────────
+        // ── NORMAL INSERT (single user or admin) ────────────────────────────
         await db.execute(
             `INSERT INTO tasks (admin_id, title, description, priority, due_date, assigned_to, assigned_by, who_assigned, section, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN')`,
