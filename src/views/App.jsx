@@ -157,14 +157,24 @@ if (sessionData.loggedIn) {
 
     // ADMIN ONLY → receive all notifications
 // Sabhi users — All Members announcements ke liye
+// Company-wide interest
 await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
 
-// Team member — sirf apni team ki announcements ke liye
+// Team specific interest
 if (sessionData.role_id) {
     await beamsClient.addDeviceInterest(
         `company-${sessionData.adminId}-team-${sessionData.role_id}`
     );
 }
+
+// Individual interest — taaki backend exclude kar sake
+if (sessionData.role === 'admin') {
+    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
+} else {
+    await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
+}
+
+window.__beamsClient = beamsClient;
 
 }
     })
@@ -172,43 +182,6 @@ if (sessionData.role_id) {
     .catch(console.error);
 const socket = io(BASE_URL, {
     withCredentials: true
-});
-// ✅ SOCKET REALTIME POPUP + SYSTEM NOTIFICATION
-socket.on('new_announcement', (data) => {
-
-    // WEB POPUP
-    showAlert(
-        'New Announcement',
-        data.title || 'New Announcement Added',
-        true
-    );
-
-    // SYSTEM NOTIFICATION
-    if (Notification.permission === 'granted') {
-
-        navigator.serviceWorker.getRegistration()
-            .then((registration) => {
-
-                if (registration) {
-                    registration.showNotification(
-                        data.title || 'TMS Notification',
-                        {
-                            body: data.description || 'New update received',
-                            icon: '/images/tms_logo.jpeg',
-                            badge: '/images/tms_logo.jpeg',
-                            vibrate: [200, 100, 200],
-
-                            data: {
-                                url: '/'
-                            }
-                        }
-                    );
-                }
-
-            });
-
-    }
-
 });
 
 }, []);

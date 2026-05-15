@@ -133,19 +133,34 @@ if (req.file) {
 
 let interests = [];
 
-        // ALL MEMBERS — fetch every user of this admin + the admin themselves
-       if (parseInt(role_id) === 0) {
-    // All Members — sirf ek interest, company-scoped
+  // Sender ki info
+const senderRole = req.session.role;
+const senderId = senderRole === 'admin' ? req.session.adminId : req.session.userId;
+const senderInterestSuffix = senderRole === 'admin' ? `admin-${senderId}` : `user-${senderId}`;
+
+if (parseInt(role_id) === 0) {
     interests.push(`company-${req.session.adminId}-all`);
 }
 else {
-    // Specific team — sirf us team ka interest
     interests.push(`company-${req.session.adminId}-team-${role_id}`);
 }
 
-        // Remove duplicates
-        interests = [...new Set(interests)];
+// Sender ko exclude karo — uska interest remove karo
+interests = interests.filter(i => i !== senderInterestSuffix);
 
+      // Remove duplicates
+interests = [...new Set(interests)];
+
+// Sender ko exclude karo
+const senderRole = req.session.role;
+const senderId = senderRole === 'admin' ? req.session.adminId : req.session.userId;
+const senderInterest = senderRole === 'admin'
+    ? `admin-${senderId}`
+    : `user-${senderId}`;
+
+interests = interests.filter(i => i !== senderInterest);
+
+console.log('[Beams] Final interests after sender exclusion:', interests);
         // Beams max 100 interests per publish call — chunk if needed
         const chunkSize = 100;
         const interestChunks = [];
