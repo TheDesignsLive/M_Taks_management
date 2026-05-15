@@ -18,24 +18,29 @@ const MOBILE_URL = 'https://m-tms.thedesigns.live';
 async function pushTaskNotification(ids, taskTitle, assignerName) {
     if (!ids || ids.length === 0) return;
 
+const pushTitle = '📋 New Task Assigned';
+    const pushBody  = `"${taskTitle}" — assigned by ${assignerName}`;
+
     const publishBody = {
         web: {
             notification: {
-                title: '📋 New Task Assigned',
-                body: `"${taskTitle}" — assigned by ${assignerName}`,
+                title: pushTitle,
+                body: pushBody,
                 icon: TMS_ICON,
                 deep_link: MOBILE_URL,
             },
         },
         fcm: {
             notification: {
-                title: '📋 New Task Assigned',
-                body: `"${taskTitle}" — assigned by ${assignerName}`,
+                title: pushTitle,
+                body: pushBody,
+                image: TMS_ICON,
             },
             data: {
                 url: MOBILE_URL,
                 deep_link: MOBILE_URL,
                 icon: TMS_ICON,
+                type: 'task',
             },
             android: {
                 priority: 'high',
@@ -46,6 +51,20 @@ async function pushTaskNotification(ids, taskTitle, assignerName) {
                     priority: 'high',
                     defaultSound: true,
                 },
+            },
+        },
+        apns: {
+            aps: {
+                alert: {
+                    title: pushTitle,
+                    body: pushBody,
+                },
+                sound: 'default',
+                badge: 1,
+            },
+            data: {
+                url: MOBILE_URL,
+                type: 'task',
             },
         },
     };
