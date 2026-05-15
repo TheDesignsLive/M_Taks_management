@@ -59,11 +59,13 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
             continue;
         }
 
-        // normal user notification — must belong to same company (admin_id match)
+// normal user notification — verify user exists AND belongs to same company
         const [userRows] = await db.execute(
             'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-            [id, adminId]
+            [String(id), String(adminId)]
         );
+
+        console.log('[Tasks] User validation | id:', id, '| adminId:', adminId, '| found:', userRows.length);
 
         if (userRows.length > 0) {
             validUserIds.push(String(id));
@@ -484,12 +486,12 @@ if (shouldNotify) {
                 if (notifyIds.length > 0) {
                     console.log('[Tasks] All-members notify ids:', notifyIds);
                     // mobile push (Beams publishToUsers — company-isolated)
-                    pushTaskNotification(
+       pushTaskNotification(
                         notifyIds,
                         taskTitle,
                         assignerName,
                         admin_id
-                    ).catch(() => {});
+                    ).catch(err => console.error('[Tasks] All-members push error:', err.message));
                     // desktop socket refresh — always send numeric user ids
                     const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
                     notifyDesktop('tasks', {
@@ -543,13 +545,12 @@ req.io.emit('update_tasks');
                 const selfUserId = req.session.role === 'admin'
                     ? null
                     : req.session.userId;
-
-                // only notify if target is not the assigner themselves
+// only notify if target is not the assigner themselves
                 if (selfUserId === null || targetId !== parseInt(selfUserId)) {
-                    // verify target user belongs to this company
+                    // verify target user exists (company check happens inside pushTaskNotification)
                     const [targetCheck] = await db.execute(
-                        'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-                        [targetId, admin_id]
+                        'SELECT id FROM users WHERE id = ?',
+                        [targetId]
                     );
                     if (targetCheck.length > 0) {
                         interests = [String(targetId)];
@@ -567,18 +568,18 @@ req.io.emit('update_tasks');
                 }
                 // admin assigned to someone → do NOT add admin_ (admin doesn't notify themselves)
 
-                console.log('[Tasks] Single-user role:', req.session.role, '| notify ids:', interests);
+                console.log('[Tasks] Single-user role:', req.session.role, '| notify ids:', interests, '| admin_id:', admin_id);
             }
 
             if (interests.length > 0) {
                 console.log('[Tasks] Single-user notify ids:', interests);
                 // mobile push (Beams publishToUsers — only exact persons)
-                pushTaskNotification(
+     pushTaskNotification(
                     interests,
                     taskTitle,
                     assignerName,
                     admin_id
-                ).catch(() => {});
+                ).catch(err => console.error('[Tasks] Single-user push error:', err.message));
                 // desktop socket refresh — numeric user ids only
                 const desktopInterests = interests.filter(id => !String(id).startsWith('admin_'));
                 notifyDesktop('tasks', {
@@ -620,6 +621,7 @@ router.post('/update-task-status', async (req, res) => {
         res.status(500).json({ success: false, error: 'Database error' });
     }
 });
+
 
 // ==============================
 // EDIT TASK DETAILS
