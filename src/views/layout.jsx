@@ -72,9 +72,6 @@ async function subscribeMobileBeams(beamsClient, beamsUserId) {
 
 await beamsClient.setUserId(beamsUserId, tokenProvider);
 
-        // Also subscribe to interest so publishToInterests works
-        await beamsClient.addDeviceInterest(beamsUserId);
-
         // Verify subscription worked
         const deviceId = await beamsClient.getDeviceId();
         console.log('[MobileBeams] ✅ Subscribed as:', beamsUserId, '| Device ID:', deviceId);

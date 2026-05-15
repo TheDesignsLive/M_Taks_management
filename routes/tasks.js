@@ -3,6 +3,11 @@ import express from 'express';
 import db from '../config/db.js';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
 import PushNotifications from '@pusher/push-notifications-server';
+import https from 'https';
+
+// Fix: keep TLS connections alive to prevent "socket disconnected before TLS" errors
+const httpsAgent = new https.Agent({ keepAlive: true });
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1';
 
 const router = express.Router();
 
@@ -72,18 +77,21 @@ const pushTitle = '📋 New Task Assigned';
     // Separate admin interests (e.g. "admin_29") from regular user IDs (e.g. "85")
     const adminInterests = ids.filter(id => String(id).startsWith('admin_'));
     const userIds = ids.filter(id => !String(id).startsWith('admin_'));
-
 try {
-        // All IDs (users + admin interests) → publishToInterests
-        // Users subscribe via setUserId which maps to interest string matching their userId
-        const allInterests = [...userIds, ...adminInterests];
-        if (allInterests.length > 0) {
+        // Regular users → publishToUsers (matches setUserId subscription)
+        if (userIds.length > 0) {
             const chunkSize = 100;
-            for (let i = 0; i < allInterests.length; i += chunkSize) {
-                const chunk = allInterests.slice(i, i + chunkSize);
-                await beamsClient.publishToInterests(chunk, publishBody);
+            for (let i = 0; i < userIds.length; i += chunkSize) {
+                const chunk = userIds.slice(i, i + chunkSize);
+                await beamsClient.publishToUsers(chunk, publishBody);
             }
-            console.log('[Tasks] 🔔 Push sent to interests:', allInterests);
+            console.log('[Tasks] 🔔 Push sent to users:', userIds);
+        }
+
+        // Admin → publishToInterests (admin subscribed via interest "admin_X")
+        if (adminInterests.length > 0) {
+            await beamsClient.publishToInterests(adminInterests, publishBody);
+            console.log('[Tasks] 🔔 Push sent to admin interests:', adminInterests);
         }
     } catch (err) {
         console.error('[Tasks] ❌ Beams push failed:', err.message);
