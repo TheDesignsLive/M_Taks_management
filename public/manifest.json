@@ -33,8 +33,9 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
   "display": "standalone",
   "theme_color": "#2E2D2D",
-  "background_color": "#3C3A3A"
+  "background_color": "#3C3A3A",
+  "orientation": "portrait",
+  "scope": "/"
 }
