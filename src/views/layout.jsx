@@ -70,7 +70,10 @@ async function subscribeMobileBeams(beamsClient, beamsUserId) {
             },
         });
 
-        await beamsClient.setUserId(beamsUserId, tokenProvider);
+await beamsClient.setUserId(beamsUserId, tokenProvider);
+
+        // Also subscribe to interest so publishToInterests works
+        await beamsClient.addDeviceInterest(beamsUserId);
 
         // Verify subscription worked
         const deviceId = await beamsClient.getDeviceId();
