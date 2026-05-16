@@ -163,11 +163,9 @@ if (sessionData.loggedIn) {
         : `user-${sessionData.userId}`;
     const storedKey = localStorage.getItem('beams_interest_key');
 
-// Only clear and re-subscribe when interest key has changed (prevents unnecessary clears)
-    if (storedKey !== expectedInterestKey) {
-        await beamsClient.clearDeviceInterests();
-        localStorage.removeItem('beams_interest_key');
-    }
+// Always clear and re-subscribe to fix broken registrations after SW change
+    await beamsClient.clearDeviceInterests();
+    localStorage.removeItem('beams_interest_key');
 
 if (sessionData.role === 'user' || sessionData.role === 'owner') {
     // Regular members + owners — company-wide + personal + team interest
