@@ -92,57 +92,18 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assig
         },
     };
 
-    // ─── ADMIN assigning tasks ───────────────────────────────────────────────
-    // Admin's device is registered via addDeviceInterest() in App.jsx
-    // Users subscribed via addDeviceInterest(`company-${adminId}-all`) in App.jsx
-    // So we MUST use publishToInterests() — publishToUsers() won't work here
-    if (assignerRole === 'admin') {
-        // Build interest strings matching what users subscribed to in App.jsx
-        const interestSet = new Set();
+    // ─── ALL ROLES: use publishToUsers() ─────────────────────────────────────
+    // layout.jsx always calls stop() then setUserId() for ALL roles (admin, owner, user).
+    // This means every device is registered in authenticated mode via setUserId().
+    // So publishToUsers() works correctly for everyone.
+    // Admin beamsUserId = 'admin_X', regular user beamsUserId = numeric string e.g. '5'
 
-        for (const id of ids) {
-            // Skip admin_ ids — admin doesn't notify themselves when they assign
-            if (String(id).startsWith('admin_')) continue;
-
-            // Verify this user belongs to same company
-            const [userRows] = await db.execute(
-                'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-                [id, adminId]
-            );
-            if (userRows.length > 0) {
-                // Each user subscribed to `company-${adminId}-all` in App.jsx
-                // We target them individually via their user-scoped interest if available,
-                // but since App.jsx only adds company-wide interest, we publish per-user
-                // using the company-all channel and rely on layout.jsx setUserId() as fallback.
-                // CORRECT approach: publish to `company-${adminId}-all` once for all users.
-                interestSet.add(`company-${adminId}-all`);
-            }
-        }
-
-        const interests = [...interestSet];
-        if (interests.length === 0) {
-            console.log('[Tasks] Admin: No valid interests to notify for adminId:', adminId);
-            return;
-        }
-
-        try {
-            await beamsClient.publishToInterests(interests, publishBody);
-            console.log('[Tasks] 🔔 Admin push sent via publishToInterests:', interests);
-        } catch (err) {
-            console.error('[Tasks] ❌ Admin Beams push failed:', err.message);
-        }
-        return;
-    }
-
-    // ─── USER / OWNER assigning tasks ────────────────────────────────────────
-    // Users & owners register via setUserId() in layout.jsx
-    // So we use publishToUsers() — this works correctly for them
     const validUserIds = [];
     const validAdminIds = [];
 
     for (const id of ids) {
 
-        // admin notification — verify admin belongs to same company
+        // admin_ prefixed id — verify this admin belongs to same company
         if (String(id).startsWith('admin_')) {
             const adminDbId = String(id).replace('admin_', '');
             if (parseInt(adminDbId) === parseInt(adminId)) {
@@ -157,7 +118,7 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assig
             continue;
         }
 
-        // normal user notification — must belong to same company (admin_id match)
+        // numeric user id — must belong to same company
         const [userRows] = await db.execute(
             'SELECT id FROM users WHERE id = ? AND admin_id = ?',
             [id, adminId]
@@ -170,7 +131,7 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assig
     const finalIds = [...validUserIds, ...validAdminIds];
 
     if (finalIds.length === 0) {
-        console.log('[Tasks] No valid company users found for adminId:', adminId);
+        console.log('[Tasks] No valid company users found for adminId:', adminId, '| role:', assignerRole);
         return;
     }
 
@@ -180,9 +141,9 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assig
             const chunk = finalIds.slice(i, i + chunkSize);
             await beamsClient.publishToUsers(chunk, publishBody);
         }
-        console.log('[Tasks] 🔔 User/Owner push sent via publishToUsers:', finalIds);
+        console.log('[Tasks] 🔔 Push sent via publishToUsers for role:', assignerRole, '| ids:', finalIds);
     } catch (err) {
-        console.error('[Tasks] ❌ User/Owner Beams push failed:', err.message);
+        console.error('[Tasks] ❌ Beams push failed:', err.message);
     }
 }
 
