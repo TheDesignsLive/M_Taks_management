@@ -320,6 +320,7 @@ let admin_id;
         }
 
 // ── TEAM ASSIGNMENT ──────────────────────────────────────────────────
+console.log('[Tasks] add-task called | role:', req.session.role, '| assignedTo:', assignedTo, '| shouldNotify:', shouldNotify, '| admin_id:', admin_id);
 if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
 
     const teamId = assignedTo.split('_')[1];
@@ -410,11 +411,12 @@ const [users] = await db.execute(`
                 return true;
             });
 
-        // owner or regular user assigned team task → also notify admin
+// owner or regular user assigned team task → also notify admin
         // admin assigned team task → do NOT add admin_ (admin doesn't notify themselves)
         if (req.session.role === 'owner' || req.session.role === 'user') {
             notifyIds.push(`admin_${admin_id}`);
         }
+        // admin assigning to team → notifyIds already has all team member user ids, send as-is
 
         // remove duplicates
         notifyIds = [...new Set(notifyIds)];
@@ -567,13 +569,14 @@ req.io.emit('update_tasks');
                     }
                 }
 
-                // owner or regular user assigned to someone → also notify admin
+// owner or regular user assigned to someone → also notify admin
                 // admin assigned to someone → do NOT add admin_ (admin doesn't notify themselves)
                 if (req.session.role === 'owner' || req.session.role === 'user') {
                     if (interests.length > 0) {
                         interests.push(`admin_${admin_id}`);
                     }
                 }
+                // admin assigning to a user — interests already has the target user id, no extra step needed
 
                 console.log('[Tasks] Single-user role:', req.session.role, '| admin_id:', admin_id, '| notify ids:', interests);
             }

@@ -159,11 +159,20 @@ export default function App() {
       .then(async (sessionData) => {
         if (!sessionData.loggedIn) return;
 
+        // Build beamsUserId:
+        // admin  → "admin_<adminId>"
+        // owner  → "admin_<adminId>"
+        // user   → "<userId>"   ← this is the key fix: users must also register via setUserId
         let beamsUserId;
         if (sessionData.role === "admin" || sessionData.role === "owner") {
           beamsUserId = "admin_" + sessionData.adminId;
         } else {
           beamsUserId = String(sessionData.userId);
+        }
+
+        if (!beamsUserId || beamsUserId === "null" || beamsUserId === "undefined") {
+          console.warn("[Beams] Invalid beamsUserId, skipping registration:", beamsUserId);
+          return;
         }
 
         try {
@@ -173,10 +182,17 @@ export default function App() {
           });
           beamsRef.current = beamsClient;
 
-          await beamsClient.start();
-          console.log("[Beams] Started");
+          // Always stop first to clear any stale user binding from previous login
+          try { await beamsClient.stop(); } catch (_) {}
 
-          const permission = await Notification.requestPermission();
+          await beamsClient.start();
+          console.log("[Beams] Started for:", beamsUserId);
+
+          // Request permission — needed for web push
+          const permission = Notification.permission === "granted"
+            ? "granted"
+            : await Notification.requestPermission();
+
           if (permission !== "granted") {
             console.warn("[Beams] Notification permission denied");
             return;
@@ -189,11 +205,12 @@ export default function App() {
             queryParams: { beamsUserId: beamsUserId },
           });
 
+          // setUserId links THIS device to beamsUserId so publishToUsers can reach it
           await beamsClient.setUserId(beamsUserId, tokenProvider);
           window.__beamsClient = beamsClient;
-          console.log("[Beams] ✅ Registered as userId:", beamsUserId);
+          console.log("[Beams] ✅ Device registered for userId:", beamsUserId);
         } catch (err) {
-          console.error("[Beams] Setup failed:", err.message);
+          console.error("[Beams] Setup failed:", err.message, err);
         }
       })
       .catch(console.error);

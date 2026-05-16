@@ -424,13 +424,13 @@ function showToast(msg) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
+body: JSON.stringify({
           title: title.trim(),
           description: desc.trim() || null,
           date,
           priority,
           assignedTo: assignTo,
-          notifyUser,
+          notifyUser: notifyUser === true,
         }),
       });
       const data = await res.json();
