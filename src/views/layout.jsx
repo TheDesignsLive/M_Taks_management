@@ -36,23 +36,18 @@ async function initMobileBeams(beamsUserId) {
         if (!PPN || !PPN.Client) { console.warn('[MobileBeams] SDK not available'); return; }
         const beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
 
-        // ── ADMIN FIX: always stop first to clear old interest-based registration from App.jsx ──
-        // App.jsx uses addDeviceInterest() which conflicts with setUserId() used here
-        // Stopping first resets the device so setUserId() registers cleanly
-        if (String(beamsUserId).startsWith('admin_')) {
-            try { await beamsClient.stop(); } catch(e) {}
-            localStorage.removeItem('beams_subscribed_' + beamsUserId);
-            localStorage.removeItem('beams_last_user');
-        }
-        // ── END ADMIN FIX ──
+        // ── ALWAYS stop first to clear App.jsx interest-based registration ──
+        // App.jsx runs addDeviceInterest() BEFORE layout.jsx loads.
+        // That puts the device in anonymous/interest mode.
+        // We must stop() first so setUserId() can register cleanly in authenticated mode.
+        // This applies to ALL roles — not just admin.
+        try { await beamsClient.stop(); } catch(e) {}
+        localStorage.removeItem('beams_subscribed_' + beamsUserId);
+        localStorage.removeItem('beams_last_user');
+        // ── END RESET ──
 
-        const lastUser = localStorage.getItem('beams_last_user');
-        if (lastUser && lastUser !== beamsUserId) {
-            try { await beamsClient.stop(); localStorage.removeItem('beams_subscribed_' + lastUser); localStorage.removeItem('beams_last_user'); } catch(e) {}
-        }
-const permission = Notification.permission;
+        const permission = Notification.permission;
         if (permission === 'granted') {
-            // Always call subscribe on load — Beams SDK is idempotent, safe to call every time
             await subscribeMobileBeams(beamsClient, beamsUserId);
         } else if (permission === 'default') {
             setTimeout(async () => {
