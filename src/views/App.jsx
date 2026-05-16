@@ -179,46 +179,31 @@ export default function App() {
           // Pehle sabhi purani interests clear karo
           await beamsClient.clearDeviceInterests();
 
-          if (sessionData.role === 'user') {
-    // Regular members — company-wide + team interest
-    await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
-    if (sessionData.team_id) {
-        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
-    }
-    console.log('[Beams] Member subscribed to interests');
-} else {
-    // Admin / Owner — company-scoped admin channel subscribe karo
-    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-admins`);
-    console.log('[Beams] Admin/Owner subscribed to:', `admin-${sessionData.adminId}-admins`);
-}
+          if (sessionData.role === "user") {
+            // Regular members — company-wide + team interest
+            await beamsClient.addDeviceInterest(
+              `company-${sessionData.adminId}-all`,
+            );
+            if (sessionData.team_id) {
+              await beamsClient.addDeviceInterest(
+                `company-${sessionData.adminId}-team-${sessionData.team_id}`,
+              );
+            }
+            console.log("[Beams] Member subscribed to interests");
+          } else {
+            // Admin / Owner — company-scoped admin channel subscribe karo
+            await beamsClient.addDeviceInterest(
+              `admin-${sessionData.adminId}-admins`,
+            );
+            console.log(
+              "[Beams] Admin/Owner subscribed to:",
+              `admin-${sessionData.adminId}-admins`,
+            );
+          }
           // Admin/Owner koi interest subscribe nahi karte — sirf publishToUsers se milega
 
-window.__beamsClient = beamsClient;
+          window.__beamsClient = beamsClient;
           console.log("[Beams] Setup done, role:", sessionData.role);
-
-          // ✅ ALSO register as named user so publishToUsers (task notifications) works
-          // This runs after interest subscription — does NOT affect announcement notifications
-          try {
-            let beamsUserId;
-            if (sessionData.role === 'admin' || sessionData.role === 'owner') {
-              beamsUserId = 'admin_' + sessionData.adminId;
-            } else {
-              beamsUserId = String(sessionData.userId);
-            }
-
-            if (beamsUserId && beamsUserId !== 'null' && beamsUserId !== 'undefined') {
-              const tokenProvider = new PusherPushNotifications.TokenProvider({
-                url: `${BASE_URL}/api/auth/beams-auth`,
-                credentials: 'include',
-                headers: { 'x-beams-user': beamsUserId },
-                queryParams: { beamsUserId: beamsUserId },
-              });
-              await beamsClient.setUserId(beamsUserId, tokenProvider);
-              console.log('[Beams] ✅ setUserId done for task notifications:', beamsUserId);
-            }
-          } catch (userIdErr) {
-            console.warn('[Beams] setUserId failed (non-fatal):', userIdErr.message);
-          }
         }
       })
       .then(() => console.log("Subscribed"))
