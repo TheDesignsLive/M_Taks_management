@@ -92,58 +92,59 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assig
         },
     };
 
-    // ─── ALL ROLES: use publishToUsers() ─────────────────────────────────────
-    // layout.jsx always calls stop() then setUserId() for ALL roles (admin, owner, user).
-    // This means every device is registered in authenticated mode via setUserId().
-    // So publishToUsers() works correctly for everyone.
-    // Admin beamsUserId = 'admin_X', regular user beamsUserId = numeric string e.g. '5'
+    // ─── USE publishToInterests() — matches exactly what App.jsx subscribes ──
+    // App.jsx (which cannot be changed) registers devices via addDeviceInterest():
+    //   regular user  → interest: `company-${adminId}-all`
+    //   admin/owner   → interest: `admin-${adminId}-admins`
+    //
+    // layout.jsx tries setUserId() but App.jsx's registration wins because it runs first
+    // and the SDK cannot reliably switch modes mid-session.
+    // So publishToUsers() never finds registered devices.
+    //
+    // Solution: publishToInterests() — matches the actual device registration in App.jsx.
+    // We build the correct interest strings from the ids list.
 
-    const validUserIds = [];
-    const validAdminIds = [];
+    const interestSet = new Set();
+    let hasAdminTarget = false;
+    let hasUserTarget = false;
 
     for (const id of ids) {
 
-        // admin_ prefixed id — verify this admin belongs to same company
+        // admin_ prefixed = notify admin/owner → they subscribed to `admin-${adminId}-admins`
         if (String(id).startsWith('admin_')) {
             const adminDbId = String(id).replace('admin_', '');
+            // verify it is the same company admin
             if (parseInt(adminDbId) === parseInt(adminId)) {
-                const [adminRows] = await db.execute(
-                    'SELECT id FROM admins WHERE id = ?',
-                    [adminDbId]
-                );
-                if (adminRows.length > 0) {
-                    validAdminIds.push(`admin_${adminDbId}`);
-                }
+                interestSet.add(`admin-${adminId}-admins`);
+                hasAdminTarget = true;
             }
             continue;
         }
 
-        // numeric user id — must belong to same company
+        // numeric user id → verify belongs to same company, then add company-wide interest
         const [userRows] = await db.execute(
-            'SELECT id FROM users WHERE id = ? AND admin_id = ?',
+            'SELECT id, role_id FROM users WHERE id = ? AND admin_id = ?',
             [id, adminId]
         );
         if (userRows.length > 0) {
-            validUserIds.push(String(id));
+            // All users of this company subscribed to company-wide interest in App.jsx
+            interestSet.add(`company-${adminId}-all`);
+            hasUserTarget = true;
         }
     }
 
-    const finalIds = [...validUserIds, ...validAdminIds];
+    const interests = [...interestSet];
 
-    if (finalIds.length === 0) {
-        console.log('[Tasks] No valid company users found for adminId:', adminId, '| role:', assignerRole);
+    if (interests.length === 0) {
+        console.log('[Tasks] No valid interests to notify for adminId:', adminId, '| role:', assignerRole);
         return;
     }
 
     try {
-        const chunkSize = 100;
-        for (let i = 0; i < finalIds.length; i += chunkSize) {
-            const chunk = finalIds.slice(i, i + chunkSize);
-            await beamsClient.publishToUsers(chunk, publishBody);
-        }
-        console.log('[Tasks] 🔔 Push sent via publishToUsers for role:', assignerRole, '| ids:', finalIds);
+        await beamsClient.publishToInterests(interests, publishBody);
+        console.log('[Tasks] 🔔 Push sent via publishToInterests:', interests, '| role:', assignerRole);
     } catch (err) {
-        console.error('[Tasks] ❌ Beams push failed:', err.message);
+        console.error('[Tasks] ❌ Beams publishToInterests failed:', err.message);
     }
 }
 
