@@ -176,26 +176,26 @@ export default function App() {
         const sessionData = await sessionRes.json();
 
         if (sessionData.loggedIn) {
-          // Pehle sabhi purani interests clear karo
-          await beamsClient.clearDeviceInterests();
+  if (sessionData.role === 'user') {
 
-          if (sessionData.role === 'user') {
-    // Regular members — company-wide + team interest
-    await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
+    const interests = [`company-${sessionData.adminId}-all`];
+
     if (sessionData.team_id) {
-        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
+      interests.push(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
     }
-    console.log('[Beams] Member subscribed to interests');
-} else {
-    // Admin / Owner — company-scoped admin channel subscribe karo
-    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-admins`);
-    console.log('[Beams] Admin/Owner subscribed to:', `admin-${sessionData.adminId}-admins`);
-}
-          // Admin/Owner koi interest subscribe nahi karte — sirf publishToUsers se milega
 
-          window.__beamsClient = beamsClient;
-          console.log("[Beams] Setup done, role:", sessionData.role);
-        }
+    await beamsClient.setDeviceInterests(interests);
+
+    console.log('[Beams] Member interests:', interests);
+
+  } else {
+    const adminInterest = `admin-${sessionData.adminId}-admins`;
+
+    await beamsClient.setDeviceInterests([adminInterest]);
+
+    console.log('[Beams] Admin/Owner interest:', adminInterest);
+  }
+}
       })
       .then(() => console.log("Subscribed"))
       .catch(console.error);
