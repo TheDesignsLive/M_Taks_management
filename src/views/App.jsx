@@ -153,60 +153,49 @@ export default function App() {
         .then(() => console.log("Service Worker Registered"));
     }
 
-    // ✅ PUSHER BEAMS
-    const beamsClient = new PusherPushNotifications.Client({
-      instanceId: "423440a8-1fc5-4373-8e6b-0085dccafc58",
-    });
+// ✅ PUSHER BEAMS — publishToUsers based (works for admin + user + owner)
+    fetch(`${BASE_URL}/api/auth/session`, { credentials: "include" })
+      .then((r) => r.json())
+      .then(async (sessionData) => {
+        if (!sessionData.loggedIn) return;
 
-    beamsRef.current = beamsClient;
+        let beamsUserId;
+        if (sessionData.role === "admin" || sessionData.role === "owner") {
+          beamsUserId = "admin_" + sessionData.adminId;
+        } else {
+          beamsUserId = String(sessionData.userId);
+        }
 
-    beamsClient
-      .start()
+        try {
+          const { Client, TokenProvider } = PusherPushNotifications;
+          const beamsClient = new Client({
+            instanceId: "423440a8-1fc5-4373-8e6b-0085dccafc58",
+          });
+          beamsRef.current = beamsClient;
 
-      .then(async () => {
-        console.log("Pusher Beams Started");
+          await beamsClient.start();
+          console.log("[Beams] Started");
 
-        return Notification.requestPermission();
-      })
-      .then(async () => {
-        const sessionRes = await fetch(`${BASE_URL}/api/auth/session`, {
-          credentials: "include",
-        });
-
-        const sessionData = await sessionRes.json();
-
-        if (sessionData.loggedIn) {
-          // Pehle sabhi purani interests clear karo
-          await beamsClient.clearDeviceInterests();
-
-          if (sessionData.role === "user") {
-            // Regular members — company-wide + team interest
-            await beamsClient.addDeviceInterest(
-              `company-${sessionData.adminId}-all`,
-            );
-            if (sessionData.team_id) {
-              await beamsClient.addDeviceInterest(
-                `company-${sessionData.adminId}-team-${sessionData.team_id}`,
-              );
-            }
-            console.log("[Beams] Member subscribed to interests");
-          } else {
-            // Admin / Owner — company-scoped admin channel subscribe karo
-            await beamsClient.addDeviceInterest(
-              `admin-${sessionData.adminId}-admins`,
-            );
-            console.log(
-              "[Beams] Admin/Owner subscribed to:",
-              `admin-${sessionData.adminId}-admins`,
-            );
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            console.warn("[Beams] Notification permission denied");
+            return;
           }
-          // Admin/Owner koi interest subscribe nahi karte — sirf publishToUsers se milega
 
+          const tokenProvider = new TokenProvider({
+            url: `${BASE_URL}/api/auth/beams-auth`,
+            credentials: "include",
+            headers: { "x-beams-user": beamsUserId },
+            queryParams: { beamsUserId: beamsUserId },
+          });
+
+          await beamsClient.setUserId(beamsUserId, tokenProvider);
           window.__beamsClient = beamsClient;
-          console.log("[Beams] Setup done, role:", sessionData.role);
+          console.log("[Beams] ✅ Registered as userId:", beamsUserId);
+        } catch (err) {
+          console.error("[Beams] Setup failed:", err.message);
         }
       })
-      .then(() => console.log("Subscribed"))
       .catch(console.error);
     const socket = io(BASE_URL, {
       withCredentials: true,

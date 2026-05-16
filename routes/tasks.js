@@ -1,4 +1,4 @@
-// mobile/routes/tasks.js
+// Real mobile/routes/tasks.js
 // in following code task send notification to user to admin,
 // user to all members,
 // user to whole team,
@@ -34,6 +34,13 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
     // remove duplicate ids
     ids = [...new Set(ids)];
 
+    // normalize adminId to integer for safe comparison
+    const normalizedAdminId = parseInt(adminId);
+    if (!normalizedAdminId || isNaN(normalizedAdminId)) {
+        console.warn('[Tasks] pushTaskNotification called with invalid adminId:', adminId);
+        return;
+    }
+
     // get only valid users of same company
     const validUserIds = [];
     const validAdminIds = [];
@@ -43,10 +50,10 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
         // admin notification — verify admin belongs to same company
         if (String(id).startsWith('admin_')) {
 
-            const adminDbId = String(id).replace('admin_', '');
+            const adminDbId = parseInt(String(id).replace('admin_', ''));
 
             // only allow if this admin is the company admin (same adminId)
-            if (parseInt(adminDbId) === parseInt(adminId)) {
+            if (adminDbId === normalizedAdminId) {
                 const [adminRows] = await db.execute(
                     'SELECT id FROM admins WHERE id = ?',
                     [adminDbId]
@@ -62,7 +69,7 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
         // normal user notification — must belong to same company (admin_id match)
         const [userRows] = await db.execute(
             'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-            [id, adminId]
+            [parseInt(id), normalizedAdminId]
         );
 
         if (userRows.length > 0) {
@@ -76,7 +83,7 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
     ];
 
     if (finalIds.length === 0) {
-        console.log('[Tasks] No valid company users found for adminId:', adminId);
+        console.log('[Tasks] No valid company users found for adminId:', normalizedAdminId, '| requested ids:', ids);
         return;
     }
 
@@ -395,6 +402,7 @@ const [users] = await db.execute(`
             .map(u => String(u.id))
             .filter(id => {
                 // exclude self only for non-admin roles (owner and user have a userId)
+                // admin has no userId row in users table, so never exclude for admin
                 if (
                     (req.session.role === 'owner' || req.session.role === 'user') &&
                     parseInt(id) === parseInt(req.session.userId)
@@ -403,10 +411,10 @@ const [users] = await db.execute(`
             });
 
         // owner or regular user assigned team task → also notify admin
+        // admin assigned team task → do NOT add admin_ (admin doesn't notify themselves)
         if (req.session.role === 'owner' || req.session.role === 'user') {
             notifyIds.push(`admin_${admin_id}`);
         }
-        // admin assigned team task → do NOT add admin_ (admin doesn't notify themselves)
 
         // remove duplicates
         notifyIds = [...new Set(notifyIds)];
@@ -468,18 +476,19 @@ req.io.emit('update_tasks');
 if (shouldNotify) {
                 const notifyIds = [];
 
-                // notify all users of this company, skip self
+                // notify all users of this company, skip self (only relevant for user/owner role)
+                const selfUserId = req.session.role === 'admin' ? null : req.session.userId;
+
                 for (const user of users) {
-                    // selfUserId is null for admin (admin has no row in users table)
                     if (selfUserId !== null && parseInt(user.id) === parseInt(selfUserId)) continue;
                     notifyIds.push(String(user.id));
                 }
 
                 // owner or regular user assigned to all → also notify admin
+                // admin assigned to all → do NOT add admin_ (admin doesn't notify themselves)
                 if (req.session.role === 'owner' || req.session.role === 'user') {
                     notifyIds.push(`admin_${admin_id}`);
                 }
-                // admin assigned to all → do NOT add admin_ (admin doesn't notify themselves)
 
                 if (notifyIds.length > 0) {
                     console.log('[Tasks] All-members notify ids:', notifyIds);
@@ -542,32 +551,31 @@ req.io.emit('update_tasks');
                 // for admin: selfUserId is null (admin has no row in users table)
                 const selfUserId = req.session.role === 'admin'
                     ? null
-                    : req.session.userId;
+                    : parseInt(req.session.userId);
 
                 // only notify if target is not the assigner themselves
-                if (selfUserId === null || targetId !== parseInt(selfUserId)) {
+                if (selfUserId === null || targetId !== selfUserId) {
                     // verify target user belongs to this company
                     const [targetCheck] = await db.execute(
                         'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-                        [targetId, admin_id]
+                        [targetId, parseInt(admin_id)]
                     );
                     if (targetCheck.length > 0) {
                         interests = [String(targetId)];
+                    } else {
+                        console.log('[Tasks] Single-user target not found in company — targetId:', targetId, '| admin_id:', admin_id);
                     }
                 }
 
                 // owner or regular user assigned to someone → also notify admin
-                if (
-                    req.session.role === 'owner' ||
-                    req.session.role === 'user'
-                ) {
+                // admin assigned to someone → do NOT add admin_ (admin doesn't notify themselves)
+                if (req.session.role === 'owner' || req.session.role === 'user') {
                     if (interests.length > 0) {
                         interests.push(`admin_${admin_id}`);
                     }
                 }
-                // admin assigned to someone → do NOT add admin_ (admin doesn't notify themselves)
 
-                console.log('[Tasks] Single-user role:', req.session.role, '| notify ids:', interests);
+                console.log('[Tasks] Single-user role:', req.session.role, '| admin_id:', admin_id, '| notify ids:', interests);
             }
 
             if (interests.length > 0) {
@@ -578,7 +586,7 @@ req.io.emit('update_tasks');
                     taskTitle,
                     assignerName,
                     admin_id
-                ).catch(() => {});
+                ).catch(err => console.error('[Tasks] Single push error:', err.message));
                 // desktop socket refresh — numeric user ids only
                 const desktopInterests = interests.filter(id => !String(id).startsWith('admin_'));
                 notifyDesktop('tasks', {

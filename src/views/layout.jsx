@@ -249,9 +249,11 @@ if (d.loggedIn) {
         if (d.role !== 'admin' && d.adminName) {
           setAdminInfo({ name: d.adminName });
         }
-        // ✅ Init Beams
+// ✅ Init Beams
         let beamsUserId;
-        if (d.role === 'admin' || d.role === 'owner') {
+        if (d.role === 'admin') {
+            beamsUserId = 'admin_' + d.adminId;
+        } else if (d.role === 'owner') {
             beamsUserId = 'admin_' + d.adminId;
         } else {
             beamsUserId = String(d.userId);
