@@ -35,6 +35,17 @@ async function initMobileBeams(beamsUserId) {
         const PPN = window.PusherPushNotifications;
         if (!PPN || !PPN.Client) { console.warn('[MobileBeams] SDK not available'); return; }
         const beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
+
+        // ── ADMIN FIX: always stop first to clear old interest-based registration from App.jsx ──
+        // App.jsx uses addDeviceInterest() which conflicts with setUserId() used here
+        // Stopping first resets the device so setUserId() registers cleanly
+        if (String(beamsUserId).startsWith('admin_')) {
+            try { await beamsClient.stop(); } catch(e) {}
+            localStorage.removeItem('beams_subscribed_' + beamsUserId);
+            localStorage.removeItem('beams_last_user');
+        }
+        // ── END ADMIN FIX ──
+
         const lastUser = localStorage.getItem('beams_last_user');
         if (lastUser && lastUser !== beamsUserId) {
             try { await beamsClient.stop(); localStorage.removeItem('beams_subscribed_' + lastUser); localStorage.removeItem('beams_last_user'); } catch(e) {}
