@@ -255,7 +255,7 @@ app.post('/api/notify-announcement-edit', async (req, res) => {
     }
 });
 
-// ✅ Desktop pings when announcement deleted → broadcast to mobile.
+//  Desktop pings when announcement deleted → broadcast to mobile
 app.post('/api/notify-announcement-delete', (req, res) => {
     const secret = req.headers['x-mobile-secret'];
     if (secret !== 'tms_mobile_bridge_2026') return res.status(403).json({ success: false });
@@ -269,7 +269,7 @@ app.post('/api/notify-announcement-delete', (req, res) => {
 });
 
 
-// ✅ CHANGE app.listen → httpServer.listen
+//  CHANGE app.listen → httpServer.listen
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
