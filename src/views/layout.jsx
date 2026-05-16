@@ -34,14 +34,28 @@ async function initMobileBeams(beamsUserId) {
         await loadBeamsSDK();
         const PPN = window.PusherPushNotifications;
         if (!PPN || !PPN.Client) { console.warn('[MobileBeams] SDK not available'); return; }
+
+        // ── WAIT for App.jsx Beams operations to fully complete ──
+        // App.jsx runs beamsClient.start() + addDeviceInterest() async.
+        // If we call stop() before App.jsx finishes, the interest gets added AFTER
+        // our stop(), leaving device in corrupted mixed state.
+        // Waiting 3 seconds guarantees App.jsx has fully finished.
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
         const beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
 
-        // ── ALWAYS stop first to clear App.jsx interest-based registration ──
-        // App.jsx runs addDeviceInterest() BEFORE layout.jsx loads.
-        // That puts the device in anonymous/interest mode.
-        // We must stop() first so setUserId() can register cleanly in authenticated mode.
-        // This applies to ALL roles — not just admin.
-        try { await beamsClient.stop(); } catch(e) {}
+        // ── STOP to clear App.jsx interest-based (anonymous) registration ──
+        // App.jsx uses addDeviceInterest() = anonymous mode.
+        // layout.jsx uses setUserId() = authenticated mode.
+        // These two modes CONFLICT — stop() clears the anonymous registration
+        // so setUserId() can register cleanly. Applies to ALL roles.
+        try {
+            await beamsClient.stop();
+            console.log('[MobileBeams] Cleared App.jsx interest registration');
+        } catch(e) {
+            console.warn('[MobileBeams] stop() error (safe to ignore):', e.message);
+        }
+
         localStorage.removeItem('beams_subscribed_' + beamsUserId);
         localStorage.removeItem('beams_last_user');
         // ── END RESET ──
