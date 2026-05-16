@@ -107,10 +107,10 @@ let query = login_type === "admin"
             req.session.adminName = rows[0].name;
             req.session.control_type = "ADMIN";
 } else {
-            req.session.userId = rows[0].id;
+req.session.userId = rows[0].id;
             req.session.adminId = rows[0].admin_id;
             req.session.role_id = rows[0].role_id;
-      
+            req.session.team_id = rows[0].team_id;
             req.session.userName = rows[0].name;
             req.session.control_type = rows[0].control_type;
             

@@ -157,18 +157,18 @@ if (sessionData.loggedIn) {
     // Pehle sabhi purani interests clear karo
     await beamsClient.clearDeviceInterests();
 
-if (sessionData.role === 'user') {
-    // Regular members — company-wide + personal + team interest
+if (sessionData.role === 'user' || sessionData.role === 'owner') {
+    // Regular members + owners — company-wide + personal + team interest
     await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
     if (sessionData.team_id) {
         await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
     }
-    console.log('[Beams] Member subscribed to interests');
+    console.log('[Beams] Member/Owner subscribed to interests, userId:', sessionData.userId);
 } else {
-    // Admin / Owner — company-scoped admin channel subscribe karo
+    // Admin — company-scoped admin channel
     await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-admins`);
-    console.log('[Beams] Admin/Owner subscribed to:', `admin-${sessionData.adminId}-admins`);
+    console.log('[Beams] Admin subscribed to:', `admin-${sessionData.adminId}-admins`);
 }
 
     window.__beamsClient = beamsClient;
