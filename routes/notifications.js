@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
             deletionRequests = dReqs;
         }
 
-        res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers, userRoleId: role_id || null });
+res.json({ success: true, teams, announcements, memberRequests, deletionRequests, canManageAnnounce, canManageMembers, userRoleId: role_id || null, adminId });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
