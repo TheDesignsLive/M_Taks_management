@@ -126,10 +126,13 @@ const beamsRef = useRef(null);
         })
         .catch(() => {});
 
-    // ✅ REGISTER SERVICE WORKER
+// ✅ REGISTER SERVICE WORKER — force update on deploy
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js')
-            .then(() => console.log('Service Worker Registered'));
+            .then(reg => {
+                reg.update(); // force check for new SW version
+                console.log('Service Worker Registered');
+            });
     }
 
     // ✅ PUSHER BEAMS
@@ -154,8 +157,17 @@ beamsClient.start()
 const sessionData = await sessionRes.json();
 
 if (sessionData.loggedIn) {
-    // Pehle sabhi purani interests clear karo
-    await beamsClient.clearDeviceInterests();
+    // Force re-subscribe every time to clear stale interests
+    const expectedInterestKey = sessionData.role === 'admin'
+        ? `admin-${sessionData.adminId}-admins`
+        : `user-${sessionData.userId}`;
+    const storedKey = localStorage.getItem('beams_interest_key');
+
+// Only clear and re-subscribe when interest key has changed (prevents unnecessary clears)
+    if (storedKey !== expectedInterestKey) {
+        await beamsClient.clearDeviceInterests();
+        localStorage.removeItem('beams_interest_key');
+    }
 
 if (sessionData.role === 'user' || sessionData.role === 'owner') {
     // Regular members + owners — company-wide + personal + team interest
@@ -171,12 +183,24 @@ if (sessionData.role === 'user' || sessionData.role === 'owner') {
     console.log('[Beams] Admin subscribed to:', `admin-${sessionData.adminId}-admins`);
 }
 
-    window.__beamsClient = beamsClient;
+window.__beamsClient = beamsClient;
+    localStorage.setItem('beams_interest_key', expectedInterestKey);
     console.log('[Beams] Setup done, role:', sessionData.role);
 }
     })
     .then(() => console.log('Subscribed'))
-    .catch(console.error);
+.catch(err => {
+        console.error('[Beams] FATAL setup error:', err);
+        // Try manual re-register after error
+        setTimeout(() => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    regs.forEach(reg => reg.unregister());
+                    console.log('[Beams] Service workers cleared — reload page to re-register');
+                });
+            }
+        }, 1000);
+    });
 const socket = io(BASE_URL, {
     withCredentials: true
 });

@@ -31,21 +31,25 @@ self.addEventListener('push', (event) => {
     if (!event.data) return;
     try {
         const payload = event.data.json();
+        // Beams sends FCM payload — title/body can be in multiple locations
         const n = payload?.notification
             || payload?.data?.notification
-            || payload?.data
+            || payload?.aps?.alert
             || null;
-        if (!n || !n.title) return;
+        const title = n?.title || payload?.title || payload?.data?.title || null;
+        const body  = n?.body  || payload?.body  || payload?.data?.body  || '';
+        const deepLink = payload?.data?.url || payload?.data?.deep_link || 'https://m-tms.thedesigns.live';
+        if (!title) return;
 
-        event.waitUntil(
+event.waitUntil(
             Promise.all([
                 // 1. Always show the OS notification (works when app is background/closed)
-                self.registration.showNotification(n.title, {
-                    body: n.body || '',
+                self.registration.showNotification(title, {
+                    body: body,
                     icon: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
                     badge: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
                     tag: 'tms-task-' + Date.now(),
-                    data: { url: n.deep_link || 'https://m-tms.thedesigns.live' },
+                    data: { url: deepLink },
                     requireInteraction: false,
                 }),
                 // 2. Also forward to open windows for in-app toast
@@ -53,8 +57,8 @@ self.addEventListener('push', (event) => {
                     windowClients.forEach(client => {
                         client.postMessage({
                             type: 'BEAMS_PUSH_RECEIVED',
-                            title: n.title,
-                            body: n.body || '',
+                            title: title,
+                            body: body,
                         });
                     });
                 }),
