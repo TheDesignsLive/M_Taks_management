@@ -27,61 +27,14 @@ const TMS_ICON = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
 const MOBILE_URL = 'https://m-tms.thedesigns.live';
 
 // ─── Helper: send push to a list of Beams interest strings ───────────────────
-async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
+async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assignerRole) {
 
     if (!ids || ids.length === 0) return;
 
     // remove duplicate ids
     ids = [...new Set(ids)];
 
-    // get only valid users of same company
-    const validUserIds = [];
-    const validAdminIds = [];
-
-    for (const id of ids) {
-
-        // admin notification — verify admin belongs to same company
-        if (String(id).startsWith('admin_')) {
-
-            const adminDbId = String(id).replace('admin_', '');
-
-            // only allow if this admin is the company admin (same adminId)
-            if (parseInt(adminDbId) === parseInt(adminId)) {
-                const [adminRows] = await db.execute(
-                    'SELECT id FROM admins WHERE id = ?',
-                    [adminDbId]
-                );
-                if (adminRows.length > 0) {
-                    validAdminIds.push(`admin_${adminDbId}`);
-                }
-            }
-
-            continue;
-        }
-
-        // normal user notification — must belong to same company (admin_id match)
-        const [userRows] = await db.execute(
-            'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-            [id, adminId]
-        );
-
-        if (userRows.length > 0) {
-            validUserIds.push(String(id));
-        }
-    }
-
-    const finalIds = [
-        ...validUserIds,
-        ...validAdminIds
-    ];
-
-    if (finalIds.length === 0) {
-        console.log('[Tasks] No valid company users found for adminId:', adminId);
-        return;
-    }
-
     const pushTitle = '📋 New Task Assigned';
-
     const pushBody = `"${taskTitle}" — assigned by ${assignerName}`;
 
     const publishBody = {
@@ -139,28 +92,97 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId) {
         },
     };
 
-    try {
+    // ─── ADMIN assigning tasks ───────────────────────────────────────────────
+    // Admin's device is registered via addDeviceInterest() in App.jsx
+    // Users subscribed via addDeviceInterest(`company-${adminId}-all`) in App.jsx
+    // So we MUST use publishToInterests() — publishToUsers() won't work here
+    if (assignerRole === 'admin') {
+        // Build interest strings matching what users subscribed to in App.jsx
+        const interestSet = new Set();
 
-        const chunkSize = 100;
+        for (const id of ids) {
+            // Skip admin_ ids — admin doesn't notify themselves when they assign
+            if (String(id).startsWith('admin_')) continue;
 
-        for (let i = 0; i < finalIds.length; i += chunkSize) {
-
-            const chunk = finalIds.slice(i, i + chunkSize);
-
-            await beamsClient.publishToUsers(
-                chunk,
-                publishBody
+            // Verify this user belongs to same company
+            const [userRows] = await db.execute(
+                'SELECT id FROM users WHERE id = ? AND admin_id = ?',
+                [id, adminId]
             );
+            if (userRows.length > 0) {
+                // Each user subscribed to `company-${adminId}-all` in App.jsx
+                // We target them individually via their user-scoped interest if available,
+                // but since App.jsx only adds company-wide interest, we publish per-user
+                // using the company-all channel and rely on layout.jsx setUserId() as fallback.
+                // CORRECT approach: publish to `company-${adminId}-all` once for all users.
+                interestSet.add(`company-${adminId}-all`);
+            }
         }
 
-        console.log('[Tasks] 🔔 Push sent only to valid company users:', finalIds);
+        const interests = [...interestSet];
+        if (interests.length === 0) {
+            console.log('[Tasks] Admin: No valid interests to notify for adminId:', adminId);
+            return;
+        }
 
-    } catch (err) {
+        try {
+            await beamsClient.publishToInterests(interests, publishBody);
+            console.log('[Tasks] 🔔 Admin push sent via publishToInterests:', interests);
+        } catch (err) {
+            console.error('[Tasks] ❌ Admin Beams push failed:', err.message);
+        }
+        return;
+    }
 
-        console.error(
-            '[Tasks] ❌ Beams push failed:',
-            err.message
+    // ─── USER / OWNER assigning tasks ────────────────────────────────────────
+    // Users & owners register via setUserId() in layout.jsx
+    // So we use publishToUsers() — this works correctly for them
+    const validUserIds = [];
+    const validAdminIds = [];
+
+    for (const id of ids) {
+
+        // admin notification — verify admin belongs to same company
+        if (String(id).startsWith('admin_')) {
+            const adminDbId = String(id).replace('admin_', '');
+            if (parseInt(adminDbId) === parseInt(adminId)) {
+                const [adminRows] = await db.execute(
+                    'SELECT id FROM admins WHERE id = ?',
+                    [adminDbId]
+                );
+                if (adminRows.length > 0) {
+                    validAdminIds.push(`admin_${adminDbId}`);
+                }
+            }
+            continue;
+        }
+
+        // normal user notification — must belong to same company (admin_id match)
+        const [userRows] = await db.execute(
+            'SELECT id FROM users WHERE id = ? AND admin_id = ?',
+            [id, adminId]
         );
+        if (userRows.length > 0) {
+            validUserIds.push(String(id));
+        }
+    }
+
+    const finalIds = [...validUserIds, ...validAdminIds];
+
+    if (finalIds.length === 0) {
+        console.log('[Tasks] No valid company users found for adminId:', adminId);
+        return;
+    }
+
+    try {
+        const chunkSize = 100;
+        for (let i = 0; i < finalIds.length; i += chunkSize) {
+            const chunk = finalIds.slice(i, i + chunkSize);
+            await beamsClient.publishToUsers(chunk, publishBody);
+        }
+        console.log('[Tasks] 🔔 User/Owner push sent via publishToUsers:', finalIds);
+    } catch (err) {
+        console.error('[Tasks] ❌ User/Owner Beams push failed:', err.message);
     }
 }
 
@@ -415,11 +437,12 @@ const [users] = await db.execute(`
             console.log('[Tasks] Team notify ids:', notifyIds);
 
             // mobile push (Beams publishToUsers)
-            pushTaskNotification(
+pushTaskNotification(
                 notifyIds,
                 taskTitle,
                 assignerName,
-                admin_id
+                admin_id,
+                req.session.role
             ).catch(console.error);
 
             // desktop socket refresh — always trigger so users don't need to refresh
@@ -483,12 +506,13 @@ if (shouldNotify) {
 
                 if (notifyIds.length > 0) {
                     console.log('[Tasks] All-members notify ids:', notifyIds);
-                    // mobile push (Beams publishToUsers — company-isolated)
+        // mobile push (Beams — company-isolated)
                     pushTaskNotification(
                         notifyIds,
                         taskTitle,
                         assignerName,
-                        admin_id
+                        admin_id,
+                        req.session.role
                     ).catch(() => {});
                     // desktop socket refresh — always send numeric user ids
                     const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
@@ -563,7 +587,7 @@ req.io.emit('update_tasks');
 
             if (interests.length > 0) {
                 console.log('[Tasks] Single-user notify ids:', interests);
-                pushTaskNotification(interests, taskTitle, assignerName, admin_id).catch(() => {});
+                pushTaskNotification(interests, taskTitle, assignerName, admin_id, req.session.role).catch(() => {});
                 const desktopInterests = interests.filter(id => !String(id).startsWith('admin_'));
                 notifyDesktop('tasks', { interests: desktopInterests, taskTitle, assignerName });
             } else {
