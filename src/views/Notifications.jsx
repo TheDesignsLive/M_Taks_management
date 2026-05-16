@@ -95,25 +95,35 @@ const Notifications = () => {
 
   // Form states
   const [form, setForm] = useState({ title: "", desc: "", teamId: "0", file: null });
+// NEW — replace with this
 useEffect(() => {
     fetchNotifications();
+}, []);
 
-    // 🔔 REAL-TIME LISTENERS (Bina refresh ke update ke liye)
-   socket.on('new_announcement', (newAnn) => {
-    setData(prev => {
-        // Admin/owner/manager — sab dekh sakte hain
-        if (prev.canManageAnnounce) {
-            return { ...prev, announcements: [newAnn, ...prev.announcements] };
-        }
-        // Regular user — sirf apni team ya all-member announcement
-        const isAllMembers = parseInt(newAnn.role_id) === 0;
-        const isMyTeam = prev.userRoleId && String(newAnn.role_id) === String(prev.userRoleId);
-        if (isAllMembers || isMyTeam) {
-            return { ...prev, announcements: [newAnn, ...prev.announcements] };
-        }
-        return prev; // Is user ke liye nahi — ignore karo
+useEffect(() => {
+    // Remove old listeners before re-registering (avoid duplicates)
+    socket.off('new_announcement');
+    socket.off('delete_announcement');
+    socket.off('edit_announcement');
+
+    socket.on('new_announcement', (newAnn) => {
+        setData(prev => {
+            // Duplicate check
+            if (prev.announcements.some(a => a.id == newAnn.id)) return prev;
+
+            // Admin/owner/manager — sab dekh sakte hain
+            if (prev.canManageAnnounce) {
+                return { ...prev, announcements: [newAnn, ...prev.announcements] };
+            }
+            // Regular user — sirf apni team ya all-member announcement
+            const isAllMembers = parseInt(newAnn.role_id) === 0;
+            const isMyTeam = prev.userRoleId && String(newAnn.role_id) === String(prev.userRoleId);
+            if (isAllMembers || isMyTeam) {
+                return { ...prev, announcements: [newAnn, ...prev.announcements] };
+            }
+            return prev;
+        });
     });
-});
 
     socket.on('delete_announcement', (deletedId) => {
         setData(prev => ({
@@ -125,7 +135,7 @@ useEffect(() => {
     socket.on('edit_announcement', (updatedData) => {
         setData(prev => ({
             ...prev,
-            announcements: prev.announcements.map(a => 
+            announcements: prev.announcements.map(a =>
                 a.id == updatedData.id ? { ...a, ...updatedData } : a
             )
         }));
@@ -136,7 +146,7 @@ useEffect(() => {
         socket.off('delete_announcement');
         socket.off('edit_announcement');
     };
-}, []);
+}, [data.canManageAnnounce, data.userRoleId]);
 
   function onTouchStart(e) { swipeStartX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
