@@ -120,15 +120,14 @@ async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assig
             }
             continue;
         }
-
-        // numeric user id → verify belongs to same company, then add company-wide interest
+// numeric user id → verify belongs to same company, then add personal interest
         const [userRows] = await db.execute(
             'SELECT id, role_id FROM users WHERE id = ? AND admin_id = ?',
             [id, adminId]
         );
         if (userRows.length > 0) {
-            // All users of this company subscribed to company-wide interest in App.jsx
-            interestSet.add(`company-${adminId}-all`);
+            // Use per-user interest for precise targeting
+            interestSet.add(`user-${id}`);
             hasUserTarget = true;
         }
     }

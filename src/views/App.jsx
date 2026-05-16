@@ -157,9 +157,10 @@ if (sessionData.loggedIn) {
     // Pehle sabhi purani interests clear karo
     await beamsClient.clearDeviceInterests();
 
-    if (sessionData.role === 'user') {
-    // Regular members — company-wide + team interest
+if (sessionData.role === 'user') {
+    // Regular members — company-wide + personal + team interest
     await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
+    await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
     if (sessionData.team_id) {
         await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
     }
