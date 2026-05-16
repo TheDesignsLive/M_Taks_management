@@ -1,14 +1,15 @@
-// public/service-worker.js — Mobile version.
-importScripts('https://js.pusher.com/beams/service-worker.js');
+// public/service-worker.js — Mobile version
+// DO NOT import Beams service worker — it conflicts with publishToInterests()
+// importScripts('https://js.pusher.com/beams/service-worker.js'); // REMOVED
+
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-
     const url =
         (event.notification.data && event.notification.data.url) ||
-        (event.notification.data && event.notification.data.deep_link) ||
         'https://m-tms.thedesigns.live';
-
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
             for (let i = 0; i < windowClients.length; i++) {
@@ -24,14 +25,10 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
-
 self.addEventListener('push', (event) => {
     if (!event.data) return;
     try {
         const payload = event.data.json();
-        // Beams sends FCM payload — title/body can be in multiple locations
         const n = payload?.notification
             || payload?.data?.notification
             || payload?.aps?.alert
@@ -41,9 +38,8 @@ self.addEventListener('push', (event) => {
         const deepLink = payload?.data?.url || payload?.data?.deep_link || 'https://m-tms.thedesigns.live';
         if (!title) return;
 
-event.waitUntil(
+        event.waitUntil(
             Promise.all([
-                // 1. Always show the OS notification (works when app is background/closed)
                 self.registration.showNotification(title, {
                     body: body,
                     icon: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
@@ -52,7 +48,6 @@ event.waitUntil(
                     data: { url: deepLink },
                     requireInteraction: false,
                 }),
-                // 2. Also forward to open windows for in-app toast
                 clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
                     windowClients.forEach(client => {
                         client.postMessage({
@@ -64,5 +59,7 @@ event.waitUntil(
                 }),
             ])
         );
-    } catch (e) {}
+    } catch (e) {
+        console.error('[SW] Push parse error:', e);
+    }
 });
