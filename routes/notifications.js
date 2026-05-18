@@ -131,26 +131,43 @@ if (req.file) {
 
         if (req.io) req.io.emit('new_announcement', ann);
 
+const senderIsAdmin = req.session.role === 'admin';
+const senderUserId = senderIsAdmin ? null : req.session.userId;
+
 let interests = [];
 
-if (parseInt(role_id) === 0) {
-    // All members — company scoped
-    interests.push(`company-${req.session.adminId}-all`);
+if (senderIsAdmin) {
+    // Admin sends → broad channel (admin doesn't subscribe here → no self-notification)
+    if (parseInt(role_id) === 0) {
+        interests.push(`company-${req.session.adminId}-all`);
+    } else {
+        interests.push(`company-${req.session.adminId}-team-${role_id}`);
+    }
 } else {
-    // Specific team only
-    interests.push(`company-${req.session.adminId}-team-${role_id}`);
+    // User/Owner sends → target individual user-ids, exclude sender
+    let targetUsers = [];
+    if (parseInt(role_id) === 0) {
+        [targetUsers] = await con.query(
+            `SELECT id FROM users WHERE admin_id=? AND status='ACTIVE' AND id!=?`,
+            [req.session.adminId, senderUserId]
+        );
+    } else {
+        [targetUsers] = await con.query(
+            `SELECT u.id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.admin_id=? AND r.team_id=? AND u.status='ACTIVE' AND u.id!=?`,
+            [req.session.adminId, role_id, senderUserId]
+        );
+    }
+    // Individual user interests + admin channel (admin + other owners receive)
+    interests = targetUsers.map(u => `user-${u.id}`);
+    interests.push(`admin-${req.session.adminId}`);
 }
 
-interests = [...new Set(interests)];
-
-
 console.log('[Beams] Sending to interests:', interests);
-        // Beams max 100 interests per publish call — chunk if needed
-        const chunkSize = 100;
-        const interestChunks = [];
-        for (let i = 0; i < interests.length; i += chunkSize) {
-            interestChunks.push(interests.slice(i, i + chunkSize));
-        }
+const chunkSize = 100;
+const interestChunks = [];
+for (let i = 0; i < interests.length; i += chunkSize) {
+    interestChunks.push(interests.slice(i, i + chunkSize));
+}
 // PUSH NOTIFICATION — web + fcm (Android) + apns (iOS) for app-closed delivery
         const pushTitle = ann.title || 'New Announcement';
         const pushBody  = ann.description || '';
@@ -199,12 +216,6 @@ try {
                 await beamsClient.publishToInterests(chunk, pushPayload);
             }
             // Admin/Owner ko user-based send karo (self exclude)
-// ❌ Don't notify self if admin is sender
-if (req.session.role !== 'admin' && req.session.role !=="ownere") {
-    const companyAdminInterest = `admin-${req.session.adminId}-admins`;
-    await beamsClient.publishToInterests([companyAdminInterest], pushPayload);
-}
-console.log('[Beams] Company admins notified via:', companyAdminInterest);
             console.log('[Mobile] 🔔 Push sent for announcement:', ann.id, '→ interests:', interests);
         } catch (pushErr) {
             console.error('[Mobile] ❌ Beams push failed:', pushErr.message);

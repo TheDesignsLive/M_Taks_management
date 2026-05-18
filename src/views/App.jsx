@@ -167,18 +167,26 @@ if (sessionData.loggedIn) {
     await beamsClient.clearDeviceInterests();
     localStorage.removeItem('beams_interest_key');
 
-if (sessionData.role === 'user' || sessionData.role === 'owner') {
-    // Regular members + owners — company-wide + personal + team interest
+if (sessionData.role === 'admin') {
+    // Admin: 1 channel only
+    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
+    console.log('[Beams] Admin: 1 channel → admin-' + sessionData.adminId);
+
+} else if (sessionData.role === 'owner') {
+    // Owner: 2 channels — shared admin channel + personal
+    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
+    await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
+    console.log('[Beams] Owner: 2 channels → admin-' + sessionData.adminId + ' + user-' + sessionData.userId);
+
+} else {
+    // Regular user: 3 channels
     await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-    if (sessionData.team_id) {
-        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
-    }
-    console.log('[Beams] Member/Owner subscribed to interests, userId:', sessionData.userId);
-} else {
-    // Admin — company-scoped admin channel
-    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-admins`);
-    console.log('[Beams] Admin subscribed to:', `admin-${sessionData.adminId}-admins`);
+    // Fetch team channel from backend (requires team_id lookup)
+    const iRes = await fetch(`${BASE_URL}/api/auth/beams-interests`, { credentials: 'include' });
+    const iData = await iRes.json();
+    if (iData.teamInterest) await beamsClient.addDeviceInterest(iData.teamInterest);
+    console.log('[Beams] User: 3 channels → company-all + user-' + sessionData.userId + ' + ' + (iData.teamInterest || 'no-team'));
 }
 
 window.__beamsClient = beamsClient;
