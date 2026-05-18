@@ -149,19 +149,13 @@ if (senderIsAdmin) {
     // User/Owner sends → target individual user-ids, exclude sender
     let targetUsers = [];
     if (parseInt(role_id) === 0) {
-        [targetUsers] = await con.query(
-            `SELECT id FROM users WHERE admin_id=? AND status='ACTIVE' AND id!=?`,
-            [req.session.adminId, senderUserId]
-        );
+       interests.push(`company-${req.session.adminId}-all`);
+       interests.push(`admin-${req.session.adminId}`);
     } else {
-        [targetUsers] = await con.query(
-            `SELECT u.id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.admin_id=? AND r.team_id=? AND u.status='ACTIVE' AND u.id!=?`,
-            [req.session.adminId, role_id, senderUserId]
-        );
+     interests.push(`company-${req.session.adminId}-team-${role_id}`);
+     interests.push(`admin-${req.session.adminId}`);
     }
-    // Individual user interests + admin channel (admin + other owners receive)
-    interests = targetUsers.map(u => `user-${u.id}`);
-    interests.push(`admin-${req.session.adminId}`);
+    
 }
 
 console.log('[Beams] Sending to interests:', interests);
