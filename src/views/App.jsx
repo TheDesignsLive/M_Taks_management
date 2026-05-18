@@ -167,18 +167,14 @@ if (sessionData.loggedIn) {
     await beamsClient.clearDeviceInterests();
     localStorage.removeItem('beams_interest_key');
 
+// ✅ NEW
 if (sessionData.role === 'user' || sessionData.role === 'owner') {
-    // Regular members + owners — company-wide + personal + team interest
-    await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
+    // Only personal interest — backend targets by userId, so sender is excluded automatically
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-    if (sessionData.team_id) {
-        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
-    }
-    console.log('[Beams] Member/Owner subscribed to interests, userId:', sessionData.userId);
+    console.log('[Beams] Subscribed to personal interest: user-' + sessionData.userId);
 } else {
-    // Admin — company-scoped admin channel
-    await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}-admins`);
-    console.log('[Beams] Admin subscribed to:', `admin-${sessionData.adminId}-admins`);
+    // Admin: no subscription — they are the announcement sender, not receiver
+    console.log('[Beams] Admin — skipping subscription (sender role)');
 }
 
 window.__beamsClient = beamsClient;
