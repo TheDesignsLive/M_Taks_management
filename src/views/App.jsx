@@ -157,6 +157,13 @@ beamsClient.start()
 const sessionData = await sessionRes.json();
 
 if (sessionData.loggedIn) {
+  const myUniqueId = sessionData.role === 'admin' ? `admin-${sessionData.adminId}` : `${sessionData.userId}`;
+    
+    if ('caches' in window) {
+        caches.open('tms-user-data').then(cache => {
+            cache.put('/my-id', new Response(myUniqueId));
+        });
+    }
     // Force re-subscribe every time to clear stale interests
     const expectedInterestKey = sessionData.role === 'admin'
         ? `admin-${sessionData.adminId}-admins`

@@ -27,39 +27,56 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('push', (event) => {
     if (!event.data) return;
-    try {
-        const payload = event.data.json();
-        const n = payload?.notification
-            || payload?.data?.notification
-            || payload?.aps?.alert
-            || null;
-        const title = n?.title || payload?.title || payload?.data?.title || null;
-        const body  = n?.body  || payload?.body  || payload?.data?.body  || '';
-        const deepLink = payload?.data?.url || payload?.data?.deep_link || 'https://m-tms.thedesigns.live';
-        if (!title) return;
 
-        event.waitUntil(
-            Promise.all([
-                self.registration.showNotification(title, {
+    event.waitUntil(
+        (async () => {
+            try {
+                const payload = event.data.json();
+                
+                // 1. Backend se aayi hui sender_id nikalo
+                const senderId = payload?.data?.sender_id;
+
+                // 2. Apni stored ID Cache se nikalo (Jo App.jsx ne rakhi thi)
+                const cache = await caches.open('tms-user-data');
+                const cachedResponse = await cache.match('/my-id');
+                const myId = cachedResponse ? await cachedResponse.text() : null;
+
+                // 3. ✅ SELF-NOTIFICATION FILTER
+                if (senderId && myId && senderId === myId) {
+                    console.log('[SW] Self-notification blocked for:', myId);
+                    return; 
+                }
+
+                // --- Baki ka notification logic wahi purana ---
+                const n = payload?.notification || payload?.data?.notification || payload?.aps?.alert || null;
+                const title = n?.title || payload?.title || payload?.data?.title || 'TMS Workspace';
+                const body  = n?.body  || payload?.body  || payload?.data?.body  || '';
+                const deepLink = payload?.data?.url || payload?.data?.deep_link || 'https://m-tms.thedesigns.live';
+
+                if (!title) return;
+
+                await self.registration.showNotification(title, {
                     body: body,
                     icon: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
                     badge: 'https://tms.thedesigns.live/images/tms_logo.jpeg',
                     tag: 'tms-task-' + Date.now(),
                     data: { url: deepLink },
                     requireInteraction: false,
-                }),
-                clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-                    windowClients.forEach(client => {
-                        client.postMessage({
-                            type: 'BEAMS_PUSH_RECEIVED',
-                            title: title,
-                            body: body,
-                        });
+                });
+
+                // In-app message bhejna (same as before)
+                const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+                windowClients.forEach(client => {
+                    client.postMessage({
+                        type: 'BEAMS_PUSH_RECEIVED',
+                        title: title,
+                        body: body,
                     });
-                }),
-            ])
-        );
-    } catch (e) {
-        console.error('[SW] Push parse error:', e);
-    }
+                });
+
+            } catch (e) {
+                console.error('[SW] Push error:', e);
+            }
+        })()
+    );
 });
