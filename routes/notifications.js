@@ -200,16 +200,7 @@ try {
             }
             // Admin/Owner ko user-based send karo (self exclude)
 const companyAdminInterest = `admin-${req.session.adminId}-admins`;
-const senderRole = req.session.role;
-const senderId = senderRole === 'admin' ? req.session.adminId : req.session.userId;
-
-// Admin/Owner interest
-const companyAdminInterest = `admin-${req.session.adminId}-admins`;
-
-// ❌ Self notification avoid
-if (!(senderRole === 'admin'||senderRole === 'owner')) {
-    await beamsClient.publishToInterests([companyAdminInterest], pushPayload);
-}
+await beamsClient.publishToInterests([companyAdminInterest], pushPayload);
 console.log('[Beams] Company admins notified via:', companyAdminInterest);
             console.log('[Mobile] 🔔 Push sent for announcement:', ann.id, '→ interests:', interests);
         } catch (pushErr) {
