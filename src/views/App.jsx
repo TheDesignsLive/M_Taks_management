@@ -170,28 +170,23 @@ if (sessionData.loggedIn) {
 if (sessionData.role === 'admin') {
     // Admin: 1 channel only
     await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
-    console.log('[Beams] Admin: 1 channel → admin-' + sessionData.adminId);
+    
 
 } else if (sessionData.role === 'owner') {
     // Owner: 2 channels — shared admin channel + personal
     await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-    console.log('[Beams] Owner: 2 channels → admin-' + sessionData.adminId + ' + user-' + sessionData.userId);
-
 } else {
     // Regular user: 3 channels
     await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-    // Fetch team channel from backend (requires team_id lookup)
-    const iRes = await fetch(`${BASE_URL}/api/auth/beams-interests`, { credentials: 'include' });
-    const iData = await iRes.json();
-    if (iData.teamInterest) await beamsClient.addDeviceInterest(iData.teamInterest);
-    console.log('[Beams] User: 3 channels → company-all + user-' + sessionData.userId + ' + ' + (iData.teamInterest || 'no-team'));
+    if (sessionData.team_id) {
+        await beamsClient.addDeviceInterest(`team-${sessionData.team_id}`);
+    }
 }
 
 window.__beamsClient = beamsClient;
     localStorage.setItem('beams_interest_key', expectedInterestKey);
-    console.log('[Beams] Setup done, role:', sessionData.role);
 }
     })
     .then(() => console.log('Subscribed'))

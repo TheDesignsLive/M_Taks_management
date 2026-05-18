@@ -134,6 +134,10 @@ if (req.file) {
 const senderIsAdmin = req.session.role === 'admin';
 const senderUserId = senderIsAdmin ? null : req.session.userId;
 
+const senderUniqueId = senderIsAdmin 
+    ? `admin-${req.session.adminId}` 
+    : `${req.session.userId}`;
+
 let interests = [];
 
 if (senderIsAdmin) {
@@ -179,6 +183,9 @@ try {
                         icon: pushIcon,
                         deep_link: pushUrl,
                     },
+                    data: { 
+                        sender_id: senderUniqueId 
+                    },
                 },
                 fcm: {
                     notification: {
@@ -189,6 +196,7 @@ try {
                     data: {
                         url: pushUrl,
                         type: 'announcement',
+                        sender_id: senderUniqueId,
                     },
                 },
                 apns: {
@@ -203,6 +211,7 @@ try {
                     data: {
                         url: pushUrl,
                         type: 'announcement',
+                        sender_id: senderUniqueId,
                     },
                 },
             };
@@ -212,7 +221,6 @@ try {
                 await beamsClient.publishToInterests(chunk, pushPayload);
             }
             // Admin/Owner ko user-based send karo (self exclude)
-            console.log('[Mobile] 🔔 Push sent for announcement:', ann.id, '→ interests:', interests);
         } catch (pushErr) {
             console.error('[Mobile] ❌ Beams push failed:', pushErr.message);
         }
