@@ -131,31 +131,20 @@ if (req.file) {
 
         if (req.io) req.io.emit('new_announcement', ann);
 
-// ✅ NEW
-const senderUserId = (req.session.role === 'user' || req.session.role === 'owner')
-    ? req.session.userId : null;
+let interests = [];
 
-let targetUsers = [];
 if (parseInt(role_id) === 0) {
-    const q = senderUserId
-        ? `SELECT id FROM users WHERE admin_id=? AND status='ACTIVE' AND id!=?`
-        : `SELECT id FROM users WHERE admin_id=? AND status='ACTIVE'`;
-    const p = senderUserId ? [req.session.adminId, senderUserId] : [req.session.adminId];
-    [targetUsers] = await con.query(q, p);
+    // All members — company scoped
+    interests.push(`company-${req.session.adminId}-all`);
 } else {
-    const q = senderUserId
-        ? `SELECT u.id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.admin_id=? AND r.team_id=? AND u.status='ACTIVE' AND u.id!=?`
-        : `SELECT u.id FROM users u JOIN roles r ON u.role_id=r.id WHERE u.admin_id=? AND r.team_id=? AND u.status='ACTIVE'`;
-    const p = senderUserId ? [req.session.adminId, role_id, senderUserId] : [req.session.adminId, role_id];
-    [targetUsers] = await con.query(q, p);
+    // Specific team only
+    interests.push(`company-${req.session.adminId}-team-${role_id}`);
 }
 
-const interests = targetUsers.map(u => `user-${u.id}`);
+interests = [...new Set(interests)];
+
+
 console.log('[Beams] Sending to interests:', interests);
-
-if (interests.length === 0) {
-    console.log('[Beams] No recipients, skipping push');
-}
         // Beams max 100 interests per publish call — chunk if needed
         const chunkSize = 100;
         const interestChunks = [];
@@ -210,6 +199,12 @@ try {
                 await beamsClient.publishToInterests(chunk, pushPayload);
             }
             // Admin/Owner ko user-based send karo (self exclude)
+// ❌ Don't notify self if admin is sender
+if (req.session.role !== 'admin' && req.session.role !=="ownere") {
+    const companyAdminInterest = `admin-${req.session.adminId}-admins`;
+    await beamsClient.publishToInterests([companyAdminInterest], pushPayload);
+}
+console.log('[Beams] Company admins notified via:', companyAdminInterest);
             console.log('[Mobile] 🔔 Push sent for announcement:', ann.id, '→ interests:', interests);
         } catch (pushErr) {
             console.error('[Mobile] ❌ Beams push failed:', pushErr.message);
