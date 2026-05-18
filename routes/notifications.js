@@ -140,6 +140,7 @@ if (senderIsAdmin) {
     // Admin sends → broad channel (admin doesn't subscribe here → no self-notification)
     if (parseInt(role_id) === 0) {
         interests.push(`company-${req.session.adminId}-all`);
+        interests.push(`admin-${req.session.adminId}`);
     } else {
         interests.push(`company-${req.session.adminId}-team-${role_id}`);
         interests.push(`admin-${req.session.adminId}`);
