@@ -225,7 +225,6 @@ try {
             headers: { 'Content-Type': 'application/json', 'x-mobile-secret': MOBILE_SECRET, 'x-source': 'mobile' },
             body: JSON.stringify({ id: ann.id }),
         }).catch(err => console.error('[Mobile] notifyDesktop announcement_add failed:', err.message));
-
         res.json({ success: true });
     } catch (err) {
         console.error(err);
