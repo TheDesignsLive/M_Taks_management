@@ -200,7 +200,7 @@ try {
             }
             // Admin/Owner ko user-based send karo (self exclude)
 // ❌ Don't notify self if admin is sender
-if (req.session.role !== 'admin' || req.session.role !=="ownere") {
+if (req.session.role !== 'admin' && req.session.role !=="ownere") {
     const companyAdminInterest = `admin-${req.session.adminId}-admins`;
     await beamsClient.publishToInterests([companyAdminInterest], pushPayload);
 }
