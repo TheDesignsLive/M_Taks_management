@@ -86,6 +86,7 @@ const Notifications = () => {
     canManageAnnounce: false,
     canManageMembers: false,
     userRoleId: null,
+    adminId: null,
 });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("announce");
@@ -111,19 +112,21 @@ useEffect(() => {
         // Duplicate check
         if (prev.announcements.some(a => a.id == newAnn.id)) return prev;
 
-        // ✅ Cross-company filter — ignore announcements from other companies
-        if (String(newAnn.admin_id) !== String(prev.adminId)) return prev;
+        // Cross-company filter — adminId available hone ke baad hi check karo
+        if (prev.adminId && String(newAnn.admin_id) !== String(prev.adminId)) return prev;
 
         // Admin/owner/manager — sab dekh sakte hain
         if (prev.canManageAnnounce) {
             return { ...prev, announcements: [newAnn, ...prev.announcements] };
         }
+
         // Regular user — sirf apni team ya all-member announcement
         const isAllMembers = parseInt(newAnn.role_id) === 0;
         const isMyTeam = prev.userRoleId && String(newAnn.role_id) === String(prev.userRoleId);
         if (isAllMembers || isMyTeam) {
             return { ...prev, announcements: [newAnn, ...prev.announcements] };
         }
+
         return prev;
     });
 });
@@ -166,7 +169,7 @@ useEffect(() => {
     try {
       const res = await fetch(`${BASE_URL}/api/notifications`, { credentials: "include" });
       const result = await res.json();
-    if (result.success) setData({ ...result, adminId: result.adminId });
+    if (result.success) setData(result);
     } catch (err) {
       console.error(err);
     } finally {
