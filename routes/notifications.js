@@ -142,6 +142,7 @@ if (senderIsAdmin) {
         interests.push(`company-${req.session.adminId}-all`);
     } else {
         interests.push(`company-${req.session.adminId}-team-${role_id}`);
+        interests.push(`admin-${req.session.adminId}`);
     }
 } else {
     // User/Owner sends → target individual user-ids, exclude sender
