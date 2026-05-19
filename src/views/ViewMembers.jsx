@@ -331,6 +331,9 @@ export default function ViewMember() {
   const [data, setData] = useState({ users: [], roles: [], teams: [], sessionRole: '', sessionUserId: null });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+const [filterBy, setFilterBy] = useState('name');
+const [showFilters, setShowFilters] = useState(false);
+const filterDropdownRef = useRef(null);
   const { toast, showToast } = useToast();
   const [showTeams, setShowTeams] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
@@ -385,7 +388,22 @@ export default function ViewMember() {
     }
   }, []);
 
- useEffect(() => {
+useEffect(() => {
+    if (!showFilters) return;
+    function handler(e) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+        setShowFilters(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [showFilters]);
+
+  useEffect(() => {
     fetchData();
 
     // Listen for real-time member updates via Socket.IO
@@ -402,11 +420,46 @@ export default function ViewMember() {
   }, [fetchData]);
 
   // ── FILTERED USERS ───────────────────────────────────────────────────────
-  const filtered = data.users.filter(u =>
-    u.name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.role_name?.toLowerCase().includes(search.toLowerCase())
-  );
+const CONTROL_ORDER = { ADMIN: 0, OWNER: 1, PARTIAL: 2, NONE: 3 };
+
+  const filtered = (() => {
+    const q = search.toLowerCase().trim();
+
+    // Step 1: filter by search query based on active filter
+    let list = data.users.filter(u => {
+      if (!q) return true;
+      if (filterBy === 'name') {
+        return (
+          u.name?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q)
+        );
+      }
+      if (filterBy === 'department') {
+        // match team name — stored in role_name's parent team via role_team_id
+        // best we have client-side is role_name; match against teams list
+        const team = data.teams.find(t => t.id === (u.role_team_id || u.team_id));
+        return team?.name?.toLowerCase().includes(q) || false;
+      }
+      if (filterBy === 'controltype') {
+        // search not very useful for controltype; just keep all when typing
+        return true;
+      }
+      return true;
+    });
+
+    // Step 2: sort based on active filter
+    if (filterBy === 'name') {
+      list = [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (filterBy === 'department') {
+      list = [...list].sort((a, b) => {
+        const ta = data.teams.find(t => t.id === (a.role_team_id || a.team_id))?.name || '';
+        const tb = data.teams.find(t => t.id === (b.role_team_id || b.team_id))?.name || '';
+        return ta.localeCompare(tb);
+      });
+}
+
+    return list;
+  })();
 
   // ── ROLES BY TEAM ────────────────────────────────────────────────────────
   function rolesForTeam(teamId) {
@@ -677,16 +730,105 @@ function openEdit(user) {
           </button>
         </div>
 
-        {/* Search */}
-        <div style={S.searchWrap}>
-          <span style={S.searchIcon}><SearchIcon /></span>
-          <input
-            style={S.searchInput}
-            placeholder="Search by name, email or role…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="vm-search"
-          />
+{/* Search + Filter in one row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+          {/* Search bar */}
+          <div style={{ ...S.searchWrap, flex: 1, marginBottom: 0 }}>
+            <span style={S.searchIcon}><SearchIcon /></span>
+            <input
+              style={S.searchInput}
+              placeholder={filterBy === 'department' ? 'Search by department…' : 'Search by name or email…'}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="vm-search"
+            />
+          </div>
+
+          {/* Filter button with dropdown */}
+          <div ref={filterDropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => setShowFilters(v => !v)}
+              title="Sort / Filter"
+              style={{
+                width: 42, height: 42,
+                borderRadius: 12,
+                border: showFilters
+                  ? '1.5px solid #0F8989'
+                  : '1.5px solid rgba(15,137,137,0.3)',
+                background: showFilters
+                  ? 'linear-gradient(135deg, #095959, #0F8989)'
+                  : 'rgba(15,137,137,0.08)',
+                color: showFilters ? '#fff' : '#0F8989',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.18s',
+                boxShadow: showFilters ? '0 2px 12px rgba(15,137,137,0.35)' : 'none',
+                position: 'relative',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="17" height="17">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+                <line x1="4" y1="18" x2="20" y2="18"/>
+                <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+              </svg>
+              {filterBy !== 'name' && (
+                <span style={{
+                  position: 'absolute', top: 7, right: 7,
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: '#CDF4F4',
+                }} />
+              )}
+            </button>
+
+            {/* Dropdown */}
+            {showFilters && (
+              <div style={{
+                position: 'absolute', right: 0, top: 48,
+                background: '#2E2D2D',
+                border: '1px solid rgba(15,137,137,0.35)',
+                borderRadius: 12,
+                overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                zIndex: 999,
+                minWidth: 160,
+              }}>
+                {[
+                  { key: 'name',       label: ' By Name' },
+                  { key: 'department', label: ' By Department' },
+                ].map((f, i, arr) => {
+                  const isActive = filterBy === f.key;
+                  return (
+                    <div
+                      key={f.key}
+                      onClick={() => { setFilterBy(f.key); setSearch(''); setShowFilters(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '11px 16px',
+                        cursor: 'pointer',
+                        background: isActive ? 'rgba(15,137,137,0.18)' : 'transparent',
+                        borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                        fontSize: 13, fontWeight: isActive ? 700 : 500,
+                        color: isActive ? '#CDF4F4' : '#ccc',
+                        fontFamily: 'Arial, sans-serif',
+                        transition: 'background 0.12s',
+                      }}
+                    >
+                      <span>{f.label}</span>
+                      {isActive && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5" width="13" height="13">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
