@@ -296,15 +296,18 @@ if (req.io) req.io.emit('update_members');
 if (req.io) req.io.emit('update_member_requests');
 notifyDesktop('members');
 
-// ✅ PUSH TO ADMIN CHANNEL
+// ✅ FETCH REQUESTER NAME & PUSH TO ADMIN CHANNEL
 const senderId = `${req.session.userId}`;
+const [requesterRows] = await con.query('SELECT name FROM users WHERE id=?', [senderId]);
+const requesterName = requesterRows.length ? requesterRows[0].name : 'A member';
+
 const interests = [`admin-${adminId}`];
 
 await beamsClient.publishToInterests(interests, {
     web: {
         notification: {
             title: 'New Member Request',
-            body: `${name} requested to join`,
+            body: `${requesterName} requested to add ${name.trim()}`,
             deep_link: 'https://m-tms.thedesigns.live',
         },
         data: { sender_id: senderId },
@@ -312,7 +315,7 @@ await beamsClient.publishToInterests(interests, {
     fcm: {
         notification: {
             title: 'New Member Request',
-            body: `${name} requested to join`,
+            body: `${requesterName} requested to add ${name.trim()}`,
         },
         data: {
             url: 'https://m-tms.thedesigns.live',
@@ -536,15 +539,18 @@ if (req.io) req.io.emit('update_members');
            if (req.io) req.io.emit('member_request');
 if (req.io) req.io.emit('update_members');
 
-// ✅ PUSH TO ADMIN CHANNEL
+// ✅ FETCH REQUESTER NAME & PUSH TO ADMIN CHANNEL
 const senderId = `${req.session.userId}`;
+const [requesterRows] = await con.query('SELECT name FROM users WHERE id=?', [senderId]);
+const requesterName = requesterRows.length ? requesterRows[0].name : 'A member';
+
 const interests = [`admin-${adminId}`];
 
 await beamsClient.publishToInterests(interests, {
     web: {
         notification: {
             title: 'Delete Request',
-            body: `${m.name} requested for deletion`,
+            body: `${requesterName} requested to delete ${m.name}`,
             deep_link: 'https://m-tms.thedesigns.live',
         },
         data: { sender_id: senderId },
@@ -552,7 +558,7 @@ await beamsClient.publishToInterests(interests, {
     fcm: {
         notification: {
             title: 'Delete Request',
-            body: `${m.name} requested for deletion`,
+            body: `${requesterName} requested to delete ${m.name}`,
         },
         data: {
             url: 'https://m-tms.thedesigns.live',
