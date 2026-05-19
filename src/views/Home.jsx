@@ -1245,10 +1245,15 @@ useEffect(() => {
     setDeleteCompleteOpen(false);
     fetchTasks();
   };
-  const sectionLabels = {
+function toTitleCase(str) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+const sectionLabels = {
   ...SECTION_LABELS,
-  CHANGES: customLabels.CHANGES || 'Change',
-  UPDATE: customLabels.UPDATE || 'Update',
+  CHANGES: toTitleCase(customLabels.CHANGES || 'Change'),
+  UPDATE: toTitleCase(customLabels.UPDATE || 'Update'),
 };
   return (
     <div style={styles.container}>

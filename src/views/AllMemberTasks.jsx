@@ -452,7 +452,7 @@ useEffect(() => {
                 borderBottom: active ? '2.5px solid #0F8989' : '2.5px solid transparent',
               }}
             >
-              {sec === 'CHANGES' ? customLabels.CHANGES : sec === 'UPDATE' ? customLabels.UPDATE : SECTION_LABELS[sec]}
+{sec === 'CHANGES' ? (s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())(customLabels.CHANGES || 'Change') : sec === 'UPDATE' ? (s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())(customLabels.UPDATE || 'Update') : SECTION_LABELS[sec]}
               {taskCounts[sec] > 0 && (
                 <span style={{
                   ...styles.badge,
