@@ -200,7 +200,9 @@ export default function ViewRoles({ onBack, onChangeToDept }) {
   const [data, setData] = useState({ roles: [], teams: [], sessionRole: '' });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('name');
+ const [filterType, setFilterType] = useState('name');
+const [showFilters, setShowFilters] = useState(false);
+const filterDropdownRef = React.useRef(null);
   const { toast, showToast } = useToast();
   
 
@@ -244,6 +246,21 @@ export default function ViewRoles({ onBack, onChangeToDept }) {
   }, []);
 
 useEffect(() => { fetchData(); }, [fetchData]);
+
+useEffect(() => {
+  if (!showFilters) return;
+  function handler(e) {
+    if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+      setShowFilters(false);
+    }
+  }
+  document.addEventListener('mousedown', handler);
+  document.addEventListener('touchstart', handler);
+  return () => {
+    document.removeEventListener('mousedown', handler);
+    document.removeEventListener('touchstart', handler);
+  };
+}, [showFilters]);
 
   // ── SOCKET — real-time role updates ──────────────────────────────────────
   useEffect(() => {
@@ -433,32 +450,108 @@ useEffect(() => { fetchData(); }, [fetchData]);
           )}
         </div>
 
-        {/* Search + Filter row */}
+{/* Search + Filter row */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* <div style={{ position: 'relative', flexShrink: 0 }}> */}
-            {/* <select
-              value={filterType}
-              onChange={e => setFilterType(e.target.value)}
-              style={S.filterSelect}
-              className="vr-filter-select"
-            >
-              <option value="name">By Name</option>
-              <option value="team">By Dept</option>
-              <option value="control">By Control</option>
-            </select> */}
-            {/* <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#fff' }}>
-              <ChevronIcon />
-            </span>
-          </div> */}
           <div style={{ ...S.searchWrap, flex: 1, marginBottom: 0 }}>
             <span style={S.searchIcon}><SearchIcon /></span>
             <input
               style={S.searchInput}
-              placeholder="Search roles…"
+              placeholder={
+                filterType === 'team' ? 'Search by department…' :
+                filterType === 'control' ? 'Search by control type…' :
+                'Search roles…'
+              }
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="vr-search"
             />
+          </div>
+
+          {/* Filter button with dropdown */}
+          <div ref={filterDropdownRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => setShowFilters(v => !v)}
+              title="Sort / Filter"
+              style={{
+                width: 42, height: 42,
+                borderRadius: 12,
+                border: showFilters
+                  ? '1.5px solid #0F8989'
+                  : '1.5px solid rgba(15,137,137,0.3)',
+                background: showFilters
+                  ? 'linear-gradient(135deg, #095959, #0F8989)'
+                  : 'rgba(15,137,137,0.08)',
+                color: showFilters ? '#fff' : '#0F8989',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.18s',
+                boxShadow: showFilters ? '0 2px 12px rgba(15,137,137,0.35)' : 'none',
+                position: 'relative',
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="17" height="17">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+                <line x1="4" y1="12" x2="20" y2="12"/>
+                <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+                <line x1="4" y1="18" x2="20" y2="18"/>
+                <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+              </svg>
+              {filterType !== 'name' && (
+                <span style={{
+                  position: 'absolute', top: 7, right: 7,
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: '#CDF4F4',
+                }} />
+              )}
+            </button>
+
+            {/* Dropdown */}
+            {showFilters && (
+              <div style={{
+                position: 'absolute', right: 0, top: 48,
+                background: '#2E2D2D',
+                border: '1px solid rgba(15,137,137,0.35)',
+                borderRadius: 12,
+                overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                zIndex: 999,
+                minWidth: 175,
+              }}>
+                {[
+                  { key: 'name',    label: ' By Name' },
+                  { key: 'team',    label: ' By Department' },
+                  { key: 'control', label: ' By Control Type' },
+                ].map((f, i, arr) => {
+                  const isActive = filterType === f.key;
+                  return (
+                    <div
+                      key={f.key}
+                      onClick={() => { setFilterType(f.key); setSearch(''); setShowFilters(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '11px 16px',
+                        cursor: 'pointer',
+                        background: isActive ? 'rgba(15,137,137,0.18)' : 'transparent',
+                        borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                        fontSize: 13, fontWeight: isActive ? 700 : 500,
+                        color: isActive ? '#CDF4F4' : '#ccc',
+                        fontFamily: 'Arial, sans-serif',
+                        transition: 'background 0.12s',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <span>{f.label}</span>
+                      {isActive && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5" width="13" height="13">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
