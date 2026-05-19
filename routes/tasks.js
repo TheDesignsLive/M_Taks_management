@@ -279,6 +279,20 @@ const pushPayload = {
             type: 'task',
             sender_id: senderUniqueId
         }
+    },
+    apns: {
+        aps: {
+            alert: {
+                title: taskTitle,
+                body: assignerName,
+            },
+            sound: 'default',
+            badge: 1,
+        },
+        data: {
+            type: 'task',
+            sender_id: senderUniqueId
+        }
     }
 };
 
@@ -340,7 +354,21 @@ const pushPayload = {
             type: 'task',
             sender_id: senderUniqueId
         }
+    },
+   apns: {
+    aps: {
+        alert: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        sound: 'default',
+        badge: 1,
+    },
+    data: {
+        type: 'task',
+        sender_id: senderUniqueId
     }
+}
 };
 
 await beamsClient.publishToInterests(interests, pushPayload);
@@ -389,6 +417,20 @@ const pushPayload = {
         notification: {
             title: taskTitle,
             body: assignerName,
+        },
+        data: {
+            type: 'task',
+            sender_id: senderUniqueId
+        }
+    },
+    apns: {
+        aps: {
+            alert: {
+                title: taskTitle,
+                body: assignerName,
+            },
+            sound: 'default',
+            badge: 1,
         },
         data: {
             type: 'task',
