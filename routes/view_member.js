@@ -9,6 +9,12 @@ import FormData from 'form-data';
 import fetch from 'node-fetch';
 import con from '../config/db.js';
 import { notifyDesktop } from '../utils/notifyDesktop.js';
+import PushNotifications from '@pusher/push-notifications-server';
+
+const beamsClient = new PushNotifications({
+    instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58',
+    secretKey: '75EBE2088425312400AD5D15B2476EA23E3CEA61B7DE841FCA0A62E822C3135F',
+});
 
 const DESKTOP_BASE_URL = 'https://tms.thedesigns.live';
 
@@ -288,9 +294,34 @@ if (req.io) req.io.emit('update_members');
                 );
 
 if (req.io) req.io.emit('update_member_requests');
-                notifyDesktop('members');
+notifyDesktop('members');
 
-                return res.json({ success: true, message: 'Member request submitted. Awaiting admin approval.', isRequest: true });
+// ✅ PUSH TO ADMIN CHANNEL
+const senderId = `${req.session.userId}`;
+const interests = [`admin-${adminId}`];
+
+await beamsClient.publishToInterests(interests, {
+    web: {
+        notification: {
+            title: 'New Member Request',
+            body: `${name} requested to join`,
+            deep_link: 'https://m-tms.thedesigns.live',
+        },
+        data: { sender_id: senderId },
+    },
+    fcm: {
+        notification: {
+            title: 'New Member Request',
+            body: `${name} requested to join`,
+        },
+        data: {
+            url: 'https://m-tms.thedesigns.live',
+            sender_id: senderId,
+        },
+    },
+});
+
+return res.json({ success: true, message: 'Member request submitted. Awaiting admin approval.', isRequest: true });
             }
 
 } catch (err) {
@@ -502,10 +533,35 @@ if (req.io) req.io.emit('update_members');
                 [adminId, m.role_id, requestedBy, m.name, m.email, m.password, m.profile_pic]
             );
 
-            if (req.io) req.io.emit('member_request');
-            if (req.io) req.io.emit('update_members');
+           if (req.io) req.io.emit('member_request');
+if (req.io) req.io.emit('update_members');
 
-            return res.json({ success: true, message: 'Delete request submitted. Awaiting admin approval.', isRequest: true });
+// ✅ PUSH TO ADMIN CHANNEL
+const senderId = `${req.session.userId}`;
+const interests = [`admin-${adminId}`];
+
+await beamsClient.publishToInterests(interests, {
+    web: {
+        notification: {
+            title: 'Delete Request',
+            body: `${m.name} requested for deletion`,
+            deep_link: 'https://m-tms.thedesigns.live',
+        },
+        data: { sender_id: senderId },
+    },
+    fcm: {
+        notification: {
+            title: 'Delete Request',
+            body: `${m.name} requested for deletion`,
+        },
+        data: {
+            url: 'https://m-tms.thedesigns.live',
+            sender_id: senderId,
+        },
+    },
+});
+
+return res.json({ success: true, message: 'Delete request submitted. Awaiting admin approval.', isRequest: true });
         }
 
     } catch (err) {
