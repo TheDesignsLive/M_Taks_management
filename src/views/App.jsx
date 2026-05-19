@@ -177,8 +177,7 @@ if (sessionData.loggedIn) {
 if (sessionData.role === 'admin') {
     // Admin: 1 channel only
     await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
-    
-
+    await beamsClient.addDeviceInterest(`admin-user-${sessionData.adminId}`);
 } else if (sessionData.role === 'owner') {
     // Owner: 2 channels — shared admin channel + personal
     await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
