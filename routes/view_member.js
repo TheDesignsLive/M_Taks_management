@@ -731,7 +731,6 @@ router.get("/delete/:id", requireAuth, async (req, res) => {
           m.profile_pic,
         ],
       );
-
       if (req.io) req.io.emit("member_request");
       if (req.io) req.io.emit("update_members");
 
