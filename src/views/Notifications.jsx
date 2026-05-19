@@ -93,6 +93,7 @@ const Notifications = () => {
   const swipeStartX = useRef(null);
   const [modal, setModal] = useState({ show: false, type: "add", editId: null });
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null });
+const [actionConfirm, setActionConfirm] = useState({ show: false, action: null, id: null, title: '', message: '', confirmLabel: '', confirmColor: '#2ecc71' });
 
   // Form states
   const [form, setForm] = useState({ title: "", desc: "", teamId: "0", file: null });
@@ -217,12 +218,15 @@ const handleSubmit = (e) => {
     try {
       const res = await fetch(`${BASE_URL}/api/notifications/${action}/${id}`, { credentials: "include" });
       const result = await res.json();
-      alert(result.message);
       if (result.success) fetchNotifications();
     } catch (err) {
-      alert("Action failed");
+      console.error("Action failed");
     }
-  };
+};
+
+const confirmAction = (action, id, title, message, confirmLabel, confirmColor) => {
+    setActionConfirm({ show: true, action, id, title, message, confirmLabel, confirmColor });
+};
 
   const handleDeleteAnn = async () => {
     const id = deleteConfirm.id;
@@ -340,9 +344,9 @@ const handleSubmit = (e) => {
                   <p style={styles.reqSubDetail}>By {r.requested_by_name} on {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
                 <div style={styles.btnStack}>
-                  <button onClick={() => handleAction("approve-member", r.id)} style={styles.btnSmlGreen}>Accept</button>
-                  <button onClick={() => handleAction("reject-member", r.id)} style={styles.btnSmlRed}>Reject</button>
-                </div>
+                  <button onClick={() => confirmAction("approve-member", r.id, "Accept Member?", `Add ${r.name} to ${r.role_name}?`, "Yes, Accept", "#2ecc71")} style={styles.btnSmlGreen}>Accept</button>
+<button onClick={() => confirmAction("reject-member", r.id, "Reject Request?", `Reject ${r.name}'s request?`, "Yes, Reject", "#e74c3c")} style={styles.btnSmlRed}>Reject</button>
+</div>
               </div>
             </div>
           ))}
@@ -361,8 +365,8 @@ const handleSubmit = (e) => {
                   <p style={styles.reqSubDetail}>By {r.requested_by_name} on {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
                 <div style={styles.btnStack}>
-                  <button onClick={() => handleAction("confirm-deletion", r.id)} style={styles.btnSmlRed}>Approve</button>
-                  <button onClick={() => handleAction("reject-deletion", r.id)} style={styles.btnSmlGreen}>Keep</button>
+                  <button onClick={() => confirmAction("confirm-deletion", r.id, "Approve Deletion?", `Permanently remove ${r.name} from the system?`, "Yes, Delete", "#e74c3c")} style={styles.btnSmlRed}>Approve</button>
+<button onClick={() => confirmAction("reject-deletion", r.id, "Keep Member?", `Keep ${r.name} and reject deletion request?`, "Yes, Keep", "#2ecc71")} style={styles.btnSmlGreen}>Keep</button>
                 </div>
               </div>
             </div>
@@ -451,15 +455,52 @@ const handleSubmit = (e) => {
       )}
 
       {/* ── DELETE CONFIRM MODAL ── */}
-      <ConfirmModal
-        open={deleteConfirm.show}
-        icon={<DangerIcon />}
-        title="Delete Announcement"
-        message="Permanently delete this announcement? This cannot be undone."
-        confirmLabel="Delete"
-        onConfirm={handleDeleteAnn}
-        onCancel={() => setDeleteConfirm({ show: false, id: null })}
-      />
+<ConfirmModal
+    open={deleteConfirm.show}
+    icon={<DangerIcon />}
+    title="Delete Announcement"
+    message="Permanently delete this announcement? This cannot be undone."
+    confirmLabel="Delete"
+    onConfirm={handleDeleteAnn}
+    onCancel={() => setDeleteConfirm({ show: false, id: null })}
+/>
+
+{/* ── ACTION CONFIRM MODAL ── */}
+{actionConfirm.show && (
+    <div style={S.backdrop} onClick={() => setActionConfirm({ show: false })}>
+        <div style={{ ...S.modal, maxWidth: 360 }} onClick={e => e.stopPropagation()}>
+            <div style={S.modalPill} />
+            <div style={{ textAlign: "center", padding: "20px 16px 8px" }}>
+                <div style={{ marginBottom: 12 }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke={actionConfirm.confirmColor} strokeWidth="2" width="36" height="36">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#CDF4F4", marginBottom: 8 }}>{actionConfirm.title}</div>
+                <div style={{ fontSize: 13, color: "#aaa", marginBottom: 22, lineHeight: 1.6 }}>{actionConfirm.message}</div>
+                <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                        style={{ ...S.btn, background: "rgba(255,255,255,0.07)", color: "#aaa", border: "1px solid rgba(255,255,255,0.12)" }}
+                        onClick={() => setActionConfirm({ show: false })}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        style={{ ...S.btn, background: actionConfirm.confirmColor, color: "#fff" }}
+                        onClick={() => {
+                            handleAction(actionConfirm.action, actionConfirm.id);
+                            setActionConfirm({ show: false });
+                        }}
+                    >
+                        {actionConfirm.confirmLabel}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+)}
     </div>
   );
 };
