@@ -575,7 +575,9 @@ router.post('/update-task-status', async (req, res) => {
         let { id, status, section } = req.body;
         if (!status) status = 'OPEN';
         if (!section) section = 'TASK';
-        await db.execute('UPDATE tasks SET status = ?, section = ? WHERE id = ?', [status, section, id]);
+        // ✅ Set completed_at on complete, clear on uncheck
+        const completedAt = status === 'COMPLETED' ? new Date() : null;
+        await db.execute('UPDATE tasks SET status = ?, section = ?, completed_at = ? WHERE id = ?', [status, section, completedAt, id]);
         req.io.emit('update_tasks');
         notifyDesktop();
         res.json({ success: true, status, section });

@@ -53,9 +53,9 @@ router.get('/get-all-tasks', async (req, res) => {
 
 // ── Tasks ────────────────────────────────────
 if (sessionRole === 'admin') {
-            const [taskRows] = await con.query(
+const [taskRows] = await con.query(
                 `SELECT id, title, description, priority, due_date, status, section,
-                        assigned_by, assigned_to, who_assigned, repeat_type
+                        assigned_by, assigned_to, who_assigned, repeat_type, completed_at
                  FROM tasks
                  WHERE admin_id=? AND assigned_to=0 AND who_assigned='admin'
                  ORDER BY due_date ASC`,
@@ -65,7 +65,7 @@ if (sessionRole === 'admin') {
 
             const [otherTaskRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
-                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type,
+                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type, t.completed_at,
                         u.name AS assigned_by_name
                  FROM tasks t
                  JOIN users u ON t.assigned_by = u.id
@@ -79,9 +79,9 @@ if (sessionRole === 'admin') {
             tasks = [...taskRows, ...otherTaskRows];
 
         } else {
-            const [adminTasksRows] = await con.query(
+const [adminTasksRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
-                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type,
+                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type, t.completed_at,
                         a.name AS assigned_by_name
                  FROM tasks t
                  JOIN admins a ON t.assigned_by = a.id
@@ -93,7 +93,7 @@ if (sessionRole === 'admin') {
 
             const [userOwnTasksRows] = await con.query(
                 `SELECT id, title, description, priority, due_date, status, section,
-                        assigned_by, assigned_to, who_assigned, repeat_type
+                        assigned_by, assigned_to, who_assigned, repeat_type, completed_at
                  FROM tasks
                  WHERE admin_id=? AND assigned_to=?
                    AND (who_assigned='user' OR who_assigned='owner')
@@ -105,7 +105,7 @@ if (sessionRole === 'admin') {
 
             const [userToOthersTasksRows] = await con.query(
                 `SELECT t.id, t.title, t.description, t.priority, t.due_date, t.status, t.section,
-                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type,
+                        t.assigned_by, t.assigned_to, t.who_assigned, t.repeat_type, t.completed_at,
                         u.name AS assigned_by_name
                  FROM tasks t
                  JOIN users u ON t.assigned_by = u.id
@@ -137,8 +137,9 @@ if (sessionRole === 'admin') {
 router.post('/update-task-status', async (req, res) => {
     const { id, status } = req.body;
     try {
-        // Only update status — section stays unchanged so unchecking restores naturally
-        await con.query("UPDATE tasks SET status=? WHERE id=?", [status, id]);
+        // ✅ Set completed_at on complete, clear on uncheck
+        const completedAt = status === 'COMPLETED' ? new Date() : null;
+        await con.query("UPDATE tasks SET status=?, completed_at=? WHERE id=?", [status, completedAt, id]);
 
         // ── Repeat logic: spawn next task when completing a repeating task ──
         if (status === 'COMPLETED') {

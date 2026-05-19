@@ -569,13 +569,15 @@ const dateLabelRef = useRef(null);
   const date = formatDate(task.due_date);
   const past = isPastDate(task.due_date);
 
-  const handleCheckbox = async () => {
+const handleCheckbox = async () => {
     setCompleting(true);
     const newStatus = isCompleted ? 'OPEN' : 'COMPLETED';
+    // ✅ Pass completed_at from frontend so sort is immediate on refresh
+    const completedAt = newStatus === 'COMPLETED' ? new Date().toISOString() : null;
     await fetch(`${BASE_URL}/api/home/update-task-status`, {
       method:'POST', credentials:'include',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ id: task.id, status: newStatus })
+      body: JSON.stringify({ id: task.id, status: newStatus, completed_at: completedAt })
     });
     setTimeout(async () => {
       setCardVisible(false);
@@ -830,13 +832,20 @@ onChangeDate={() => { setShowMenu(false); setTimeout(() => dateLabelRef.current?
 function SectionColumn({ section, tasks, members, adminName, role, onRefresh, sectionLabels }) {
   const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
-  const buildSorted = useCallback(() =>
+const buildSorted = useCallback(() =>
     tasks
       .filter(t => {
         if (section === 'COMPLETED') return t.status === 'COMPLETED';
         return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
       })
       .sort((a, b) => {
+        // ✅ COMPLETED section: sort by completed_at ASC (oldest first, newest last)
+        if (section === 'COMPLETED') {
+          const ta = a.completed_at ? new Date(a.completed_at).getTime() : 0;
+          const tb = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+          return ta - tb;
+        }
+        // All other sections: sort by due_date then priority
         const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
         const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
         if (dateA - dateB !== 0) return dateA - dateB;
