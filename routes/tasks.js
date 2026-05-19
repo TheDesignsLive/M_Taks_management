@@ -26,127 +26,6 @@ const beamsClient = new PushNotifications({
 const TMS_ICON = 'https://tms.thedesigns.live/images/tms_logo.jpeg';
 const MOBILE_URL = 'https://m-tms.thedesigns.live';
 
-// ─── Helper: send push to a list of Beams interest strings ───────────────────
-async function pushTaskNotification(ids, taskTitle, assignerName, adminId, assignerRole) {
-
-    if (!ids || ids.length === 0) return;
-
-    // remove duplicate ids
-    ids = [...new Set(ids)];
-
-    const pushTitle = '📋 New Task Assigned';
-    const pushBody = `"${taskTitle}" — assigned by ${assignerName}`;
-
-    const publishBody = {
-        web: {
-            notification: {
-                title: pushTitle,
-                body: pushBody,
-                icon: TMS_ICON,
-                deep_link: MOBILE_URL,
-            },
-        },
-
-        fcm: {
-            notification: {
-                title: pushTitle,
-                body: pushBody,
-                image: TMS_ICON,
-            },
-
-            data: {
-                url: MOBILE_URL,
-                deep_link: MOBILE_URL,
-                icon: TMS_ICON,
-                type: 'task',
-            },
-
-            android: {
-                priority: 'high',
-                ttl: '86400s',
-
-                notification: {
-                    sound: 'default',
-                    channelId: 'tms_tasks',
-                    priority: 'high',
-                    defaultSound: true,
-                },
-            },
-        },
-
-        apns: {
-            aps: {
-                alert: {
-                    title: pushTitle,
-                    body: pushBody,
-                },
-
-                sound: 'default',
-                badge: 1,
-            },
-
-            data: {
-                url: MOBILE_URL,
-                type: 'task',
-            },
-        },
-    };
-
-    // ─── USE publishToInterests() — matches exactly what App.jsx subscribes ──
-    // App.jsx (which cannot be changed) registers devices via addDeviceInterest():
-    //   regular user  → interest: `company-${adminId}-all`
-    //   admin/owner   → interest: `admin-${adminId}-admins`
-    //
-    // layout.jsx tries setUserId() but App.jsx's registration wins because it runs first
-    // and the SDK cannot reliably switch modes mid-session.
-    // So publishToUsers() never finds registered devices.
-    //
-    // Solution: publishToInterests() — matches the actual device registration in App.jsx.
-    // We build the correct interest strings from the ids list.
-
-    const interestSet = new Set();
-    let hasAdminTarget = false;
-    let hasUserTarget = false;
-
-    for (const id of ids) {
-
-        // admin_ prefixed = notify admin/owner → they subscribed to `admin-${adminId}-admins`
-        if (String(id).startsWith('admin_')) {
-            const adminDbId = String(id).replace('admin_', '');
-            // verify it is the same company admin
-            if (parseInt(adminDbId) === parseInt(adminId)) {
-                interestSet.add(`admin-${adminId}-admins`);
-                hasAdminTarget = true;
-            }
-            continue;
-        }
-// numeric user id → verify belongs to same company, then add personal interest
-        const [userRows] = await db.execute(
-            'SELECT id, role_id FROM users WHERE id = ? AND admin_id = ?',
-            [id, adminId]
-        );
-        if (userRows.length > 0) {
-            // Use per-user interest for precise targeting
-            interestSet.add(`user-${id}`);
-            hasUserTarget = true;
-        }
-    }
-
-    const interests = [...interestSet];
-
-    if (interests.length === 0) {
-        console.log('[Tasks] No valid interests to notify for adminId:', adminId, '| role:', assignerRole);
-        return;
-    }
-
-    try {
-        await beamsClient.publishToInterests(interests, publishBody);
-        console.log('[Tasks] 🔔 Push sent via publishToInterests:', interests, '| role:', assignerRole);
-    } catch (err) {
-        console.error('[Tasks] ❌ Beams publishToInterests failed:', err.message);
-    }
-}
-
 // ─── Helper: get assigner display name ───────────────────────────────────────
 async function getAssignerName(session) {
     try {
@@ -223,6 +102,11 @@ router.get('/get-team-members/:teamId', async (req, res) => {
 
                 const { title, description, date, priority, assignedTo, notifyUser } = req.body;
                 const shouldNotify = notifyUser === true || notifyUser === 'true';
+                const senderIsAdmin = req.session.role === 'admin';
+
+const senderUniqueId = senderIsAdmin 
+    ? `admin-${req.session.adminId}` 
+    : `${req.session.userId}`;
 
                 const assigned_by = req.session.role === 'admin' ? req.session.adminId : req.session.userId;
                 const who_assigned = req.session.role;
@@ -372,50 +256,34 @@ const [users] = await db.execute(`
 
 // TEAM notification
     if (shouldNotify) {
+        let interests = [];
 
-        // notify all team members, exclude self
-        let notifyIds = users
-            .map(u => String(u.id))
-            .filter(id => {
-                // exclude self only for non-admin roles (owner and user have a userId)
-                if (
-                    (req.session.role === 'owner' || req.session.role === 'user') &&
-                    parseInt(id) === parseInt(req.session.userId)
-                ) return false;
-                return true;
-            });
+// team
+interests.push(`company-${req.session.adminId}-team-${teamId}`);
 
-        // owner or regular user assigned team task → also notify admin
-        if (req.session.role === 'owner' || req.session.role === 'user') {
-            notifyIds.push(`admin_${admin_id}`);
+
+const pushPayload = {
+    web: {
+        notification: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        data: { sender_id: senderUniqueId }
+    },
+    fcm: {
+        notification: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        data: {
+            type: 'task',
+            sender_id: senderUniqueId
         }
-        // admin assigned team task → do NOT add admin_ (admin doesn't notify themselves)
+    }
+};
 
-        // remove duplicates
-        notifyIds = [...new Set(notifyIds)];
-
-        if (notifyIds.length > 0) {
-            console.log('[Tasks] Team notify ids:', notifyIds);
-
-            // mobile push (Beams publishToUsers)
-pushTaskNotification(
-                notifyIds,
-                taskTitle,
-                assignerName,
-                admin_id,
-                req.session.role
-            ).catch(console.error);
-
-            // desktop socket refresh — always trigger so users don't need to refresh
-            const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
-            notifyDesktop('tasks', {
-                interests: desktopInterests,
-                taskTitle,
-                assignerName
-            });
-        } else {
-            notifyDesktop('tasks', {});
-        }
+await beamsClient.publishToInterests(interests, pushPayload);
+            
     } else {
         notifyDesktop('tasks', {});
     }
@@ -450,41 +318,32 @@ pushTaskNotification(
 req.io.emit('update_tasks');
 
 if (shouldNotify) {
-                const notifyIds = [];
+                let interests = [];
 
-                // notify all users of this company, skip self
-                for (const user of users) {
-                    // selfUserId is null for admin (admin has no row in users table)
-                    if (selfUserId !== null && parseInt(user.id) === parseInt(selfUserId)) continue;
-                    notifyIds.push(String(user.id));
-                }
+interests.push(`company-${req.session.adminId}-all`);
+interests.push(`admin-${req.session.adminId}`);
 
-                // owner or regular user assigned to all → also notify admin
-                if (req.session.role === 'owner' || req.session.role === 'user') {
-                    notifyIds.push(`admin_${admin_id}`);
-                }
-                // admin assigned to all → do NOT add admin_ (admin doesn't notify themselves)
+const pushPayload = {
+    web: {
+        notification: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        data: { sender_id: senderUniqueId }
+    },
+    fcm: {
+        notification: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        data: {
+            type: 'task',
+            sender_id: senderUniqueId
+        }
+    }
+};
 
-                if (notifyIds.length > 0) {
-                    console.log('[Tasks] All-members notify ids:', notifyIds);
-        // mobile push (Beams — company-isolated)
-                    pushTaskNotification(
-                        notifyIds,
-                        taskTitle,
-                        assignerName,
-                        admin_id,
-                        req.session.role
-                    ).catch(() => {});
-                    // desktop socket refresh — always send numeric user ids
-                    const desktopInterests = notifyIds.filter(id => !String(id).startsWith('admin_'));
-                    notifyDesktop('tasks', {
-                        interests: desktopInterests,
-                        taskTitle,
-                        assignerName
-                    });
-                } else {
-                    notifyDesktop('tasks', {});
-                }
+await beamsClient.publishToInterests(interests, pushPayload);
             } else {
                 notifyDesktop('tasks', {});
             }
@@ -510,50 +369,35 @@ req.io.emit('update_tasks');
 
 // ── SINGLE USER NOTIFICATION ────────────────────────────────────────
         if (shouldNotify && assignedTo !== 'self') {
-            let interests = [];
+           let interests = [];
 
-            if (assignedTo === 'admin') {
-                // user/owner assigning to admin → notify only this company's admin
-                if (req.session.role !== 'admin') {
-                    interests = [`admin_${admin_id}`];
-                }
-                // admin assigning to themselves → skip (no self-notification)
+if (assignedTo === 'admin') {
+    interests.push(`admin-user-${req.session.adminId}`);
+} else {
+    interests.push(`user-${assignedTo}`);
+}
 
-            } else if (!isNaN(parseInt(assignedTo))) {
-                const targetId = parseInt(assignedTo);
-                const selfUserId = req.session.role === 'admin' ? null : req.session.userId;
+const pushPayload = {
+    web: {
+        notification: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        data: { sender_id: senderUniqueId }
+    },
+    fcm: {
+        notification: {
+            title: taskTitle,
+            body: assignerName,
+        },
+        data: {
+            type: 'task',
+            sender_id: senderUniqueId
+        }
+    }
+};
 
-                // notify target only if not self
-                if (selfUserId === null || targetId !== parseInt(selfUserId)) {
-                    // verify target belongs to same company
-                    const [targetCheck] = await db.execute(
-                        'SELECT id FROM users WHERE id = ? AND admin_id = ?',
-                        [targetId, admin_id]
-                    );
-                    if (targetCheck.length > 0) {
-                        interests = [String(targetId)];
-                    }
-                }
-
-                // user/owner also notifies admin — admin does NOT notify themselves
-                if (
-                    (req.session.role === 'owner' || req.session.role === 'user') &&
-                    interests.length > 0
-                ) {
-                    interests.push(`admin_${admin_id}`);
-                }
-
-                console.log('[Tasks] Single-user role:', req.session.role, '| notify ids:', interests);
-            }
-
-            if (interests.length > 0) {
-                console.log('[Tasks] Single-user notify ids:', interests);
-                pushTaskNotification(interests, taskTitle, assignerName, admin_id, req.session.role).catch(() => {});
-                const desktopInterests = interests.filter(id => !String(id).startsWith('admin_'));
-                notifyDesktop('tasks', { interests: desktopInterests, taskTitle, assignerName });
-            } else {
-                notifyDesktop('tasks', {});
-            }
+await beamsClient.publishToInterests(interests, pushPayload);
         } else {
             notifyDesktop('tasks', {});
         }
@@ -575,9 +419,7 @@ router.post('/update-task-status', async (req, res) => {
         let { id, status, section } = req.body;
         if (!status) status = 'OPEN';
         if (!section) section = 'TASK';
-        // ✅ Set completed_at on complete, clear on uncheck
-        const completedAt = status === 'COMPLETED' ? new Date() : null;
-        await db.execute('UPDATE tasks SET status = ?, section = ?, completed_at = ? WHERE id = ?', [status, section, completedAt, id]);
+        await db.execute('UPDATE tasks SET status = ?, section = ? WHERE id = ?', [status, section, id]);
         req.io.emit('update_tasks');
         notifyDesktop();
         res.json({ success: true, status, section });

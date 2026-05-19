@@ -182,12 +182,15 @@ if (sessionData.role === 'admin') {
     // Owner: 2 channels — shared admin channel + personal
     await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
+    if (sessionData.team_id) {
+        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
+    }
 } else {
     // Regular user: 3 channels
     await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-all`);
     await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
     if (sessionData.team_id) {
-        await beamsClient.addDeviceInterest(`team-${sessionData.team_id}`);
+        await beamsClient.addDeviceInterest(`company-${sessionData.adminId}-team-${sessionData.team_id}`);
     }
 }
 
