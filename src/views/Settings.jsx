@@ -408,22 +408,28 @@ const handleLogout = async () => {
     </span>
   </div>
 </div>
-{/* NEW BUTTON */}
-<div style={{ ...S.sectionLabel, marginTop: 24 }}>TEST</div>
+{/* EXPORT TASK */}
+<div style={{ ...S.sectionLabel, marginTop: 24 }}>EXPORT</div>
 
 <div style={S.card}>
   <div
     style={S.menuItem}
-    onClick={() => alert("Button Clicked")}
+    onClick={handleExportCSV}
   >
     <div style={S.menuLeft}>
-      <div style={{ ...S.menuIcon, background: "rgba(15,137,137,0.15)", color: "#0F8989" }}>
-        <BellIcon />
+      <div style={{
+        ...S.menuIcon,
+        background: "rgba(15,137,137,0.15)",
+        color: "#0F8989"
+      }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
       </div>
 
       <div>
-        <div style={S.menuTitle}>My Button</div>
-        <div style={S.menuSub}>Testing button</div>
+        <div style={S.menuTitle}>Export Tasks (CSV)</div>
+        <div style={S.menuSub}>Download all tasks</div>
       </div>
     </div>
 
