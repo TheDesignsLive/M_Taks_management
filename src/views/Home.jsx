@@ -842,7 +842,8 @@ const buildSorted = useCallback(() =>
   if (!filterDate || section !== 'COMPLETED') return true;
   if (!t.completed_at) return false;
   const d = new Date(t.completed_at);
-  const local = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset() * -1);
+  const local = d.toISOString().split('T')[0];
   return local === filterDate;
 })
       .sort((a, b) => {
