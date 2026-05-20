@@ -87,12 +87,6 @@ const Settings = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ show: false, type: "", step: 1 });
-  const [exportForm, setExportForm] = useState({
-  section: "all",
-  fromDate: "",
-  toDate: "",
-  previewData: []
-});
   const [form, setForm] = useState({ otp: "", generatedOtp: "", newPass: "", confPass: "", newEmail: "" });
   const [alertBox, setAlertBox] = useState({ show: false, title: "", msg: "", isSuccess: true });
 const [labelForm, setLabelForm] = useState({ changes: '', update: '' });
@@ -281,50 +275,6 @@ const handleLogout = async () => {
   };
 
   const closeModal = () => setModal({ show: false, type: "", step: 1 });
-  const handlePreviewExport = async () => {
-  try {
-    const res = await fetch(`${BASE_URL}/api/export/preview`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        section: exportForm.section,
-        fromDate: exportForm.fromDate,
-        toDate: exportForm.toDate
-      }),
-      credentials: "include"
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      setExportForm(prev => ({ ...prev, previewData: data.tasks }));
-      setModal({ show: true, type: "export", step: 2 });
-    }
-
-  } catch (err) {
-    console.error(err);
-  }
-};
-const handleDownloadCSV = () => {
-  const rows = exportForm.previewData;
-
-  const csv = [
-    ["Title", "Description", "Date"],
-    ...rows.map(r => [r.title, r.description, r.date])
-  ]
-    .map(e => e.join(","))
-    .join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "tasks.csv";
-  a.click();
-};
   const handleSaveLabels = async () => {
     setLabelSaving(true);
     try {
@@ -340,12 +290,7 @@ const handleDownloadCSV = () => {
     setLabelSaving(false);
 };
 
-  const modalTitle =
-  modal.type === "pass" ? "Change Password" :
-  modal.type === "email" ? "Change Email" :
-  modal.type === "labels" ? "Section Labels" :
-  modal.type === "export" ? "Export Tasks" :
-  "Delete Profile";
+  const modalTitle = modal.type === "pass" ? "Change Password" : modal.type === "email" ? "Change Email" : modal.type === "labels" ? "Section Labels" : "Delete Profile";
 
   // step label
   const stepLabels = {
@@ -466,7 +411,7 @@ const handleDownloadCSV = () => {
 {/* Export Section */}
 <div style={{ ...S.sectionLabel, marginTop: 24 }}>EXPORT</div>
 <div style={S.card}>
-  <div style={S.menuItem} onClick={() => setModal({ show: true, type: "export", step: 1 })}>
+  <div style={S.menuItem} onClick={() => {}}>
     <div style={S.menuLeft}>
       <div style={{ ...S.menuIcon, background: 'rgba(15,137,137,0.15)', color: '#0F8989' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -626,59 +571,6 @@ const handleDownloadCSV = () => {
             )}
 
             {/* Labels — Step 1 */}
-            {/* EXPORT — Step 1 */}
-{modal.type === "export" && modal.step === 1 && (
-  <div>
-    <label style={S.label}>Select Section</label>
-    <select
-      style={S.input}
-      value={exportForm.section}
-      onChange={e => setExportForm({ ...exportForm, section: e.target.value })}
-    >
-      <option value="all">All</option>
-      <option value="task">Task</option>
-      <option value="completed">Completed</option>
-      <option value="others">Others</option>
-    </select>
-
-    <label style={S.label}>From Date</label>
-    <input
-      type="date"
-      style={S.input}
-      onChange={e => setExportForm({ ...exportForm, fromDate: e.target.value })}
-    />
-
-    <label style={S.label}>To Date</label>
-    <input
-      type="date"
-      style={S.input}
-      onChange={e => setExportForm({ ...exportForm, toDate: e.target.value })}
-    />
-
-    <button
-      style={S.primaryBtn}
-      onClick={handlePreviewExport}
-    >
-      Preview
-    </button>
-  </div>
-)}
-{/* EXPORT — Step 2 (Preview) */}
-{modal.type === "export" && modal.step === 2 && (
-  <div>
-    <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 12 }}>
-      {exportForm.previewData.map((t, i) => (
-        <div key={i} style={{ padding: 6, borderBottom: "1px solid #555", color: "#ccc" }}>
-          {t.title}
-        </div>
-      ))}
-    </div>
-
-    <button style={S.primaryBtn} onClick={handleDownloadCSV}>
-      Export CSV
-    </button>
-  </div>
-)}
             {modal.type === "labels" && modal.step === 1 && (
               <div>
                 <p style={S.infoText}>Edit the display names shown for the <span style={{ color: '#CDF4F4', fontWeight: 700 }}>Change</span> and <span style={{ color: '#CDF4F4', fontWeight: 700 }}>Update</span> sections across the app.</p>
