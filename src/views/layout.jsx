@@ -173,6 +173,9 @@ useEffect(() => {
 if (d.loggedIn) {
         setSessionRole(d.role || '');
         setSessionControlType(d.control_type || '');
+
+        await subscribeUser();  
+        
         if (d.role !== 'admin' && d.adminName) {
           setAdminInfo({ name: d.adminName });
         }
