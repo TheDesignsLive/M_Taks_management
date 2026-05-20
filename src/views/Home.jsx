@@ -1519,7 +1519,7 @@ const sectionLabels = {
       </label>
     )}
 
-{/* ── Export ── */}
+{/* ── Export (right of filter) ── */}
     {taskCounts['COMPLETED'] > 0 && (
       <button
         onClick={handleExportCompleted}
@@ -1533,6 +1533,7 @@ const sectionLabels = {
           fontFamily:'Arial, sans-serif',
           letterSpacing:0.15,
           transition:'background 0.15s, border-color 0.15s',
+          marginLeft: 6,
         }}
         onMouseEnter={e => e.currentTarget.style.background='rgba(15,137,137,0.16)'}
         onMouseLeave={e => e.currentTarget.style.background='rgba(15,137,137,0.08)'}
@@ -1545,6 +1546,7 @@ const sectionLabels = {
         Export
       </button>
     )}
+    <div style={{ flex: 1 }} />
 
     {/* ── Clear All ── */}
     {taskCounts['COMPLETED'] > 0 && (
