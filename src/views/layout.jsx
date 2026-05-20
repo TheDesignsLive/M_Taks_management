@@ -395,9 +395,9 @@ function showToast(msg) {
  const handleLogout = async () => {
   try {
     // ===== 1. STOP BEAMS =====
-    if (window.beamsClient) {
-      await window.beamsClient.clearAllState();
-      await window.beamsClient.stop();
+    if (window.__beamsClient) {
+      await window.__beamsClient.clearAllState();
+      await window.__beamsClient.stop();
       console.log("✅ Beams stopped");
     }
 

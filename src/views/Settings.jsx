@@ -192,7 +192,55 @@ const handleEnableNotifications = async () => {
       showAlert("Invalid OTP", "OTP mismatch!", false);
     }
   };
+const handleLogout = async () => {
+  try {
+    // ===== 1. STOP BEAMS =====
+    if (window.__beamsClient) {
+      await window.__beamsClient.clearAllState();
+      await window.__beamsClient.stop();
+      console.log("✅ Beams stopped");
+    }
 
+    // ===== 2. UNSUBSCRIBE PUSH =====
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          console.log("✅ Push unsubscribed");
+        }
+      }
+    }
+
+    // ===== 3. UNREGISTER SERVICE WORKER =====
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (let registration of registrations) {
+      await registration.unregister();
+    }
+    console.log("✅ Service workers removed");
+
+  } catch (err) {
+    console.error("Logout cleanup error:", err);
+  }
+
+  // ===== 4. SERVER LOGOUT =====
+  try {
+    const res = await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      localStorage.removeItem('activePage');
+      localStorage.removeItem('beams_interest_key'); // 🔥 IMPORTANT
+      window.location.href = '/';
+    }
+  } catch (err) {
+    window.location.href = '/';
+  }
+};
   const handleFinalSubmit = async () => {
     let url = modal.type === "pass" ? "/api/settings/change-password" : "/api/settings/change-email";
     let body = modal.type === "pass" ? { new_password: form.newPass } : { new_email: form.newEmail };
@@ -388,14 +436,8 @@ const handleEnableNotifications = async () => {
               msg: `Logout from ${data.email}?`,
               isSuccess: false,
               action: async () => {
-                try {
-                  const res = await fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
-                  const result = await res.json();
-                  if (result.status === "success") window.location.href = "/";
-                } catch (err) {
-                  setAlertBox({ show: true, title: "Error", msg: "Network error", isSuccess: false });
-                }
-              },
+  await handleLogout();
+},
             })}
           >
             <div style={S.menuLeft}>
