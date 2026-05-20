@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { io } from 'socket.io-client';
+import * as XLSX from 'xlsx';
 
 const SOCKET_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -1247,10 +1248,147 @@ useEffect(() => {
     }).length;
   });
 
-  const handleDeleteCompleted = async () => {
+const handleDeleteCompleted = async () => {
     await fetch(`${BASE_URL}/api/home/delete-completed-tasks`, { method:'POST', credentials:'include' });
     setDeleteCompleteOpen(false);
     fetchTasks();
+  };
+
+const handleExportCompleted = () => {
+    let completedTasks = tasks.filter(t => t.status === 'COMPLETED');
+
+    if (completedFilterDate) {
+      completedTasks = completedTasks.filter(t => {
+        if (!t.due_date) return false;
+        return normDateKey(t.due_date) === completedFilterDate;
+      });
+    }
+
+    const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+    completedTasks.sort((a, b) => {
+      const da = a.due_date ? new Date(normDateKey(a.due_date)) : new Date('9999-12-31');
+      const db = b.due_date ? new Date(normDateKey(b.due_date)) : new Date('9999-12-31');
+      if (da - db !== 0) return da - db;
+      const pa = PRIORITY_ORDER[(a.priority || 'LOW').toUpperCase()] ?? 2;
+      const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
+      return pa - pb;
+    });
+
+    if (completedTasks.length === 0) return;
+
+// ✅ Rock-solid date formatter — handles ALL formats MySQL can return
+    function formatExcelDate(val) {
+      if (!val) return '';
+      let d;
+      // If already a JS Date object (MySQL driver sometimes returns this)
+      if (val instanceof Date) {
+        d = val;
+      } else {
+        // String: could be "2025-05-15", "2025-05-15T00:00:00.000Z", etc.
+        const str = String(val).trim();
+        // Extract just YYYY-MM-DD portion before any T or space
+        const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!match) return '';
+        // Construct with explicit parts to avoid timezone shift
+        d = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+      }
+      if (isNaN(d.getTime())) return '';
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    // ✅ Build AOA — no # column
+    const aoa = [
+      ['Task Title', 'Description', 'Assigned By', 'Date', 'Priority'],
+      ...completedTasks.map(t => [
+        t.title || '',
+        t.description || '',
+        t.assigned_by_name || 'Myself',
+        formatExcelDate(t.due_date),
+        (t.priority || 'LOW').charAt(0).toUpperCase() + (t.priority || 'LOW').slice(1).toLowerCase(),
+      ])
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    ws['!cols'] = [
+      { wch: 32 },  // Task Title
+      { wch: 40 },  // Description
+      { wch: 22 },  // Assigned By
+      { wch: 16 },  // Date
+      { wch: 10 },  // Priority
+    ];
+
+    ws['!rows'] = aoa.map(() => ({ hpt: 20 }));
+
+    // ✅ Priority fills with patternType (required by SheetJS for bg colors)
+    const priorityFills = {
+      HIGH:   { patternType: 'solid', fgColor: { rgb: 'FFCCCC' }, bgColor: { rgb: 'FFCCCC' } },
+      MEDIUM: { patternType: 'solid', fgColor: { rgb: 'FFF9C4' }, bgColor: { rgb: 'FFF9C4' } },
+      LOW:    { patternType: 'solid', fgColor: { rgb: 'CCE5FF' }, bgColor: { rgb: 'CCE5FF' } },
+    };
+
+    const priorityFonts = {
+      HIGH:   { bold: true, color: { rgb: 'C0392B' }, sz: 11 },
+      MEDIUM: { bold: true, color: { rgb: 'B8860B' }, sz: 11 },
+      LOW:    { bold: true, color: { rgb: '1A5276' }, sz: 11 },
+    };
+
+    // ✅ Header row styles
+    ['A1','B1','C1','D1','E1'].forEach(addr => {
+      if (!ws[addr]) return;
+      ws[addr].s = {
+        fill: { patternType: 'solid', fgColor: { rgb: '0F8989' }, bgColor: { rgb: '0F8989' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: false },
+        border: {
+          bottom: { style: 'thin', color: { rgb: '097070' } },
+        },
+      };
+    });
+
+    // ✅ Data rows styles
+    completedTasks.forEach((t, i) => {
+      const rowNum = i + 2;
+      const priority = (t.priority || 'LOW').toUpperCase();
+      const fill = priorityFills[priority] || priorityFills.LOW;
+      const font = priorityFonts[priority] || priorityFonts.LOW;
+      const cols = ['A', 'B', 'C', 'D', 'E'];
+
+      cols.forEach(col => {
+        const addr = `${col}${rowNum}`;
+        if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+        ws[addr].s = {
+          fill,
+          font: col === 'E' ? font : { sz: 11, color: { rgb: '1A1A1A' } },
+          alignment: {
+            vertical: 'center',
+            horizontal: col === 'E' ? 'center' : 'left',
+            wrapText: col === 'B',
+          },
+        };
+      });
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Completed Tasks');
+
+    // ✅ cellStyles:true — REQUIRED for background colors to render in Excel/Sheets
+    const wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+    const blob = new Blob([wbOut], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = completedFilterDate
+      ? `completed-tasks-${completedFilterDate}.xlsx`
+      : `completed-tasks-${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+URL.revokeObjectURL(url);
   };
 function toTitleCase(str) {
   if (!str) return str;
@@ -1379,6 +1517,33 @@ const sectionLabels = {
           style={{ position:'absolute', inset:0, opacity:0, cursor:'pointer', width:'100%', height:'100%' }}
         />
       </label>
+    )}
+
+{/* ── Export ── */}
+    {taskCounts['COMPLETED'] > 0 && (
+      <button
+        onClick={handleExportCompleted}
+        style={{
+          background:'rgba(15,137,137,0.08)',
+          border:'1px solid rgba(15,137,137,0.25)',
+          borderRadius:100,
+          cursor:'pointer', padding:'5px 13px',
+          display:'flex', alignItems:'center', gap:5,
+          color:'#0F8989', fontSize:11.5, fontWeight:700,
+          fontFamily:'Arial, sans-serif',
+          letterSpacing:0.15,
+          transition:'background 0.15s, border-color 0.15s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background='rgba(15,137,137,0.16)'}
+        onMouseLeave={e => e.currentTarget.style.background='rgba(15,137,137,0.08)'}
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export
+      </button>
     )}
 
     {/* ── Clear All ── */}
