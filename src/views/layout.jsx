@@ -170,7 +170,7 @@ const [notifyUser, setNotifyUser] = useState(false);
 useEffect(() => {
   fetch(`${BASE_URL}/api/auth/session`, { credentials: 'include' })
     .then(r => r.json())
-    .then(d => {
+    .then(async (d) => {
 if (d.loggedIn) {
         setSessionRole(d.role || '');
         setSessionControlType(d.control_type || '');
