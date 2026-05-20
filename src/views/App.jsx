@@ -162,6 +162,7 @@ export default function App() {
       .start()
 
       .then(async () => {
+        window.__beamsClient = beamsClient;
         console.log("Pusher Beams Started");
 
         return Notification.requestPermission();
