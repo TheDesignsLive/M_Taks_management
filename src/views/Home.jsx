@@ -829,7 +829,7 @@ onChangeDate={() => { setShowMenu(false); setTimeout(() => dateLabelRef.current?
 }
 
 // ─── SectionColumn ────────────────────────────────────────────────────────────
-function SectionColumn({ section, tasks, members, adminName, role, onRefresh, sectionLabels }) {
+function SectionColumn({ section, tasks, members, adminName, role, onRefresh, sectionLabels, filterDate }) {
   const PRIORITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
 const buildSorted = useCallback(() =>
@@ -837,6 +837,11 @@ const buildSorted = useCallback(() =>
       .filter(t => {
         if (section === 'COMPLETED') return t.status === 'COMPLETED';
         return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
+      })
+      .filter(t => {
+        if (!filterDate || section !== 'COMPLETED') return true;
+        if (!t.completed_at) return false;
+        return normDateKey(t.completed_at) === filterDate;
       })
       .sort((a, b) => {
         // ✅ COMPLETED section: sort by completed_at ASC (oldest first, newest last)
@@ -853,7 +858,7 @@ const buildSorted = useCallback(() =>
         const pb = PRIORITY_ORDER[(b.priority || 'LOW').toUpperCase()] ?? 2;
         return pa - pb;
       }),
-  [tasks, section]);
+  [tasks, section, filterDate]);
 
   const [orderedTasks, setOrderedTasks] = useState(buildSorted);
 
@@ -863,7 +868,7 @@ const buildSorted = useCallback(() =>
     if (!isDraggingRef.current) {
       setOrderedTasks(buildSorted());
     }
-  }, [tasks, section]);
+  }, [tasks, section, filterDate]);
 
   // ── Drag state ──────────────────────────────────────────────────────────────
   const [dragIndex, setDragIndex] = useState(null);
@@ -1157,6 +1162,7 @@ const Home = () => {
   const [activeSection, setActiveSection] = useState('TASK');
   const [loading, setLoading] = useState(true);
   const [deleteCompleteOpen, setDeleteCompleteOpen] = useState(false);
+const [completedFilterDate, setCompletedFilterDate] = useState('');
   const [customLabels, setCustomLabels] = useState({ CHANGES: 'Change', UPDATE: 'Update' });
 
 
@@ -1308,25 +1314,61 @@ const sectionLabels = {
           ))}
         </div>
 
-        {activeSection === 'COMPLETED' && taskCounts['COMPLETED'] > 0 && (
-<div style={{ display:'flex', justifyContent:'flex-end', padding:'0px 14px 6px' }}>
-            <button
-              onClick={()=>setDeleteCompleteOpen(true)}
-              style={{
-                background:'#2a1515', border:'1px solid #7f1d1d', borderRadius:8,
-                cursor:'pointer', padding:'7px 16px',
-                display:'flex', alignItems:'center', gap:6,
-                color:'#ef4444', fontSize:13, fontWeight:700, fontFamily:'Arial, sans-serif',
-                minHeight:36,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-              Clear All
-            </button>
-          </div>
-        )}
+        {activeSection === 'COMPLETED' && (
+  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'4px 14px 8px', gap:8 }}>
+
+    {/* ── Date Filter ── */}
+    {completedFilterDate ? (
+      <span style={{
+        display:'inline-flex', alignItems:'center', gap:5,
+        background:'rgba(15,137,137,0.15)', border:'1px solid rgba(15,137,137,0.5)',
+        borderRadius:20, padding:'5px 11px',
+        fontSize:11, color:'#0F8989', fontWeight:700,
+      }}>
+        📅 {new Date(completedFilterDate + 'T00:00:00').toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}
+        <span
+          onClick={() => setCompletedFilterDate('')}
+          style={{ marginLeft:2, fontSize:13, color:'#aaa', cursor:'pointer', lineHeight:1 }}
+        >✕</span>
+      </span>
+    ) : (
+      <label style={{
+        display:'inline-flex', alignItems:'center', gap:5,
+        background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)',
+        borderRadius:20, padding:'5px 11px',
+        fontSize:11, color:'#aaa', fontWeight:600, cursor:'pointer',
+        position:'relative', overflow:'hidden',
+      }}>
+        📅 Filter Date
+        <input
+          type="date"
+          value={completedFilterDate}
+          onChange={e => setCompletedFilterDate(e.target.value)}
+          style={{ position:'absolute', inset:0, opacity:0, cursor:'pointer', width:'100%' }}
+        />
+      </label>
+    )}
+
+    {/* ── Clear All ── */}
+    {taskCounts['COMPLETED'] > 0 && (
+      <button
+        onClick={()=>setDeleteCompleteOpen(true)}
+        style={{
+          background:'#2a1515', border:'1px solid #7f1d1d', borderRadius:8,
+          cursor:'pointer', padding:'7px 16px',
+          display:'flex', alignItems:'center', gap:6,
+          color:'#ef4444', fontSize:13, fontWeight:700, fontFamily:'Arial, sans-serif',
+          minHeight:36,
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </svg>
+        Clear All
+      </button>
+    )}
+  </div>
+)}
       </div>
 
       {/* SLIDER */}
@@ -1347,7 +1389,8 @@ const sectionLabels = {
               key={sec} section={sec} tasks={tasks}
               members={members} adminName={adminName}
               role={role} onRefresh={fetchTasks}
-               sectionLabels={sectionLabels}
+              sectionLabels={sectionLabels}
+              filterDate={sec === 'COMPLETED' ? completedFilterDate : ''}
             />
           ))}
         </div>
