@@ -1492,19 +1492,18 @@ const sectionLabels = {
           </svg>
         </span>
       </span>
-) : (
+    ) : (
       <label style={{
-        display:'inline-flex', alignItems:'center', gap:5,
-        background:'rgba(15,137,137,0.08)',
-        border:'1px solid rgba(15,137,137,0.25)',
+        display:'inline-flex', alignItems:'center', gap:6,
+        background:'rgba(255,255,255,0.04)',
+        border:'1px solid rgba(255,255,255,0.1)',
         borderRadius:100, padding:'5px 13px',
-        fontSize:11.5, color:'#0F8989', fontWeight:700, cursor:'pointer',
+        fontSize:11.5, color:'#888', fontWeight:600, cursor:'pointer',
         position:'relative', overflow:'hidden',
         letterSpacing:0.15,
         transition:'border-color 0.2s, background 0.2s',
-        fontFamily:'Arial, sans-serif',
       }}>
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F8989" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
           <rect x="3" y="4" width="18" height="18" rx="3" ry="3"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
           <line x1="8" y1="2" x2="8" y2="6"/>
