@@ -408,6 +408,30 @@ const handleLogout = async () => {
     </span>
   </div>
 </div>
+{/* NEW BUTTON */}
+<div style={{ ...S.sectionLabel, marginTop: 24 }}>TEST</div>
+
+<div style={S.card}>
+  <div
+    style={S.menuItem}
+    onClick={() => alert("Button Clicked")}
+  >
+    <div style={S.menuLeft}>
+      <div style={{ ...S.menuIcon, background: "rgba(15,137,137,0.15)", color: "#0F8989" }}>
+        <BellIcon />
+      </div>
+
+      <div>
+        <div style={S.menuTitle}>My Button</div>
+        <div style={S.menuSub}>Testing button</div>
+      </div>
+    </div>
+
+    <span style={S.chevron}>
+      <ChevronRight />
+    </span>
+  </div>
+</div>
 {/* Account Section */}
 <div style={{ ...S.sectionLabel, marginTop: 24 }}>ACCOUNT</div>
         <div style={S.card}>
