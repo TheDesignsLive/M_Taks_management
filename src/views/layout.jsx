@@ -8,7 +8,7 @@ import ViewMembers from './ViewMembers.jsx';
 import Settings from './Settings.jsx';
 import Profile from './Profile.jsx';
 import AllMemberTasks from './AllMemberTasks.jsx';
-import { subscribeUser } from "./utils/subscribeUser.js";
+import { subscribeUser } from "../../utils/subscribeUser.js";
 
 
 
