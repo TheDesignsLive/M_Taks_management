@@ -9,83 +9,8 @@ import Settings from './Settings.jsx';
 import Profile from './Profile.jsx';
 import AllMemberTasks from './AllMemberTasks.jsx';
 
-// ─── BEAMS CONFIG ────────────────────────────────────────────────────────────
-const BEAMS_INSTANCE_ID = '423440a8-1fc5-4373-8e6b-0085dccafc58';
 
-function loadBeamsSDK() {
-    return new Promise((resolve, reject) => {
-        if (window.PusherPushNotifications) return resolve();
-        const s = document.createElement('script');
-        s.src = 'https://js.pusher.com/beams/1.0/push-notifications-cdn.js';
-        s.async = true;
-        s.onload = resolve;
-        s.onerror = () => reject(new Error('Beams SDK load failed'));
-        document.head.appendChild(s);
-    });
-}
 
-async function initMobileBeams(beamsUserId) {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.warn('[MobileBeams] Push not supported');
-        return;
-    }
-    try {
-        await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
-        await loadBeamsSDK();
-        const PPN = window.PusherPushNotifications;
-        if (!PPN || !PPN.Client) { console.warn('[MobileBeams] SDK not available'); return; }
-
-const beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
-
-        // ── Do NOT stop() or fight App.jsx — let App.jsx keep its interest registration ──
-        // App.jsx registers via addDeviceInterest() = anonymous/interest mode.
-        // Backend now uses publishToInterests() to match this registration.
-        // layout.jsx no longer needs setUserId() for task notifications.
-        // This avoids SDK mode conflicts entirely.
-
-        const permission = Notification.permission;
-        if (permission === 'granted') {
-            console.log('[MobileBeams] Device already registered via App.jsx interests — no action needed');
-        } else if (permission === 'default') {
-            setTimeout(async () => {
-                await Notification.requestPermission();
-            }, 2000);
-        } else {
-            console.warn('[MobileBeams] Notifications blocked by user');
-        }
-    } catch(err) { console.warn('[MobileBeams] Init error:', err.message); }
-}
-
-async function subscribeMobileBeams(beamsClient, beamsUserId) {
-    try {
-        await beamsClient.start();
-        console.log('[MobileBeams] SDK started, setting userId:', beamsUserId);
-
-const tokenProvider = new window.PusherPushNotifications.TokenProvider({
-    url: `${BASE_URL}/api/auth/beams-auth`,
-    credentials: 'include',
-    headers: {
-        'x-beams-user': beamsUserId,
-    },
-    queryParams: {
-        beamsUserId: beamsUserId,
-    },
-});
-
-await beamsClient.setUserId(beamsUserId, tokenProvider);
-
-        // Verify subscription worked
-        const deviceId = await beamsClient.getDeviceId();
-        console.log('[MobileBeams] ✅ Subscribed as:', beamsUserId, '| Device ID:', deviceId);
-
-        localStorage.setItem('beams_subscribed_' + beamsUserId, '1');
-        localStorage.setItem('beams_last_user', beamsUserId);
-    } catch(err) {
-        console.warn('[MobileBeams] Subscribe error:', err.message, err);
-        // Clear stored flag so next load retries
-        localStorage.removeItem('beams_subscribed_' + beamsUserId);
-    }
-}
 
 // ─── BASE URL ───────────────────────────────────────────────────────────────
 const BASE_URL =
@@ -258,7 +183,7 @@ if (d.loggedIn) {
         } else {
             beamsUserId = String(d.userId);
         }
-        initMobileBeams(beamsUserId);
+        
         // Fetch profile pic for top bar
         fetch(`${BASE_URL}/api/profile`, { credentials: 'include' })
           .then(r => r.json())
@@ -467,24 +392,54 @@ function showToast(msg) {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json();
-if (data.status === 'success') {
-    localStorage.removeItem('activePage'); // ✅ clear so next login starts at home
-    window.location.href = '/';
-      } else {
-        alert('Logout failed. Please try again.');
+ const handleLogout = async () => {
+  try {
+    // ===== 1. STOP BEAMS =====
+    if (window.beamsClient) {
+      await window.beamsClient.clearAllState();
+      await window.beamsClient.stop();
+      console.log("✅ Beams stopped");
+    }
+
+    // ===== 2. UNSUBSCRIBE PUSH =====
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          console.log("✅ Push unsubscribed");
+        }
       }
-    } catch (err) {
-      console.error('Logout Error:', err);
+    }
+
+    // ===== 3. UNREGISTER SERVICE WORKER =====
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (let registration of registrations) {
+      await registration.unregister();
+    }
+    console.log("✅ Service workers removed");
+
+  } catch (err) {
+    console.error("Logout cleanup error:", err);
+  }
+
+  // ===== 4. SERVER LOGOUT =====
+  try {
+    const res = await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      localStorage.removeItem('activePage');
       window.location.href = '/';
     }
-  };
+  } catch (err) {
+    window.location.href = '/';
+  }
+};
 
   const priColor = PRIORITIES.find(p => p.value === priority)?.color || '#f59e0b';
 
