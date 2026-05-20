@@ -173,60 +173,6 @@ export default function App() {
 
         const sessionData = await sessionRes.json();
 
-        async function subscribeUser() {
-          const myUniqueId =
-            sessionData.role === "admin"
-              ? `admin-${sessionData.adminId}`
-              : `${sessionData.userId}`;
-
-          if ("caches" in window) {
-            caches.open("tms-user-data").then((cache) => {
-              cache.put("/my-id", new Response(myUniqueId));
-            });
-          }
-          // Force re-subscribe every time to clear stale interests
-          const expectedInterestKey =
-            sessionData.role === "admin"
-              ? `admin-${sessionData.adminId}-admins`
-              : `user-${sessionData.userId}`;
-          const storedKey = localStorage.getItem("beams_interest_key");
-
-          // Always clear and re-subscribe to fix broken registrations after SW change
-          await beamsClient.clearDeviceInterests();
-          localStorage.removeItem("beams_interest_key");
-
-          if (sessionData.role === "admin") {
-            // Admin: 1 channel only
-            await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
-            await beamsClient.addDeviceInterest(
-              `admin-user-${sessionData.adminId}`,
-            );
-          } else if (sessionData.role === "owner") {
-            // Owner: 2 channels — shared admin channel + personal
-            await beamsClient.addDeviceInterest(`admin-${sessionData.adminId}`);
-            await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-            if (sessionData.team_id) {
-              await beamsClient.addDeviceInterest(
-                `company-${sessionData.adminId}-team-${sessionData.team_id}`,
-              );
-            }
-          } else {
-            // Regular user: 3 channels
-            await beamsClient.addDeviceInterest(
-              `company-${sessionData.adminId}-all`,
-            );
-            await beamsClient.addDeviceInterest(`user-${sessionData.userId}`);
-            if (sessionData.team_id) {
-              await beamsClient.addDeviceInterest(
-                `company-${sessionData.adminId}-team-${sessionData.team_id}`,
-              );
-            }
-          }
-
-          window.__beamsClient = beamsClient;
-          localStorage.setItem("beams_interest_key", expectedInterestKey);
-        }
-        
       })
       .then(() => console.log("Subscribed"))
       .catch((err) => {

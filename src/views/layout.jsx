@@ -8,6 +8,7 @@ import ViewMembers from './ViewMembers.jsx';
 import Settings from './Settings.jsx';
 import Profile from './Profile.jsx';
 import AllMemberTasks from './AllMemberTasks.jsx';
+import { subscribeUser } from "./utils/subscribeUser.js";
 
 
 
@@ -174,8 +175,12 @@ if (d.loggedIn) {
         setSessionRole(d.role || '');
         setSessionControlType(d.control_type || '');
 
-        await subscribeUser();  
-        
+        if (window.__beamsClient || window.PusherPushNotifications) {
+            const PPN = window.PusherPushNotifications;
+            const clientInstance = window.__beamsClient || new PPN.Client({ instanceId: '423440a8-1fc5-4373-8e6b-0085dccafc58' });
+            await subscribeUser(clientInstance, d);
+          }  
+
         if (d.role !== 'admin' && d.adminName) {
           setAdminInfo({ name: d.adminName });
         }
