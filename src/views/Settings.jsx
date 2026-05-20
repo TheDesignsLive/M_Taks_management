@@ -683,6 +683,7 @@ const S = {
   },
   menuLeft: {
     display: "flex", alignItems: "center", gap: 14,
+    flex: 1, minWidth: 0,
   },
   menuIcon: {
     width: 40, height: 40, borderRadius: 10,
@@ -691,9 +692,11 @@ const S = {
   },
   menuTitle: {
     fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 2,
+    textAlign: 'left',
   },
-  menuSub: {
+menuSub: {
     fontSize: 11, color: "#888",
+    textAlign: 'left',
   },
   chevron: {
     color: "#555",
