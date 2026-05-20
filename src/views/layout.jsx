@@ -11,7 +11,6 @@ import AllMemberTasks from './AllMemberTasks.jsx';
 
 // ─── BEAMS CONFIG ────────────────────────────────────────────────────────────
 const BEAMS_INSTANCE_ID = '423440a8-1fc5-4373-8e6b-0085dccafc58';
-const BEAMS_INSTANCE_ID = '423440a8-1fc5-4373-8e6b-0085dccafc58';
 
 function loadBeamsSDK() {
     return new Promise((resolve, reject) => {
@@ -36,7 +35,7 @@ async function initMobileBeams(beamsUserId) {
         const PPN = window.PusherPushNotifications;
         if (!PPN || !PPN.Client) { console.warn('[MobileBeams] SDK not available'); return; }
 
- beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
+const beamsClient = new PPN.Client({ instanceId: BEAMS_INSTANCE_ID });
 
         // ── Do NOT stop() or fight App.jsx — let App.jsx keep its interest registration ──
         // App.jsx registers via addDeviceInterest() = anonymous/interest mode.
@@ -469,60 +468,23 @@ function showToast(msg) {
   };
 
   const handleLogout = async () => {
-  try {
-    // ===== 1. STOP BEAMS =====
-    if (beamsClient) {
-      try {
-        await beamsClient.clearAllState();
-        await beamsClient.stop();
-        console.log('[Logout] Beams stopped');
-      } catch (e) {
-        console.warn('[Logout] Beams stop error:', e.message);
-      }
-    }
-
-    // ===== 2. UNSUBSCRIBE PUSH =====
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) {
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          await sub.unsubscribe();
-          console.log('[Logout] Push unsubscribed');
-        }
-      }
-    }
-
-    // ===== 3. UNREGISTER SERVICE WORKER =====
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    for (let registration of registrations) {
-      await registration.unregister();
-    }
-    console.log('[Logout] Service workers removed');
-
-  } catch (err) {
-    console.error('Logout cleanup error:', err);
-  }
-
-  // ===== 4. BACKEND LOGOUT =====
-  try {
-    const res = await fetch(`${BASE_URL}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    const data = await res.json();
-
-    if (data.status === 'success') {
-      localStorage.removeItem('activePage');
-      window.location.href = '/';
-    } else {
-      window.location.href = '/';
-    }
-  } catch (err) {
-    console.error('Logout API error:', err);
+    try {
+      const res = await fetch(`${BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+if (data.status === 'success') {
+    localStorage.removeItem('activePage'); // ✅ clear so next login starts at home
     window.location.href = '/';
-  }
-};
+      } else {
+        alert('Logout failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Logout Error:', err);
+      window.location.href = '/';
+    }
+  };
 
   const priColor = PRIORITIES.find(p => p.value === priority)?.color || '#f59e0b';
 
