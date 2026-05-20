@@ -838,16 +838,11 @@ const buildSorted = useCallback(() =>
         if (section === 'COMPLETED') return t.status === 'COMPLETED';
         return t.status !== 'COMPLETED' && (t.section || 'TASK') === section;
       })
-      .filter(t => {
+.filter(t => {
   if (!filterDate || section !== 'COMPLETED') return true;
-  if (!t.completed_at) return false;
-  const d = new Date(t.completed_at);
-  const local = [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0')
-  ].join('-');
-  return local === filterDate;
+  if (!t.due_date) return false;
+  const taskDate = t.due_date.split('T')[0].slice(0, 10);
+  return taskDate === filterDate;
 })
       .sort((a, b) => {
         // ✅ COMPLETED section: sort by completed_at ASC (oldest first, newest last)
