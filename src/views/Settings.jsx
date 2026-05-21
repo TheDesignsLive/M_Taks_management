@@ -768,80 +768,96 @@ const handleLogout = async () => {
 
                 <button
                   disabled={exportModal.loading || exportModal.previewData.length === 0}
-                  onClick={() => {
-                    import('xlsx').then(XLSX => {
-                      const filename = `tasks-${exportModal.section}-${exportModal.date || 'all'}`;
+                  onClick={async () => {
+                    const filename = `tasks-${exportModal.section}-${exportModal.date || 'all'}`;
 
-                      // ── Helper: assigned_by display name ──
-                      const getAssignedBy = (t) => {
-                        if (!t.assigned_by_name) return 'Self';
-                        if (t.is_self) return 'Self';
-                        return t.assigned_by_name; // backend already sends "Name (Admin)" format
-                      };
+                    const getAssignedBy = (t) => {
+                      if (t.is_self || !t.assigned_by_name) return 'Self';
+                      return t.assigned_by_name;
+                    };
 
-                     const priorityFills = {
-  HIGH:   { patternType: 'solid', fgColor: { rgb: 'FF4444' }, bgColor: { rgb: 'FF4444' } },
-  MEDIUM: { patternType: 'solid', fgColor: { rgb: 'FFCC00' }, bgColor: { rgb: 'FFCC00' } },
-  LOW:    { patternType: 'solid', fgColor: { rgb: '56B4F5' }, bgColor: { rgb: '56B4F5' } },
-};
-                      const priorityFonts = {
-                        HIGH:   { bold: true, color: { rgb: 'C0392B' }, sz: 11 },
-                        MEDIUM: { bold: true, color: { rgb: 'B8860B' }, sz: 11 },
-                        LOW:    { bold: true, color: { rgb: '1A5276' }, sz: 11 },
-                      };
+                    const priorityColors = {
+                      HIGH:   { bg: 'FFCCCC', font: 'C0392B' },
+                      MEDIUM: { bg: 'FFF9C4', font: 'B8860B' },
+                      LOW:    { bg: 'CCE5FF', font: '1A5276' },
+                    };
 
-                      const aoa = [
-                        ['Title', 'Description', 'Priority', 'Due Date', 'Created At', 'Assigned By', 'Status'],
-                        ...exportModal.previewData.map(t => [
-                          t.title || '',
-                          t.description || '',
-                          t.priority || '',
-                          t.due_date || '',
-                          t.created_at || '',
-                          getAssignedBy(t),
-                          t.status || '',
-                        ])
-                      ];
+                    // ── Load ExcelJS from CDN ──
+                    if (!window.ExcelJS) {
+                      await new Promise((resolve, reject) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
+                        s.onload = resolve; s.onerror = reject;
+                        document.head.appendChild(s);
+                      });
+                    }
 
-                      const ws = XLSX.utils.aoa_to_sheet(aoa);
-                      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 22 }, { wch: 12 }];
+                    const ExcelJS = window.ExcelJS;
+                    const wb = new ExcelJS.Workbook();
+                    const ws = wb.addWorksheet('Tasks');
 
-                      // Header styles
-                      ['A1','B1','C1','D1','E1','F1','G1'].forEach(addr => {
-                        if (!ws[addr]) return;
-                        ws[addr].s = {
-                          fill: { patternType: 'solid', fgColor: { rgb: '0F8989' } },
-                          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-                          alignment: { horizontal: 'center', vertical: 'center' },
+                    // ── Column widths ──
+                    ws.columns = [
+                      { key: 'title',    width: 32 },
+                      { key: 'desc',     width: 42 },
+                      { key: 'priority', width: 12 },
+                      { key: 'due',      width: 16 },
+                      { key: 'created',  width: 16 },
+                      { key: 'by',       width: 24 },
+                      { key: 'status',   width: 12 },
+                    ];
+
+                    // ── Header row ──
+                    const headerRow = ws.addRow(['Title', 'Description', 'Priority', 'Due Date', 'Created At', 'Assigned By', 'Status']);
+                    headerRow.height = 22;
+                    headerRow.eachCell(cell => {
+                      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F8989' } };
+                      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                      cell.border = { bottom: { style: 'thin', color: { argb: 'FF097070' } } };
+                    });
+
+                    // ── Data rows ──
+                    exportModal.previewData.forEach(t => {
+                      const p = (t.priority || 'LOW').toUpperCase();
+                      const colors = priorityColors[p] || priorityColors.LOW;
+                      const bgArgb = 'FF' + colors.bg;
+                      const fontArgb = 'FF' + colors.font;
+
+                      const row = ws.addRow([
+                        t.title || '',
+                        t.description || '',
+                        p,
+                        t.due_date || '',
+                        t.created_at || '',
+                        getAssignedBy(t),
+                        t.status || '',
+                      ]);
+                      row.height = 20;
+
+                      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } };
+                        cell.font = {
+                          size: 11,
+                          color: { argb: colNumber === 3 ? fontArgb : 'FF1A1A1A' },
+                          bold: colNumber === 3,
+                        };
+                        cell.alignment = {
+                          vertical: 'middle',
+                          horizontal: colNumber === 3 ? 'center' : 'left',
+                          wrapText: colNumber === 2,
                         };
                       });
-
-                      // Data row styles — priority-based color
-                      exportModal.previewData.forEach((t, i) => {
-                        const rowNum = i + 2;
-                        const p = (t.priority || 'LOW').toUpperCase();
-                        const fill = priorityFills[p] || priorityFills.LOW;
-                        const font = priorityFonts[p] || priorityFonts.LOW;
-                        ['A','B','C','D','E','F','G'].forEach(col => {
-                          const addr = `${col}${rowNum}`;
-                          if (!ws[addr]) ws[addr] = { v: '', t: 's' };
-                          ws[addr].s = {
-                            fill,
-                            font: col === 'C' ? font : { sz: 11, color: { rgb: '1A1A1A' } },
-                            alignment: { vertical: 'center', horizontal: col === 'C' ? 'center' : 'left', wrapText: col === 'B' },
-                          };
-                        });
-                      });
-
-                      const wb = XLSX.utils.book_new();
-                      XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
-                      const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
-                      const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url; a.download = `${filename}.xlsx`;
-                      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
                     });
+
+                    // ── Download ──
+                    const buffer = await wb.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = `${filename}.xlsx`;
+                    document.body.appendChild(a); a.click();
+                    document.body.removeChild(a); URL.revokeObjectURL(url);
                   }}
                   style={{ ...S.primaryBtn, opacity: exportModal.loading || exportModal.previewData.length === 0 ? 0.5 : 1 }}
                 >
