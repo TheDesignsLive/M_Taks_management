@@ -779,11 +779,11 @@ const handleLogout = async () => {
                         return t.assigned_by_name; // backend already sends "Name (Admin)" format
                       };
 
-                      const priorityFills = {
-                        HIGH:   { patternType: 'solid', fgColor: { rgb: 'FFCCCC' } },
-                        MEDIUM: { patternType: 'solid', fgColor: { rgb: 'FFF9C4' } },
-                        LOW:    { patternType: 'solid', fgColor: { rgb: 'CCE5FF' } },
-                      };
+                     const priorityFills = {
+  HIGH:   { patternType: 'solid', fgColor: { rgb: 'FF4444' }, bgColor: { rgb: 'FF4444' } },
+  MEDIUM: { patternType: 'solid', fgColor: { rgb: 'FFCC00' }, bgColor: { rgb: 'FFCC00' } },
+  LOW:    { patternType: 'solid', fgColor: { rgb: '56B4F5' }, bgColor: { rgb: '56B4F5' } },
+};
                       const priorityFonts = {
                         HIGH:   { bold: true, color: { rgb: 'C0392B' }, sz: 11 },
                         MEDIUM: { bold: true, color: { rgb: 'B8860B' }, sz: 11 },
