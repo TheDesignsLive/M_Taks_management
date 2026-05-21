@@ -769,29 +769,113 @@ const handleLogout = async () => {
                 <button
                   disabled={exportModal.loading || exportModal.previewData.length === 0}
                   onClick={() => {
-                    // Excel export
                     import('xlsx').then(XLSX => {
+                      const filename = `tasks-${exportModal.section}-${exportModal.date || 'all'}`;
+
+                      // ── Helper: assigned_by display name ──
+                      const getAssignedBy = (t) => {
+                        if (!t.assigned_by_name) return 'Self';
+                        if (t.is_self) return 'Self';
+                        return t.assigned_by_name; // backend already sends "Name (Admin)" format
+                      };
+
+                      const priorityFills = {
+                        HIGH:   { patternType: 'solid', fgColor: { rgb: 'FFCCCC' } },
+                        MEDIUM: { patternType: 'solid', fgColor: { rgb: 'FFF9C4' } },
+                        LOW:    { patternType: 'solid', fgColor: { rgb: 'CCE5FF' } },
+                      };
+                      const priorityFonts = {
+                        HIGH:   { bold: true, color: { rgb: 'C0392B' }, sz: 11 },
+                        MEDIUM: { bold: true, color: { rgb: 'B8860B' }, sz: 11 },
+                        LOW:    { bold: true, color: { rgb: '1A5276' }, sz: 11 },
+                      };
+
                       const aoa = [
-                        ['Title', 'Description', 'Priority', 'Date', 'Assigned By', 'Status'],
+                        ['Title', 'Description', 'Priority', 'Due Date', 'Created At', 'Assigned By', 'Status'],
                         ...exportModal.previewData.map(t => [
-                          t.title || '', t.description || '', t.priority || '', t.due_date || '', t.assigned_by_name || '', t.status || '',
+                          t.title || '',
+                          t.description || '',
+                          t.priority || '',
+                          t.due_date || '',
+                          t.created_at || '',
+                          getAssignedBy(t),
+                          t.status || '',
                         ])
                       ];
+
                       const ws = XLSX.utils.aoa_to_sheet(aoa);
-                      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 10 }, { wch: 14 }, { wch: 20 }, { wch: 12 }];
+                      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 22 }, { wch: 12 }];
+
+                      // Header styles
+                      ['A1','B1','C1','D1','E1','F1','G1'].forEach(addr => {
+                        if (!ws[addr]) return;
+                        ws[addr].s = {
+                          fill: { patternType: 'solid', fgColor: { rgb: '0F8989' } },
+                          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+                          alignment: { horizontal: 'center', vertical: 'center' },
+                        };
+                      });
+
+                      // Data row styles — priority-based color
+                      exportModal.previewData.forEach((t, i) => {
+                        const rowNum = i + 2;
+                        const p = (t.priority || 'LOW').toUpperCase();
+                        const fill = priorityFills[p] || priorityFills.LOW;
+                        const font = priorityFonts[p] || priorityFonts.LOW;
+                        ['A','B','C','D','E','F','G'].forEach(col => {
+                          const addr = `${col}${rowNum}`;
+                          if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+                          ws[addr].s = {
+                            fill,
+                            font: col === 'C' ? font : { sz: 11, color: { rgb: '1A1A1A' } },
+                            alignment: { vertical: 'center', horizontal: col === 'C' ? 'center' : 'left', wrapText: col === 'B' },
+                          };
+                        });
+                      });
+
                       const wb = XLSX.utils.book_new();
                       XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
                       const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
                       const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement('a');
-                      a.href = url; a.download = `tasks-${exportModal.section}-${exportModal.date || 'all'}.xlsx`;
+                      a.href = url; a.download = `${filename}.xlsx`;
                       document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
                     });
                   }}
                   style={{ ...S.primaryBtn, opacity: exportModal.loading || exportModal.previewData.length === 0 ? 0.5 : 1 }}
                 >
                   ⬇ Export Excel
+                </button>
+
+                <button
+                  disabled={exportModal.loading || exportModal.previewData.length === 0}
+                  onClick={() => {
+                    const getAssignedBy = (t) => {
+                      if (!t.assigned_by_name) return 'Self';
+                      if (t.is_self) return 'Self';
+                      return t.assigned_by_name;
+                    };
+                    const header = ['Title', 'Description', 'Priority', 'Due Date', 'Created At', 'Assigned By', 'Status'];
+                    const rows = exportModal.previewData.map(t => [
+                      `"${(t.title || '').replace(/"/g, '""')}"`,
+                      `"${(t.description || '').replace(/"/g, '""')}"`,
+                      t.priority || '',
+                      t.due_date || '',
+                      t.created_at || '',
+                      `"${getAssignedBy(t).replace(/"/g, '""')}"`,
+                      t.status || '',
+                    ]);
+                    const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = `tasks-${exportModal.section}-${exportModal.date || 'all'}.csv`;
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                  }}
+                  style={{ ...S.primaryBtn, background: '#2E2D2D', border: '1px solid rgba(15,137,137,0.4)', color: '#0F8989', boxShadow: 'none', opacity: exportModal.loading || exportModal.previewData.length === 0 ? 0.5 : 1 }}
+                >
+                  ⬇ Export CSV
                 </button>
                 <button onClick={() => setExportModal(p => ({ ...p, show: false }))} style={S.cancelBtn}>Close</button>
               </div>

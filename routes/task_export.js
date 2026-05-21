@@ -18,10 +18,17 @@ router.get('/', async (req, res) => {
             SELECT 
                 t.id, t.title, t.description, t.priority, t.status, t.section,
                 DATE_FORMAT(t.due_date, '%Y-%m-%d') AS due_date,
+                DATE_FORMAT(t.created_at, '%Y-%m-%d') AS created_at,
                 CASE 
-                    WHEN t.who_assigned = 'admin' THEN a.name
+                    WHEN t.who_assigned = 'admin' THEN CONCAT(a.name, ' (Admin)')
+                    WHEN t.who_assigned = 'owner' THEN CONCAT(u2.name, ' (Admin)')
                     ELSE u2.name
-                END AS assigned_by_name
+                END AS assigned_by_name,
+                CASE
+                    WHEN t.who_assigned = 'admin' AND t.assigned_to = 0 THEN 1
+                    WHEN t.who_assigned != 'admin' AND t.assigned_by = t.assigned_to THEN 1
+                    ELSE 0
+                END AS is_self
             FROM tasks t
             LEFT JOIN admins a ON t.assigned_by = a.id AND t.who_assigned = 'admin'
             LEFT JOIN users u2 ON t.assigned_by = u2.id AND t.who_assigned != 'admin'
