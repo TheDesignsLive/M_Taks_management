@@ -22,6 +22,7 @@ import AllMemberTask from './routes/all_member_task.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import repeatRoutes from './routes/repeat.js';
+import taskExportRouter from './routes/task_export.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -105,7 +106,7 @@ app.use('/api/teams', teams);
 app.use('/api/roles', roles);
 app.use('/api/home', Home);
 app.use('/api/all-member-tasks', AllMemberTask);
-
+app.use('/api/task-export', taskExportRouter);
 app.use('/api/repeat', repeatRoutes);
 
 app.use(express.static('dist'));

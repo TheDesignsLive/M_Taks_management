@@ -92,6 +92,7 @@ const Settings = () => {
 const [labelForm, setLabelForm] = useState({ changes: '', update: '' });
 const [labelSaving, setLabelSaving] = useState(false);
 const [notificationStatus, setNotificationStatus] = useState("Checking...");
+const [exportModal, setExportModal] = useState({ show: false, step: 1, section: '', date: '', previewData: [], loading: false });
   useEffect(() => {
   fetchSettings();
   checkNotificationPermission();
@@ -411,7 +412,7 @@ const handleLogout = async () => {
 {/* Export Section */}
 <div style={{ ...S.sectionLabel, marginTop: 24 }}>EXPORT</div>
 <div style={S.card}>
-  <div style={S.menuItem} onClick={() => {}}>
+  <div style={S.menuItem} onClick={() => setExportModal({ show: true, step: 1, section: '', date: '', previewData: [], loading: false })}>
     <div style={S.menuLeft}>
       <div style={{ ...S.menuIcon, background: 'rgba(15,137,137,0.15)', color: '#0F8989' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -634,6 +635,171 @@ const handleLogout = async () => {
           </div>
         </div>
       )}
+    {/* ── EXPORT MODAL ── */}
+      {exportModal.show && (
+        <div style={S.backdrop} onClick={() => setExportModal(p => ({ ...p, show: false }))}>
+          <div style={{ ...S.modal, maxHeight: '92dvh' }} onClick={e => e.stopPropagation()}>
+            <div style={S.modalPill} />
+            <div style={S.modalHead}>
+              <div>
+                <div style={S.modalTitle}>Export Tasks</div>
+                <div style={S.stepLabel}>
+                  {exportModal.step === 1 ? 'Choose Section' : exportModal.step === 2 ? 'Choose Date' : 'Preview'}
+                </div>
+              </div>
+              <button style={S.closeBtn} onClick={() => setExportModal(p => ({ ...p, show: false }))}><CloseIcon /></button>
+            </div>
+
+            {/* Step 1 — Section picker */}
+            {exportModal.step === 1 && (
+              <div>
+                <p style={S.infoText}>Which section do you want to export?</p>
+                {[
+                  { key: 'TASK', label: 'Task' },
+                  { key: 'CHANGES', label: labelForm.changes || 'Change' },
+                  { key: 'UPDATE', label: labelForm.update || 'Update' },
+                  { key: 'OTHERS', label: 'Others' },
+                  { key: 'COMPLETED', label: 'Completed' },
+                ].map(sec => (
+                  <button
+                    key={sec.key}
+                    onClick={() => setExportModal(p => ({ ...p, section: sec.key, step: 2 }))}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', background: exportModal.section === sec.key ? 'rgba(15,137,137,0.15)' : 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(15,137,137,0.25)', borderRadius: 10,
+                      padding: '13px 16px', marginBottom: 10, cursor: 'pointer',
+                      color: '#eee', fontSize: 14, fontWeight: 600, fontFamily: 'Arial, sans-serif',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span>{sec.label}</span>
+                    <ChevronRight />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Step 2 — Date picker */}
+            {exportModal.step === 2 && (
+              <div>
+                <p style={S.infoText}>Filter by date or export all tasks in <span style={{ color: '#CDF4F4', fontWeight: 700 }}>{exportModal.section}</span>?</p>
+                <button
+                  onClick={() => setExportModal(p => ({ ...p, date: '', step: 3 }))}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    width: '100%', background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(15,137,137,0.25)', borderRadius: 10,
+                    padding: '13px 16px', marginBottom: 10, cursor: 'pointer',
+                    color: '#eee', fontSize: 14, fontWeight: 600, fontFamily: 'Arial, sans-serif',
+                  }}
+                  onClick={async () => {
+                    setExportModal(p => ({ ...p, date: '', loading: true, step: 3, previewData: [] }));
+                    try {
+                      const res = await fetch(`${BASE_URL}/api/task-export?section=${exportModal.section}`, { credentials: 'include' });
+                      const result = await res.json();
+                      setExportModal(p => ({ ...p, previewData: result.tasks || [], loading: false }));
+                    } catch { setExportModal(p => ({ ...p, loading: false })); }
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>📋</span> All Tasks
+                </button>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  width: '100%', background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(15,137,137,0.25)', borderRadius: 10,
+                  padding: '13px 16px', marginBottom: 20, cursor: 'pointer',
+                  color: '#eee', fontSize: 14, fontWeight: 600, fontFamily: 'Arial, sans-serif',
+                  boxSizing: 'border-box', position: 'relative',
+                }}>
+                  <span style={{ fontSize: 20 }}>📅</span>
+                  <span style={{ flex: 1 }}>{exportModal.date ? `Selected: ${exportModal.date}` : 'Pick a Date'}</span>
+                  <input
+                    type="date"
+                    value={exportModal.date}
+                    onChange={async e => {
+                      const d = e.target.value;
+                      setExportModal(p => ({ ...p, date: d, loading: true, step: 3, previewData: [] }));
+                      try {
+                        const res = await fetch(`${BASE_URL}/api/task-export?section=${exportModal.section}&date=${d}`, { credentials: 'include' });
+                        const result = await res.json();
+                        setExportModal(p => ({ ...p, previewData: result.tasks || [], loading: false }));
+                      } catch { setExportModal(p => ({ ...p, loading: false })); }
+                    }}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                  />
+                </label>
+                <button onClick={() => setExportModal(p => ({ ...p, step: 1 }))} style={S.cancelBtn}>← Back</button>
+              </div>
+            )}
+
+            {/* Step 3 — Preview */}
+            {exportModal.step === 3 && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ color: '#aaa', fontSize: 12 }}>{exportModal.previewData.length} tasks found</span>
+                  <button onClick={() => setExportModal(p => ({ ...p, step: 2 }))} style={{ background: 'none', border: 'none', color: '#0F8989', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>← Back</button>
+                </div>
+
+                {exportModal.loading ? (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: '#aaa' }}>
+                    <div style={{ ...S.spinner, width: 28, height: 28, margin: '0 auto 10px' }} />
+                    Loading…
+                  </div>
+                ) : exportModal.previewData.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: '#aaa' }}>No tasks found</div>
+                ) : (
+                  <div style={{ maxHeight: '40vh', overflowY: 'auto', marginBottom: 16 }}>
+                    {exportModal.previewData.map((t, i) => (
+                      <div key={i} style={{
+                        background: '#3C3A3A', borderRadius: 8, padding: '10px 12px', marginBottom: 8,
+                        borderLeft: `3px solid ${t.priority === 'HIGH' ? '#ef4444' : t.priority === 'MEDIUM' ? '#eab308' : '#3b82f6'}`,
+                      }}>
+                        <div style={{ color: '#eee', fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{t.title}</div>
+                        <div style={{ color: '#888', fontSize: 11, display: 'flex', gap: 10 }}>
+                          <span>📅 {t.due_date || 'No date'}</span>
+                          <span style={{ color: t.priority === 'HIGH' ? '#ef4444' : t.priority === 'MEDIUM' ? '#eab308' : '#3b82f6', fontWeight: 700 }}>{t.priority}</span>
+                          {t.assigned_by_name && <span>👤 {t.assigned_by_name}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  disabled={exportModal.loading || exportModal.previewData.length === 0}
+                  onClick={() => {
+                    // Excel export
+                    import('xlsx').then(XLSX => {
+                      const aoa = [
+                        ['Title', 'Description', 'Priority', 'Date', 'Assigned By', 'Status'],
+                        ...exportModal.previewData.map(t => [
+                          t.title || '', t.description || '', t.priority || '', t.due_date || '', t.assigned_by_name || '', t.status || '',
+                        ])
+                      ];
+                      const ws = XLSX.utils.aoa_to_sheet(aoa);
+                      ws['!cols'] = [{ wch: 30 }, { wch: 40 }, { wch: 10 }, { wch: 14 }, { wch: 20 }, { wch: 12 }];
+                      const wb = XLSX.utils.book_new();
+                      XLSX.utils.book_append_sheet(wb, ws, 'Tasks');
+                      const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+                      const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = `tasks-${exportModal.section}-${exportModal.date || 'all'}.xlsx`;
+                      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                    });
+                  }}
+                  style={{ ...S.primaryBtn, opacity: exportModal.loading || exportModal.previewData.length === 0 ? 0.5 : 1 }}
+                >
+                  ⬇ Export Excel
+                </button>
+                <button onClick={() => setExportModal(p => ({ ...p, show: false }))} style={S.cancelBtn}>Close</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
