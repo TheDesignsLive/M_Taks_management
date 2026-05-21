@@ -893,6 +893,19 @@ const handleLogout = async () => {
                 >
                   ⬇ Export CSV
                 </button>
+                {/* Guide Info */}
+<div style={{
+  marginTop: 10,
+  fontSize: 12,
+  color: "#666",
+  lineHeight: 1.6,
+  textAlign: "left"
+}}>
+  <strong>Guide:</strong><br />
+  • <b>Excel Export</b> → Styled format with colors based on priority<br />
+  &nbsp;&nbsp;&nbsp;🔴 High = Red &nbsp;&nbsp;🟡 Medium = Yellow &nbsp;&nbsp;🔵 Low = Blue<br />
+  • <b>CSV Export</b> → Simple plain file (no colors, lightweight)
+</div>
                 <button onClick={() => setExportModal(p => ({ ...p, show: false }))} style={S.cancelBtn}>Close</button>
               </div>
             )}
