@@ -841,8 +841,8 @@ const buildSorted = useCallback(() =>
       })
 .filter(t => {
   if (!filterDate || section !== 'COMPLETED') return true;
-  if (!t.due_date) return false;
-  const taskDate = t.due_date.split('T')[0].slice(0, 10);
+  if (!t.completed_at) return false;
+  const taskDate = t.completed_at.split('T')[0].slice(0, 10);
   return taskDate === filterDate;
 })
       .sort((a, b) => {
@@ -1257,10 +1257,10 @@ const handleDeleteCompleted = async () => {
 const handleExportCompleted = () => {
     let completedTasks = tasks.filter(t => t.status === 'COMPLETED');
 
-    if (completedFilterDate) {
+if (completedFilterDate) {
       completedTasks = completedTasks.filter(t => {
-        if (!t.due_date) return false;
-        return normDateKey(t.due_date) === completedFilterDate;
+        if (!t.completed_at) return false;
+        return t.completed_at.split('T')[0] === completedFilterDate;
       });
     }
 
