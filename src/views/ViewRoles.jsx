@@ -398,6 +398,14 @@ useEffect(() => {
 
   const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
 
+  const allowedControlTypes = (() => {
+    if (isAdminLike) return ['OWNER', 'ADMIN', 'PARTIAL', 'NONE'];
+    const ct = data.sessionControlType || 'NONE';
+    if (ct === 'ADMIN')   return ['ADMIN', 'PARTIAL', 'NONE'];
+    if (ct === 'PARTIAL') return ['PARTIAL', 'NONE'];
+    return ['NONE'];
+  })();
+
   return (
     <div style={S.page}>
       <style>{CSS}</style>
@@ -605,10 +613,9 @@ useEffect(() => {
                   onChange={e => setAddForm(f => ({ ...f, control_type: e.target.value }))}
                 >
                   <option value="" disabled>Select Control Type</option>
-                  <option value="OWNER">OWNER</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="PARTIAL">PARTIAL</option>
-                  <option value="NONE">NONE</option>
+                  {allowedControlTypes.map(ct => (
+                    <option key={ct} value={ct}>{ct}</option>
+                  ))}
                 </SelectField>
               </Field>
 
@@ -660,10 +667,9 @@ useEffect(() => {
                   onChange={e => setEditForm(f => ({ ...f, control_type: e.target.value }))}
                 >
                   <option value="" disabled>Select Control Type</option>
-                  <option value="OWNER">OWNER</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="PARTIAL">PARTIAL</option>
-                  <option value="NONE">NONE</option>
+                  {allowedControlTypes.map(ct => (
+                    <option key={ct} value={ct}>{ct}</option>
+                  ))}
                 </SelectField>
               </Field>
 

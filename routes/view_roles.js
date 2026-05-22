@@ -49,6 +49,7 @@ router.get('/', requireAuth, async (req, res) => {
             roles: roleRows,
             teams: teamRows,
             sessionRole: req.session.role,
+            sessionControlType: req.session.control_type || 'NONE',
         });
 
     } catch (err) {
@@ -72,6 +73,18 @@ router.post('/add', requireAuth, async (req, res) => {
         }
         if (!control_type) {
             return res.status(400).json({ success: false, message: 'Control type is required.' });
+        }
+
+        // Block privilege escalation
+        const _sRole = req.session.role;
+        const _sCT   = req.session.control_type;
+        const _addAllowed = (_sRole === 'admin' || _sRole === 'owner')
+            ? ['OWNER', 'ADMIN', 'PARTIAL', 'NONE']
+            : _sCT === 'ADMIN'   ? ['ADMIN', 'PARTIAL', 'NONE']
+            : _sCT === 'PARTIAL' ? ['PARTIAL', 'NONE']
+            : ['NONE'];
+        if (!_addAllowed.includes(control_type)) {
+            return res.status(403).json({ success: false, message: 'You cannot assign this control type.' });
         }
 
         team_id = team_id || null;
@@ -107,6 +120,18 @@ router.post('/edit/:id', requireAuth, async (req, res) => {
         }
         if (!control_type) {
             return res.status(400).json({ success: false, message: 'Control type is required.' });
+        }
+
+        // Block privilege escalation
+        const _sRole = req.session.role;
+        const _sCT   = req.session.control_type;
+        const _editAllowed = (_sRole === 'admin' || _sRole === 'owner')
+            ? ['OWNER', 'ADMIN', 'PARTIAL', 'NONE']
+            : _sCT === 'ADMIN'   ? ['ADMIN', 'PARTIAL', 'NONE']
+            : _sCT === 'PARTIAL' ? ['PARTIAL', 'NONE']
+            : ['NONE'];
+        if (!_editAllowed.includes(control_type)) {
+            return res.status(403).json({ success: false, message: 'You cannot assign this control type.' });
         }
 
         team_id = team_id || null;
