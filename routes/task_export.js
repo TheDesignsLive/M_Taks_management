@@ -45,7 +45,9 @@ router.get('/', async (req, res) => {
         }
 
         // Section filter
-        if (section === 'COMPLETED') {
+        if (section === 'ALL') {
+            // No filter — return every task across all sections
+        } else if (section === 'COMPLETED') {
             query += ` AND t.status = 'COMPLETED'`;
         } else {
             query += ` AND t.status != 'COMPLETED' AND t.section = ?`;

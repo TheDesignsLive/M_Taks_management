@@ -655,6 +655,7 @@ const handleLogout = async () => {
               <div>
                 <p style={S.infoText}>Which section do you want to export?</p>
                 {[
+                  { key: 'ALL', label: '📂 All Sections' },
                   { key: 'TASK', label: 'Task' },
                   { key: 'CHANGES', label: labelForm.changes || 'Change' },
                   { key: 'UPDATE', label: labelForm.update || 'Update' },
@@ -801,6 +802,7 @@ const handleLogout = async () => {
                       { key: 'title',    width: 32 },
                       { key: 'desc',     width: 42 },
                       { key: 'priority', width: 12 },
+                      { key: 'section',  width: 14 },
                       { key: 'due',      width: 16 },
                       { key: 'created',  width: 16 },
                       { key: 'by',       width: 24 },
@@ -808,7 +810,7 @@ const handleLogout = async () => {
                     ];
 
                     // ── Header row ──
-                    const headerRow = ws.addRow(['Title', 'Description', 'Priority', 'Due Date', 'Created At', 'Assigned By', 'Status']);
+                    const headerRow = ws.addRow(['Title', 'Description', 'Priority', 'Section', 'Due Date', 'Created At', 'Assigned By', 'Status']);
                     headerRow.height = 22;
                     headerRow.eachCell(cell => {
                       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F8989' } };
@@ -828,6 +830,7 @@ const handleLogout = async () => {
                         t.title || '',
                         t.description || '',
                         p,
+                        t.section || '',
                         t.due_date || '',
                         t.created_at || '',
                         getAssignedBy(t),
@@ -872,11 +875,12 @@ const handleLogout = async () => {
                       if (t.is_self) return 'Self';
                       return t.assigned_by_name;
                     };
-                    const header = ['Title', 'Description', 'Priority', 'Due Date', 'Created At', 'Assigned By', 'Status'];
+                    const header = ['Title', 'Description', 'Priority', 'Section', 'Due Date', 'Created At', 'Assigned By', 'Status'];
                     const rows = exportModal.previewData.map(t => [
                       `"${(t.title || '').replace(/"/g, '""')}"`,
                       `"${(t.description || '').replace(/"/g, '""')}"`,
                       t.priority || '',
+                      t.section || '',
                       t.due_date || '',
                       t.created_at || '',
                       `"${getAssignedBy(t).replace(/"/g, '""')}"`,
