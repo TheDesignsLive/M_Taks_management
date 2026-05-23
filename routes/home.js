@@ -131,77 +131,94 @@ const [adminTasksRows] = await con.query(
 /* ───────────────────────────────────────────────
    UPDATE TASK STATUS  (checkbox → complete)
 ─────────────────────────────────────────────── */
-/* ───────────────────────────────────────────────
-   UPDATE TASK STATUS  (checkbox → complete)
-─────────────────────────────────────────────── */
 router.post('/update-task-status', async (req, res) => {
     const { id, status } = req.body;
     try {
-        // ✅ Set completed_at on complete, clear on uncheck
+        // Fetch task FIRST before any update — need original due_date and repeat_type
+        const [rows] = await con.query("SELECT * FROM tasks WHERE id=?", [id]);
+        if (rows.length === 0) return res.status(404).json({ success: false });
+        const task = rows[0];
+
         const completedAt = status === 'COMPLETED' ? new Date() : null;
-        await con.query("UPDATE tasks SET status=?, completed_at=? WHERE id=?", [status, completedAt, id]);
 
-        // ── Repeat logic: spawn next task when completing a repeating task ──
-        if (status === 'COMPLETED') {
-            const [rows] = await con.query(
-                "SELECT * FROM tasks WHERE id=?", [id]
+        if (status === 'OPEN') {
+            // Restore correct section when unchecking
+            const restoredSection = parseInt(task.assigned_to) === 0 ? 'TASK' : 'OTHERS';
+            await con.query(
+                "UPDATE tasks SET status=?, completed_at=?, section=? WHERE id=?",
+                ['OPEN', null, restoredSection, id]
             );
-            if (rows.length > 0) {
-                const task = rows[0];
-                const repeatType = task.repeat_type;
 
-                if (repeatType && repeatType !== 'none') {
-                    // Calculate next due date
-                    let baseDate = task.due_date
-                        ? new Date(task.due_date)
-                        : new Date();
+            // Delete the exact next-date clone that was spawned on completion
+            if (task.repeat_type && task.repeat_type !== 'none' && task.due_date) {
+const rawDate = task.due_date instanceof Date
+                    ? task.due_date.toISOString().split('T')[0]
+                    : String(task.due_date).split('T')[0];
+                const [y, m, d] = rawDate.split('-').map(Number);
+                let ny = y, nm = m, nd = d;
+                if (task.repeat_type === 'daily')   nd += 1;
+                if (task.repeat_type === 'weekly')  nd += 7;
+                if (task.repeat_type === 'monthly') nm += 1;
+                const nextDate = new Date(ny, nm - 1, nd);
+                const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth()+1).padStart(2,'0')}-${String(nextDate.getDate()).padStart(2,'0')}`;
 
-                    // If base date is in the past, start from today
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (baseDate < today) baseDate = today;
+                console.log('[UNCHECK DELETE] task.due_date:', task.due_date, '| nextDateStr:', nextDateStr, '| title:', task.title, '| assigned_to:', task.assigned_to, '| repeat_type:', task.repeat_type, '| admin_id:', task.admin_id);
 
-                    let nextDate = new Date(baseDate);
+                await con.execute(
+                    `DELETE FROM tasks
+                     WHERE admin_id=? AND title=? AND assigned_to=?
+                       AND repeat_type=? AND status='OPEN'
+                       AND DATE(due_date) = DATE(?) AND id != ?
+                     LIMIT 1`,
+                    [task.admin_id, task.title, task.assigned_to,
+                     task.repeat_type, nextDateStr, id]
+                );
+            }
 
-                    if (repeatType === 'daily') {
-                        nextDate.setDate(nextDate.getDate() + 1);
-                    } else if (repeatType === 'weekly') {
-                        nextDate.setDate(nextDate.getDate() + 7);
-                    } else if (repeatType === 'monthly') {
-                        nextDate.setMonth(nextDate.getMonth() + 1);
-                    }
+        } else {
+            // COMPLETED — mark done
+            await con.query(
+                "UPDATE tasks SET status=?, completed_at=? WHERE id=?",
+                ['COMPLETED', completedAt, id]
+            );
 
-                    const nextDateStr = nextDate.toISOString().split('T')[0];
+            // Spawn next repeat task
+            if (task.repeat_type && task.repeat_type !== 'none') {
+                const baseDate = task.due_date ? new Date(task.due_date) : new Date();
+                let nextDate = new Date(baseDate);
+                if (task.repeat_type === 'daily')   nextDate.setDate(nextDate.getDate() + 1);
+                if (task.repeat_type === 'weekly')  nextDate.setDate(nextDate.getDate() + 7);
+                if (task.repeat_type === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1);
+                const nextDateStr = nextDate.toISOString().split('T')[0];
 
-                    // Insert new task with same details, status OPEN, repeat_type carried over
-       await con.query(
-                        `INSERT INTO tasks 
+                const [existingClones] = await con.execute(
+                    `SELECT id FROM tasks
+                     WHERE admin_id=? AND title=? AND assigned_to=?
+                       AND repeat_type=? AND status='OPEN' AND id != ?
+                       AND DATE(due_date) = DATE(?)
+                     LIMIT 1`,
+                    [task.admin_id, task.title, task.assigned_to,
+                     task.repeat_type, id, nextDateStr]
+                );
+
+                if (existingClones.length === 0) {
+                    await con.query(
+                        `INSERT INTO tasks
                          (admin_id, title, description, priority, due_date, status, section,
                           assigned_by, assigned_to, who_assigned, repeat_type)
-                         VALUES (?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?, ?)`,
-                        [
-                            task.admin_id,
-                            task.title,
-                            task.description,
-                            task.priority,
-                            nextDateStr,
-                            'TASK',
-                            task.assigned_by,
-                            task.assigned_to,
-                            task.who_assigned,
-                            repeatType,
-                        ]
+                         VALUES (?, ?, ?, ?, ?, 'OPEN', 'TASK', ?, ?, ?, ?)`,
+                        [task.admin_id, task.title, task.description, task.priority,
+                         nextDateStr, task.assigned_by, task.assigned_to,
+                         task.who_assigned, task.repeat_type]
                     );
-
-                    // Update the template's last_spawned date
-                    await con.query(
-                        "UPDATE task_templates SET last_spawned=? WHERE id=?",
-                        [nextDateStr, id]
-                    ).catch(() => {}); // non-critical, don't fail if template missing
                 }
+
+                await con.query(
+                    "UPDATE task_templates SET last_spawned=? WHERE id=?",
+                    [nextDateStr, id]
+                ).catch(() => {});
             }
         }
-        // ── End repeat logic ──
 
         req.io.emit('update_tasks');
         notifyDesktop();
