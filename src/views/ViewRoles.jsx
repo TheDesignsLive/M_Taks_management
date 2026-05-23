@@ -396,7 +396,7 @@ useEffect(() => {
 
  
 
-  const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner';
+  const isAdminLike = data.sessionRole === 'admin' || data.sessionRole === 'owner' || data.sessionControlType === 'ADMIN';
 
   const allowedControlTypes = (() => {
     if (isAdminLike) return ['OWNER', 'ADMIN', 'PARTIAL', 'NONE'];
