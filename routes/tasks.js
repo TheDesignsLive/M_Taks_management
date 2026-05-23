@@ -197,6 +197,15 @@ if (typeof assignedTo === 'string' && assignedTo.startsWith('team_')) {
         });
     }
 
+    // ✅ verify team belongs to same company
+    const [teamCheck] = await db.execute(
+        'SELECT id FROM teams WHERE id = ? AND admin_id = ?',
+        [teamId, admin_id]
+    );
+    if (teamCheck.length === 0) {
+        return res.status(403).json({ success: false, message: 'Invalid team.' });
+    }
+
     // ✅ get all users from selected team
 const [users] = await db.execute(`
     SELECT u.id
@@ -383,7 +392,18 @@ await beamsClient.publishToInterests(interests, pushPayload);
         if (assignedTo === 'self') {
             finalAssignedTo = req.session.role === 'admin' ? 0 : req.session.userId;
             sectionValue = 'TASK';
-            // self-assign → no notification needed
+        }
+
+        // ── CROSS-COMPANY VALIDATION — single user assignment ────────────────
+        // 0 = admin ka apna task, 'admin' = admin ko assign karna — dono valid hain
+        if (finalAssignedTo !== 0 && finalAssignedTo !== 'admin' && assignedTo !== 'self') {
+            const [userCheck] = await db.execute(
+                'SELECT id FROM users WHERE id = ? AND admin_id = ?',
+                [finalAssignedTo, admin_id]
+            );
+            if (userCheck.length === 0) {
+                return res.status(403).json({ success: false, message: 'User does not belong to your company.' });
+            }
         }
 
         // ── NORMAL INSERT (single user or admin) ────────────────────────────
