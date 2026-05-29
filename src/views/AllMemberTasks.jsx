@@ -116,6 +116,21 @@ return (
           </svg>
         </button>
 
+        {/* Repeat badge — read only, no click */}
+        {task.repeat_type && task.repeat_type !== 'none' && (
+          <span style={{
+            fontSize: 9, color: '#a78bfa',
+            padding: '2px 5px', borderRadius: 3,
+            background: 'rgba(167,139,250,0.1)',
+            border: '1px solid rgba(167,139,250,0.35)',
+            fontWeight: 700, letterSpacing: 0.3,
+            whiteSpace: 'nowrap', flexShrink: 0,
+            lineHeight: 1.4, marginRight: 4,
+          }}>
+            🔁 {task.repeat_type}
+          </span>
+        )}
+
         {date ? (
           <span style={{ fontSize: 11, fontWeight: 600, color: past && !isCompleted ? '#ef4444' : '#0F8989', padding: '1px 6px', borderRadius: 4, background: past && !isCompleted ? '#ef444415' : '#095959', flexShrink: 0, minWidth: 72, textAlign: 'center' }}>
             📅 {date}
