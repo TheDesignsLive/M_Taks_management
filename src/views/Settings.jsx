@@ -661,8 +661,6 @@ const handleLogout = async () => {
                   { key: 'UPDATE', label: labelForm.update || 'Update' },
                   { key: 'OTHERS', label: 'Others' },
                   { key: 'COMPLETED', label: 'Completed' },
-                  { key: 'ASSIGNED_BY_ME', label: 'Assigned By Me' },
-                  { key: 'COMPLETED_BY_ME', label: 'Completed (Assigned By Me)' },
                 ].map(sec => (
                   <button
                     key={sec.key}

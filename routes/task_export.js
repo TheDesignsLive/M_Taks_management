@@ -51,22 +51,31 @@ router.get('/', async (req, res) => {
                 query += ` AND t.status != 'COMPLETED'`;
             }
         } else {
-            // Normal role-based filter
-            if (role === 'admin') {
-                query += ` AND (t.assigned_to = 0)`;
+            if (section === 'COMPLETED') {
+                // COMPLETED = apne completed tasks + assigned-by-me completed tasks (dono ek file mein)
+                if (role === 'admin') {
+                    query += ` AND t.status = 'COMPLETED' AND (t.assigned_to = 0 OR (t.assigned_by = ? AND t.who_assigned = 'admin' AND t.assigned_to != 0))`;
+                    params.push(adminId);
+                } else {
+                    query += ` AND t.status = 'COMPLETED' AND (t.assigned_to = ? OR (t.assigned_by = ? AND t.who_assigned != 'admin' AND t.assigned_to != ?))`;
+                    params.push(userId, userId, userId);
+                }
             } else {
-                query += ` AND t.assigned_to = ?`;
-                params.push(userId);
-            }
+                // Normal role-based filter
+                if (role === 'admin') {
+                    query += ` AND (t.assigned_to = 0)`;
+                } else {
+                    query += ` AND t.assigned_to = ?`;
+                    params.push(userId);
+                }
 
-            // Section filter
-            if (section === 'ALL') {
-                // No filter — return every task across all sections
-            } else if (section === 'COMPLETED') {
-                query += ` AND t.status = 'COMPLETED'`;
-            } else {
-                query += ` AND t.status != 'COMPLETED' AND t.section = ?`;
-                params.push(section);
+                // Section filter
+                if (section === 'ALL') {
+                    // No filter — return every task across all sections
+                } else {
+                    query += ` AND t.status != 'COMPLETED' AND t.section = ?`;
+                    params.push(section);
+                }
             }
         }
 
