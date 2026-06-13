@@ -313,9 +313,11 @@ router.post('/edit-task-details', async (req, res) => {
 /* ───────────────────────────────────────────────
    DELETE SINGLE TASK
 ─────────────────────────────────────────────── */
+// NEW
 router.post('/delete-task/:id', async (req, res) => {
     try {
         await con.query("DELETE FROM tasks WHERE id=?", [req.params.id]);
+        await con.query("DELETE FROM task_templates WHERE id=?", [req.params.id]);
         req.io.emit('update_tasks');
            notifyDesktop(); 
         return res.json({ success: true });
@@ -328,13 +330,23 @@ router.post('/delete-task/:id', async (req, res) => {
 /* ───────────────────────────────────────────────
    DELETE ALL COMPLETED TASKS
 ─────────────────────────────────────────────── */
+// NEW
 router.post('/delete-completed-tasks', async (req, res) => {
     try {
         const adminId = req.session.adminId;
+        const [completedRows] = await con.query(
+            "SELECT id FROM tasks WHERE admin_id=? AND status='COMPLETED'",
+            [adminId]
+        );
         await con.query(
             "DELETE FROM tasks WHERE admin_id=? AND status='COMPLETED'",
             [adminId]
         );
+        if (completedRows.length > 0) {
+            const ids = completedRows.map(r => r.id);
+            const placeholders = ids.map(() => '?').join(',');
+            await con.query(`DELETE FROM task_templates WHERE id IN (${placeholders})`, ids);
+        }
         req.io.emit('update_tasks');
         notifyDesktop();
         return res.json({ success: true });

@@ -672,6 +672,7 @@ router.post('/update-task-section', async (req, res) => {
 router.post('/delete-task/:id', async (req, res) => {
     try {
         await db.execute('DELETE FROM tasks WHERE id = ?', [req.params.id]);
+        await db.execute('DELETE FROM task_templates WHERE id = ?', [req.params.id]);
         req.io.emit('update_tasks');
         notifyDesktop();
         res.json({ success: true });
@@ -684,24 +685,33 @@ router.post('/delete-task/:id', async (req, res) => {
 // ==============================
 // DELETE COMPLETED TASKS
 // ==============================
+// NEW
 router.post('/delete-completed-tasks', async (req, res) => {
     try {
         const { role, adminId, userId } = req.session;
         if (!role) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
-        let query, params;
+        let selectQuery, query, params;
         if (role === 'admin') {
+            selectQuery = "SELECT id FROM tasks WHERE admin_id = ? AND assigned_to = 0 AND status = 'COMPLETED'";
             query = "DELETE FROM tasks WHERE admin_id = ? AND assigned_to = 0 AND status = 'COMPLETED'";
             params = [adminId];
         } else if (role === 'user' || role === 'owner') {
+            selectQuery = "SELECT id FROM tasks WHERE admin_id = ? AND assigned_to = ? AND status = 'COMPLETED'";
             query = "DELETE FROM tasks WHERE admin_id = ? AND assigned_to = ? AND status = 'COMPLETED'";
             params = [adminId, userId];
         } else {
             return res.status(403).json({ success: false, message: 'Forbidden' });
         }
 
+        const [completedRows] = await db.query(selectQuery, params);
         const [result] = await db.query(query, params);
         if (result.affectedRows > 0) {
+            if (completedRows.length > 0) {
+                const ids = completedRows.map(r => r.id);
+                const placeholders = ids.map(() => '?').join(',');
+                await db.query(`DELETE FROM task_templates WHERE id IN (${placeholders})`, ids);
+            }
             req.io.emit('update_tasks');
             notifyDesktop();
         }
