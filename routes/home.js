@@ -134,34 +134,13 @@ const [adminTasksRows] = await con.query(
 router.post('/update-task-status', async (req, res) => {
     const { id, status } = req.body;
     try {
-        // Fetch task FIRST before any update — need original due_date and repeat_type
-        const [rows] = await con.query("SELECT * FROM tasks WHERE id=?", [id]);
-        if (rows.length === 0) return res.status(404).json({ success: false });
-        const task = rows[0];
-
         const completedAt = status === 'COMPLETED' ? new Date() : null;
 
-if (status === 'OPEN') {
-            // Restore correct section — self task goes to TASK, others go to OTHERS
-            // Self task = admin assigned to himself (assigned_to=0, who_assigned='admin')
-            //           OR user assigned to himself (assigned_by === assigned_to)
-            const isSelfTask = (
-                (task.who_assigned === 'admin' && parseInt(task.assigned_to) === 0) ||
-                (task.who_assigned !== 'admin' && String(task.assigned_by) === String(task.assigned_to))
-            );
-            const restoredSection = isSelfTask ? 'TASK' : 'OTHERS';
-            await con.query(
-                "UPDATE tasks SET status=?, completed_at=?, section=? WHERE id=?",
-                ['OPEN', null, restoredSection, id]
-            );
-
-        } else {
-            // COMPLETED — mark done
-            await con.query(
-                "UPDATE tasks SET status=?, completed_at=? WHERE id=?",
-                ['COMPLETED', completedAt, id]
-            );
-        }
+        // Only change status + completed_at — section stays exactly as it was
+        await con.query(
+            "UPDATE tasks SET status=?, completed_at=? WHERE id=?",
+            [status === 'COMPLETED' ? 'COMPLETED' : 'OPEN', completedAt, id]
+        );
 
         req.io.emit('update_tasks');
         notifyDesktop();
