@@ -499,7 +499,7 @@ function RepeatModal({ currentRepeat, onSelect, onClose }) {
 }
 
 // ─── 3-dot Menu Portal ────────────────────────────────────────────────────────
-function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onRepeat, onClose }) {
+function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onClose }) {
   return createPortal(
     <>
       <div
@@ -514,7 +514,7 @@ function TaskMenu({ menuPos, onEdit, onChangeDate, onDelete, onRepeat, onClose }
         zIndex: 99999,
         background:'#2E2D2D',
         border:'1px solid #0F8989',
-borderRadius: menuPos.openUpward ? '10px 10px 1px 10px' : '10px 1px 10px 10px',
+        borderRadius: menuPos.openUpward ? '10px 10px 1px 10px' : '10px 1px 10px 10px',
         boxShadow:'0 8px 32px rgba(0,0,0,0.8)',
         overflow:'hidden',
         minWidth:160,
@@ -525,9 +525,6 @@ borderRadius: menuPos.openUpward ? '10px 10px 1px 10px' : '10px 1px 10px 10px',
         </button>
         <button style={styles.menuItem} onClick={e=>{e.stopPropagation(); onChangeDate();}}>
           📅 Change Date
-        </button>
-        <button style={styles.menuItem} onClick={e=>{e.stopPropagation(); onRepeat();}}>
-          🔁 Repeat
         </button>
         <button style={{...styles.menuItem, color:'#ef4444', borderBottom:'none'}} onClick={e=>{e.stopPropagation(); onDelete();}}>
           🗑️ Delete
@@ -546,8 +543,7 @@ function TaskCard({ task, members, adminName, role, onRefresh, onSectionChange, 
   const [editOpen, setEditOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [repeatOpen, setRepeatOpen] = useState(false);
-  const [currentRepeat, setCurrentRepeat] = useState(task.repeat_type || 'none');
+  
   const [completing, setCompleting] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
   const menuBtnRef = useRef(null);
@@ -556,7 +552,7 @@ const dateLabelRef = useRef(null);
 
   // Track any open modal/menu globally so drag knows to stay off
   useEffect(() => {
-    const anyOpen = showMenu || editOpen || sectionOpen || deleteOpen || repeatOpen;
+    const anyOpen = showMenu || editOpen || sectionOpen || deleteOpen;
     window.__taskModalOpen = anyOpen;
   }, [showMenu, editOpen, sectionOpen, deleteOpen, repeatOpen]);
 
@@ -618,17 +614,7 @@ const handleCheckbox = async () => {
     onRefresh();
   };
 
-    // Add this handler inside TaskCard:
-  const handleSetRepeat = async (repeat_type) => {
-    setCurrentRepeat(repeat_type);
-    setRepeatOpen(false);
-    await fetch(`${BASE_URL}/api/repeat/set-repeat`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_id: task.id, repeat_type })
-    });
-    onRefresh();
-};
+    
 
   const handleDelete = async () => {
     await fetch(`${BASE_URL}/api/home/delete-task/${task.id}`, {
@@ -715,23 +701,7 @@ const handleCheckbox = async () => {
               </span>
             )}
 
-  {/* Repeat badge — shows above the 3-dot row, right aligned */}
-            {currentRepeat && currentRepeat !== 'none' && (
-              <span
-                onClick={(e) => { e.stopPropagation(); setRepeatOpen(true); }}
-                style={{
-                  fontSize: 9, color: '#a78bfa', cursor: 'pointer',
-                  padding: '2px 5px', borderRadius: 3,
-                  background: 'rgba(167,139,250,0.1)',
-                  border: '1px solid rgba(167,139,250,0.35)',
-                  fontWeight: 700, letterSpacing: 0.3,
-                  whiteSpace: 'nowrap', flexShrink: 0,
-                  lineHeight: 1.4,
-                }}
-              >
-                🔁 {currentRepeat}
-              </span>
-            )}
+  
 
             {/* Due date */}
             {date ? (
@@ -776,18 +746,9 @@ const handleCheckbox = async () => {
         <TaskMenu
           menuPos={menuPos}
           onEdit={() => { setEditOpen(true); setShowMenu(false); }}
-onChangeDate={() => { setShowMenu(false); setTimeout(() => dateLabelRef.current?.click(), 50); }}
-          onRepeat={() => { setRepeatOpen(true); setShowMenu(false); }}
+          onChangeDate={() => { setShowMenu(false); setTimeout(() => dateLabelRef.current?.click(), 50); }}
           onDelete={() => { setDeleteOpen(true); setShowMenu(false); }}
           onClose={() => setShowMenu(false)}
-        />
-      )}
-
-      {repeatOpen && (
-        <RepeatModal
-          currentRepeat={currentRepeat}
-          onSelect={handleSetRepeat}
-          onClose={() => setRepeatOpen(false)}
         />
       )}
 
